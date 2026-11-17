@@ -199,3 +199,11 @@ Cierre de la verificación (17-nov):
 # Carga del Excel de escuelas visitadas (17-nov-2026)
 Se creó `agente.escuelas_visitadas` (`sql/10`) y se cargó el Excel con `cargar_escuelas_visitadas.py`: **21 visitadas · 26 no visitadas · 47 en total**.
 El Excel que leía Power BI tenía 17 visitadas. Las 4 de diferencia (Amalia Marín Castilla, Amalia Marín Elemental, Antonio Sarriera Egozcue y Arturo Morales Carrión) están marcadas como visitadas pero no tienen fecha, igual que Manuel Boada. Falta confirmar que el archivo cargado es la versión vigente del Excel.
+
+# API contra producción (17-nov-2026, `correr_api_mysql.sh`; consultas del tablero con `agente_lector`)
+| Endpoint | Resultado | Referencia (Workbench / Power BI) | |
+|---|---|---|---|
+| `/resumen-usuarios` | 17.744 usuarios · 7.277 activos · 14.479 cancelados · 489 sin suscripción | igual que B1 y #13 | ✅ |
+| `/escuelas-visitadas` | 21 visitadas · 26 no visitadas · 47 escuelas · 8 con alerta | igual que la carga del Excel | ✅ |
+| `/no-conectados-por-rol?definicion=corregida` | 7.277 activos · 949 conectados · 6.328 no conectados | igual que la vista SQL de Power BI (949 / 7.277) | ✅ |
+| `/quizzes-por-periodo?anio_academico=2025-2026` | 206 tomados · 6.883 no tomados | igual que la página «Reporte Académico» | ✅ |
