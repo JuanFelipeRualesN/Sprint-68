@@ -16,6 +16,7 @@
 -- =====================================================================================
 
 -- ─────────────────────────────── PARTE A · CREAR (administrador) ───────────────────────────────
+SET NAMES utf8mb4;   -- obligatorio: con otro juego de caracteres el texto «sin subscripción» queda mal guardado en la vista
 CREATE SCHEMA IF NOT EXISTS agente DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 
 -- A1) Sistema Educativo: los school_identifier SEMI/Alianza (en Power BI están fijos en el M de 3 tablas)

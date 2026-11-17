@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API de consultas de uso de Estudia y Avanza",
-    "version": "0.1.0",
-    "description": "Consultas de solo lectura que devuelven agregados de uso de la plataforma (conexiones y pruebas completadas). No devuelve datos por estudiante. Cada respuesta indica en 'datos_hasta' el último día con datos de ese tipo (las pruebas y las conexiones pueden tener fechas distintas)."
+    "version": "0.2.0",
+    "description": "Consultas de solo lectura que devuelven agregados de uso de la plataforma (conexiones y pruebas completadas). No devuelve datos por estudiante. Cada respuesta indica en 'datos_hasta' el último día con datos de ese tipo (las pruebas y las conexiones pueden tener fechas distintas). Las consultas «del tablero» (resumen_usuarios, conexion_por_escuela_pct, no_conectados_por_rol, escuelas_visitadas, quizzes_por_periodo, conexiones_por_ubicacion, conexiones_por_mes, suscripciones_por_anio) leen vistas validadas contra el informe de Power BI MSJ_Utilization y reproducen sus cifras."
   },
   "servers": [
     {
@@ -334,6 +334,294 @@
           }
         }
       }
+    },
+    "/resumen-usuarios": {
+      "get": {
+        "operationId": "resumen_usuarios",
+        "summary": "Usuarios y estado de su suscripción (foto actual)",
+        "description": "Total de usuarios y cuántos tienen suscripción activa, cancelada o ninguna, por rol y en total (resumen). Es una foto actual: NO necesita período. Un usuario puede tener a la vez suscripciones activas y canceladas, por eso los estados no suman el total; usuarios_solo_cancelados son los que no tienen ninguna activa. Úsala para «cuántos usuarios hay», «cuántos tienen suscripción activa», «cuántos cancelaron» o «cuántos no tienen suscripción».",
+        "parameters": [
+          {
+            "name": "escuela",
+            "in": "query",
+            "required": false,
+            "description": "Nombre exacto de una escuela (usa antes buscar_escuela). Sin él, todas.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/conexion-por-escuela-pct": {
+      "get": {
+        "operationId": "conexion_por_escuela_pct",
+        "summary": "Porcentaje de usuarios conectados por escuela",
+        "description": "Por escuela: usuarios conectados, usuarios con suscripción activa y porcentaje_conectados (ya calculado). Con orden asc la primera fila es la escuela con MENOR porcentaje. Sin desde/hasta usa todo el histórico. Con definicion=tablero el porcentaje puede pasar de 100, porque cuenta conectados de cualquier estado.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/hasta_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          },
+          {
+            "$ref": "#/components/parameters/definicion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/no-conectados-por-rol": {
+      "get": {
+        "operationId": "no_conectados_por_rol",
+        "summary": "Usuarios activos que no se han conectado, por rol",
+        "description": "Por rol (student, teacher, director…): activos, conectados y no_conectados; el total está en 'resumen' (usuarios distintos, no la suma de roles). Sin desde/hasta usa todo el histórico. La definición del tablero subestima los no conectados; para la cifra real usa definicion=corregida y menciona ambas.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/hasta_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/definicion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/escuelas-visitadas": {
+      "get": {
+        "operationId": "escuelas_visitadas",
+        "summary": "Escuelas visitadas y no visitadas, con la fecha de la última visita",
+        "description": "Lista de escuelas del Excel de visitas con visitada (sí/no), fecha de visita inicial y de última visita, y una 'alerta' cuando el dato es inconsistente. 'resumen' trae cuántas fueron visitadas y cuántas no. Es una foto actual: NO necesita período.",
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "description": "'todas' (por defecto), 'visitada' o 'no_visitada'.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "todas",
+                "visitada",
+                "no_visitada"
+              ],
+              "default": "todas"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/quizzes-por-periodo": {
+      "get": {
+        "operationId": "quizzes_por_periodo",
+        "summary": "Quizzes tomados y no tomados por año académico y período",
+        "description": "Por año académico (ago–jul) y período (P1–P4): asignados, tomados, no tomados y porcentaje_tomados (ya calculado). Por defecto excluye la Posprueba, como la página «Reporte Académico» de Power BI. Sin anio_academico devuelve todos los años.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/anio_academico"
+          },
+          {
+            "name": "periodo",
+            "in": "query",
+            "required": false,
+            "description": "P1, P2, P3 o P4.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+              ]
+            }
+          },
+          {
+            "name": "excluir_posprueba",
+            "in": "query",
+            "required": false,
+            "description": "false incluye la Posprueba.",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/conexiones-por-ubicacion": {
+      "get": {
+        "operationId": "conexiones_por_ubicacion",
+        "summary": "Usuarios conectados y conexiones por ciudad u ORE",
+        "description": "Por ciudad o por ORE: usuarios_conectados (distintos) y conexiones (un usuario en un día). El total de usuarios distintos está en 'resumen' (no sumes filas). Sin desde/hasta usa todo el histórico.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/hasta_opcional"
+          },
+          {
+            "name": "agrupar",
+            "in": "query",
+            "required": false,
+            "description": "'ciudad' (por defecto) u 'ore'.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ciudad",
+                "ore"
+              ],
+              "default": "ciudad"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/incluir_facilitadores"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/conexiones-por-mes": {
+      "get": {
+        "operationId": "conexiones_por_mes",
+        "summary": "Evolución mensual de las conexiones",
+        "description": "Serie mes a mes (incluye los meses en cero) con conexiones y usuarios conectados distintos. Indica anio_academico (de agosto a julio) o desde y hasta. Úsala para la evolución de las conexiones en un año académico. 'resumen' trae el total de conexiones, el total de usuarios distintos del rango y el mes con más conexiones.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/anio_academico"
+          },
+          {
+            "$ref": "#/components/parameters/desde_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/hasta_opcional"
+          },
+          {
+            "$ref": "#/components/parameters/incluir_facilitadores"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
+    },
+    "/suscripciones-por-anio": {
+      "get": {
+        "operationId": "suscripciones_por_anio",
+        "summary": "Suscripciones por año académico",
+        "description": "Por año académico: suscripciones distintas, usuarios distintos, filas (usuario × suscripción) y cuántas suscripciones están activas o canceladas. criterio=fin (por defecto) = el «Academic Year» del tablero (año en que termina la suscripción); criterio=activacion = año académico en que se activó.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/anio_academico"
+          },
+          {
+            "name": "criterio",
+            "in": "query",
+            "required": false,
+            "description": "'fin' (por defecto) o 'activacion'.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fin",
+                "activacion"
+              ],
+              "default": "fin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          },
+          "503": {
+            "description": "La fuente no está disponible todavía (p. ej. el Excel de visitas no se ha cargado); el mensaje lo explica."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -413,6 +701,60 @@
             "escuela_materia"
           ],
           "default": "escuela_materia"
+        }
+      },
+      "desde_opcional": {
+        "name": "desde",
+        "in": "query",
+        "required": false,
+        "description": "Primer día del período, AAAA-MM-DD, inclusivo. Va junto con 'hasta'; sin los dos se usa todo el histórico.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "hasta_opcional": {
+        "name": "hasta",
+        "in": "query",
+        "required": false,
+        "description": "Último día del período, AAAA-MM-DD, inclusivo. Va junto con 'desde'.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "definicion": {
+        "name": "definicion",
+        "in": "query",
+        "required": false,
+        "description": "'tablero' (por defecto) reproduce la medida de Power BI tal cual; 'corregida' cuenta como conectados solo a los usuarios con suscripción activa. Si la pregunta es sobre la cifra real, usa 'corregida' y menciona también la del tablero.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "tablero",
+            "corregida"
+          ],
+          "default": "tablero"
+        }
+      },
+      "anio_academico": {
+        "name": "anio_academico",
+        "in": "query",
+        "required": false,
+        "description": "Año académico de agosto a julio, formato AAAA-AAAA (p. ej. 2025-2026).",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{4}$"
+        }
+      },
+      "incluir_facilitadores": {
+        "name": "incluir_facilitadores",
+        "in": "query",
+        "required": false,
+        "description": "true incluye la Escuela Facilitadores MSJ (por defecto se excluye, como la página de conexiones de Power BI).",
+        "schema": {
+          "type": "boolean",
+          "default": false
         }
       }
     },
