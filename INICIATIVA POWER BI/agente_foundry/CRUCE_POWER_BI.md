@@ -191,4 +191,7 @@ Se ejecutaron las 20 sentencias sin errores: el esquema `agente`, 9 vistas, el u
 | B6 suscripciones 2026-27 (suscripciones / usuarios / filas) | 290 / 6.988 / 9.674 | 301 / 7.277 / 9.982 | ⚠️ datos nuevos |
 
 **Conclusión:** las reglas coinciden con las de Power BI. Las únicas diferencias están en la suscripción activa 2026-27, y salen del crecimiento de los datos después del corte del 5-nov: el total de activos fue 6.988 el 5-nov, 7.199 el 12-nov (servicio) y 7.277 el 17-nov. Los cancelados y los años cerrados coinciden exactos.
-Pendiente: #13 (total de usuarios), #19 (promedio de % Full Quiz, esperado 60,19) y `SELECT * FROM gs_data_analysis.vw_total_users_with_connection_details` (esperado 7.277 usuarios y unos 935 conectados).
+Cierre de la verificación (17-nov):
+- #13 total de usuarios: 17.744 en la base hoy (17.679 en el .pbix del 5-nov; +65 usuarios nuevos).
+- #19 promedio de % Full Quiz (Completed, sin Posprueba, 2025-2026): **60,19**, igual que el tablero ✅.
+- `vw_total_users_with_connection_details` hoy: 949 conectados / 7.277 usuarios / 13,04 %. Los 7.277 coinciden con las vistas `agente` ✅. Las vistas dan 935 conectados porque B3 corta las conexiones al 4-nov; la diferencia de 14 deberían ser conexiones posteriores (falta confirmarlo con B3 sin ese corte).
