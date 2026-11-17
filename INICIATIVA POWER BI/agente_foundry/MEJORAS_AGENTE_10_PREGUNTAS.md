@@ -52,6 +52,8 @@ Cada respuesta devuelve las cifras ya calculadas (el agente no hace cálculos, s
 | `suscripciones_por_anio` | P10 | `anio_academico?`, `criterio=activacion\|fin` | suscripciones, usuarios y filas por año |
 | (ampliar) `tendencia_conexiones` | P4 | `anio_academico`, `granularidad=mes` | serie mensual de conexiones y usuarios distintos |
 
+**Estado (17-nov-2026): implementado** en `EyaInsightsApi/ConsultasTablero.cs`, en `Program.cs` y en `openapi.json` (v0.2.0). Son 8 operaciones: las 7 de la tabla, y `conexiones_por_mes` en lugar de ampliar `tendencia_conexiones`. Se probó con un MySQL 8 local y datos simulados: todas las cifras coinciden con los resultados calculados a mano, y la suite existente da el mismo resultado que antes del cambio. Configuración: si no hay `EYA_MYSQL_AGENTE`, se usa la misma conexión con base `agente` y, si existen, `EYA_MYSQL_AGENTE_USER` / `EYA_MYSQL_AGENTE_PASSWORD` (`agente_lector`). La P7 sigue con `promedio_full_quiz`, que lee las tablas base: falta pasarla a `agente.pruebas` cuando se conozcan los nombres de las columnas de escuela y materia de `vw_academics_details`.
+
 Pon una descripción precisa en cada `operationId`: el modelo elige la herramienta por la descripción, así que hay que evitar que dos se solapen.
 
 ## 4. Excel de escuelas visitadas en Azure
