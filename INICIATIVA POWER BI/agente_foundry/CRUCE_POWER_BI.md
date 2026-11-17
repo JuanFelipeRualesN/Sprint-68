@@ -194,4 +194,4 @@ Se ejecutaron las 20 sentencias sin errores: el esquema `agente`, 9 vistas, el u
 Cierre de la verificación (17-nov):
 - #13 total de usuarios: 17.744 en la base hoy (17.679 en el .pbix del 5-nov; +65 usuarios nuevos).
 - #19 promedio de % Full Quiz (Completed, sin Posprueba, 2025-2026): **60,19**, igual que el tablero ✅.
-- `vw_total_users_with_connection_details` hoy: 949 conectados / 7.277 usuarios / 13,04 %. Los 7.277 coinciden con las vistas `agente` ✅. Las vistas dan 935 conectados porque B3 corta las conexiones al 4-nov; la diferencia de 14 deberían ser conexiones posteriores (falta confirmarlo con B3 sin ese corte).
+- `vw_total_users_with_connection_details` hoy: 949 conectados / 7.277 usuarios / 13,04 %. Los 7.277 coinciden con las vistas `agente` ✅. Las vistas dan 935 conectados porque B3 corta las conexiones al 4-nov; sin ese corte dan **949**, igual que la vista SQL ✅. **Las vistas `agente` quedan validadas.**
