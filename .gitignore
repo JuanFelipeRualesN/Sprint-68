@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+escuelas_visitadas_carga.sql
+Escuelas_EA_Visitadas.xlsx
