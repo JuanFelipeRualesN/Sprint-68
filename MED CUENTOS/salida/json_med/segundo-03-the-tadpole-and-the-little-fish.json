@@ -1,0 +1,25 @@
+{
+  "LevelId": 2,
+  "CategoryId": 1,
+  "TitleEn": "The Tadpole and the Little Fish",
+  "TitleEs": "El renacuajo y el pececito",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/animals.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Once upon a time there was a little fish who lived in the Pond of Sighs. One day he met a tadpole. The little fish looked at him in amazement. He saw that the tadpole swam easily thanks to his tail.\nThe friends spent a lot of time together. They loved to float and let the current carry them. They also liked to hide among the rocks.\nOne day, the tadpole fell asleep. When he woke up from his long nap, he got a big surprise. He had grown four legs. Soon after, his tail began to shrink until it disappeared.",
+      "TextEs": "Había una vez un pececito que vivía en la Charca de los Suspiros. Un día se encontró con un renacuajo. El pececito lo miraba con asombro. Veía que el renacuajo nadaba con facilidad gracias a su cola.\nLos amigos pasaban mucho tiempo juntos. Les encantaba flotar y dejarse llevar por la corriente. También, les gustaba esconderse entre las piedras.\nUn día, el renacuajo se quedó dormido. Cuando se levantó de su larga siesta, se llevó una gran sorpresa. Le habían crecido cuatro patas. Al poco tiempo, se le empezó a encoger la cola hasta desaparecer.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "The tadpole had turned into a frog! Now he could jump everywhere. He still liked to swim, but he also wanted to spend time outside of the pond.\nThe little fish became very sad. He was afraid of losing his friend. The frog promised that he would visit him every morning.",
+      "TextEs": "¡El renacuajo se había convertido en un sapo! Ahora podía saltar a todas partes. Todavía le gustaba nadar, pero también quería pasar tiempo fuera de la charca.\nEl pececito se puso muy triste. Tenía miedo de perder a su amigo. EL sapo le prometió que iría a visitarlo todas las mañanas.",
+      "ImageUrl": null
+    }
+  ]
+}

@@ -1,0 +1,356 @@
+.contentForms-inline {
+    display: flex;
+    gap: 20px;
+}
+
+/* FORMS FIELDS GROUPS */
+
+.form-group-fields {
+    position: relative;
+    margin-top: 2.25rem;
+}
+
+.form-group-fields__noLabels {
+    margin-top: 1rem;
+}
+
+.form-group-fields input {
+    height: 1.9rem;
+}
+
+.form-group-fields textarea {
+    resize: none;
+}
+
+.form-group-fields select {
+    width: 100% !important;
+    font-size: var(--fontSize-xsm) !important;
+    height: 2rem;
+    padding: 0.125rem 0.125rem 0.0625rem;
+    background-color: var(--palette-gray-grayLigther) !important;
+    border: none;
+    line-height: 1.6;
+    box-shadow: none;
+    font-family: inherit;
+}
+
+.form-group-fields .control-label,
+.form-group-fields .control-label-w-placeholder {
+    position: absolute;
+    top: 0.25rem;
+    pointer-events: none;
+    padding-left: 0.125rem;
+    z-index: 1;
+    color: var(--palette-gray-charcoal);
+    font-size: var(--fontSize-xsm) !important;
+    font-weight: normal;
+    -webkit-transition: all 0.28s ease;
+    transition: all 0.28s ease;
+}
+
+.form-group-fields .control-label-w-placeholder {
+    top: -1.25rem;
+}
+
+.form-group-fields input::placeholder {
+    font-size: var(--fontSize-xsm) !important;
+    color: var(--palette-gray-gray);
+    padding-left: 0.2em;
+    font-family: inherit;
+}
+
+.form-group-fields input,
+.form-group-fields textarea {
+    display: block;
+    background-color: var(--palette-gray-grayLigther) !important;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: var(--fontSize-xsm) !important;
+    border-width: 0;
+    border-color: transparent;
+    line-height: 1.9;
+    width: 100% !important;
+    color: transparent;
+    -webkit-transition: all 0.28s ease;
+    transition: all 0.28s ease;
+    box-shadow: none;
+    font-family: inherit;
+}
+
+.form-group-fields select,
+.form-group-fields input:focus,
+.form-group-fields input:valid,
+.form-group-fields input.form-file,
+.form-group-fields textarea:focus,
+.form-group-fields textarea:valid,
+.form-group-fields textarea.form-file {
+    color: var(--palette-gray-charcoal);
+}
+
+.form-group-fields select~.control-label,
+.form-group-fields select~.control-label-w-placeholder,
+.form-group-fields textarea~.control-label {
+    font-size: var(--fontSize-xsm) !important;
+    color: var(--palette-gray-charcoal);
+    top: -1.2rem;
+    left: 0;
+}
+
+.form-group-fields .bar {
+    position: relative;
+    border-bottom: 0.0625rem solid var(--palette-gray-grayLigther);
+    display: block;
+}
+
+.form-group-fields .bar::before {
+    content: '';
+    height: 0.125rem;
+    width: 0;
+    left: 50%;
+    bottom: -0.0625rem;
+    position: absolute;
+    background: var(--palette-utility-orange);
+    -webkit-transition: left 0.28s ease, width 0.28s ease;
+    transition: left 0.28s ease, width 0.28s ease;
+    z-index: 1;
+}
+
+.form-group-fields select:focus,
+.form-group-fields input:focus,
+.form-group-fields textarea:focus {
+    outline: none;
+}
+
+.form-group-fields .creatable:focus~.bar::before,
+.form-group-fields select:focus~.bar::before,
+.form-group-fields input:focus~.bar::before,
+.form-group-fields textarea:focus~.bar::before {
+    width: 100% !important;
+    left: 0;
+}
+
+/* CHECKBOX y RADIO BUTTON */
+
+.form-group-fields__checkbox label,
+.form-group-fields__radio label {
+    position: relative;
+    cursor: pointer;
+    padding-left: 1.89rem;
+    text-align: left;
+    color: var(--palette-gray-charcoal);
+    display: block;
+    font-size: var(--fontSize-sm);
+}
+
+.form-group-fields__checkbox label {
+    margin-top: 0.5em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.form-group-fields__checkbox input,
+.form-group-fields__radio input {
+    width: auto;
+    opacity: 0.00000001;
+    position: absolute;
+    left: 0;
+}
+
+.form-group-fields__radio--radio {
+    margin-bottom: 0;
+}
+
+.form-group-fields__radio--radio .helper {
+    top: -0.25rem;
+    left: -0.25rem;
+    cursor: pointer;
+    display: block;
+    font-size: 1rem;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    color: var(--palette-gray-gray);
+}
+
+.form-group-fields__radio--radio .helper::before,
+.form-group-fields__radio--radio .helper::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0.25rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    -webkit-transition: -webkit-transform 0.28s ease;
+    transition: -webkit-transform 0.28s ease;
+    transition: transform 0.28s ease;
+    transition: transform 0.28s ease, -webkit-transform 0.28s ease;
+    border-radius: 50%;
+    border: 0.125rem solid currentColor;
+}
+
+.form-group-fields__radio--radio .helper::after {
+    -webkit-transform: scale(0);
+    transform: scale(0);
+    background-color: var(--palette-brand-blue-1);
+    border-color: var(--palette-brand-blue-1);
+}
+
+.form-group-fields__radio--radio label:hover .helper {
+    color: var(--palette-brand-blue-1);
+}
+
+.form-group-fields__radio--radio input:checked~.helper::after {
+    -webkit-transform: scale(0.5);
+    transform: scale(0.5);
+}
+
+.form-group-fields__radio--radio input:checked~.helper::before {
+    color: var(--palette-brand-blue-1);
+}
+
+.form-group-fields__checkbox .helper {
+    color: #999;
+    position: absolute;
+    left: 0;
+    width: 0.8rem;
+    height: 0.8rem;
+    z-index: 0;
+    border: 0.125rem solid currentColor;
+    border-radius: 0.0625rem;
+    -webkit-transition: border-color 0.28s ease;
+    transition: border-color 0.28s ease;
+}
+
+/* checkbox */
+.form-group-fields__checkbox .helper::before,
+.form-group-fields__checkbox .helper::after {
+    position: absolute;
+    height: 0;
+    width: 0.2rem;
+    background-color: var(--palette-brand-blue-1);
+    display: block;
+    -webkit-transform-origin: left top;
+    transform-origin: left top;
+    border-radius: 0.25rem;
+    content: '';
+    -webkit-transition: opacity 0.28s ease, height 0s linear 0.28s;
+    transition: opacity 0.28s ease, height 0s linear 0.28s;
+    opacity: 0;
+}
+
+.form-group-fields__checkbox .helper::before {
+    top: 0.73rem;
+    left: 0.39rem;
+    -webkit-transform: rotate(-135deg);
+    transform: rotate(-135deg);
+    box-shadow: 0 0 0 0.0625rem var(--palette-gray-white);
+}
+
+.form-group-fields__checkbox .helper::after {
+    top: 0.35rem;
+    left: 0.01em;
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+.form-group-fields__checkbox label:hover .helper {
+    color: var(--palette-brand-blue-1);
+}
+
+.form-group-fields__checkbox input:checked~.helper {
+    color: var(--palette-brand-blue-1);
+}
+
+.form-group-fields__checkbox input:checked~.helper::after,
+.form-group-fields__checkbox input:checked~.helper::before {
+    opacity: 1;
+    -webkit-transition: height 0.28s ease;
+    transition: height 0.28s ease;
+}
+
+.form-group-fields__checkbox input:checked~.helper::after {
+    height: 0.5rem;
+}
+
+.form-group-fields__checkbox input:checked~.helper::before {
+    height: 1.2rem;
+    -webkit-transition-delay: 0.28s;
+    transition-delay: 0.28s;
+}
+
+.checboxList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.placeholder {
+    color: #bfbfbf;
+}
+
+.form-group-fields select.placeholder {
+    color: #bfbfbf;
+}
+
+.form-group-fields select option:not(:first-of-type) {
+    color: var(--palette-gray-charcoal);
+}
+
+.form-group-fields input:focus-visible {
+    border: none !important;
+    outline: 0;
+}
+
+.form-group-fields .creatable .creatable__control {
+    border-radius: 0;
+    background-color: var(--palette-gray-grayLigther) !important;
+    border-width: 0;
+    box-shadow: none;
+}
+
+.form-group-fields .creatable .creatable__control:hover {
+    border-color: transparent;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__value-container {
+    display: flex;
+    flex-flow: wrap-reverse;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__value-container .creatable__multi-value {
+    background-color: #fff;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__value-container .creatable__multi-value__remove {
+    cursor: pointer;
+    background-color: #fff;
+    color: #999;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__value-container .creatable__multi-value__remove:hover {
+    color: #323232;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__value-container .creatable__placeholder {
+    font-weight: normal;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__value-container .creatable__input>input {
+    background-color: transparent !important;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__indicators>.creatable__indicator-separator,
+.form-group-fields .creatable .creatable__control .creatable__indicators>.creatable__dropdown-indicator {
+    display: none;
+}
+
+.form-group-fields .creatable .creatable__control .creatable__indicators>.creatable__clear-indicator {
+    cursor: pointer;
+}
+
+.form-group-fields__checkbox input[type="checkbox"][disabled]~i.helper {
+    cursor: no-drop;
+}

@@ -1,0 +1,95 @@
+.wrapper-school {
+    padding: 0.25em;
+    width: 98%;
+      display: -webkit-box; 
+          display: -webkit-flex;  
+          display: -ms-flexbox; 
+          display: flex;
+              -webkit-flex-wrap: wrap;
+              -ms-flex-wrap: wrap;
+          flex-wrap: wrap;
+          justify-content: space-between;
+              -webkit-box-pack: justify;
+              -ms-flex-pack: justify;
+}
+
+/* .wrapper-school--flex-start {
+    justify-content: flex-start;
+        -webkit-box-pack: flex-start;
+        -ms-flex-pack: flex-start;
+} */
+
+.school-three-col {
+    width: 32%;
+    border: 1px solid #DDD;
+    margin-bottom: 1.5em;
+}
+
+.school-three-col--empty {
+    width: 32%;
+}
+
+.school-two-col {
+    width: 48%;
+    border: 1px solid #DDD;
+    margin-bottom: 1.5em;
+}
+
+.wrapper-school--flex-start .school-three-col {
+    margin-right: 10px;
+}
+
+.mod-school {
+    padding: 1em;
+    font-size: 14px;
+    color: #31353d;
+}
+
+.mod-school__title {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 0.5em;
+}
+
+.mod-school__title svg {
+    color: #8f959b;
+    margin-right: 10px;
+}
+.mod-school__description {
+    padding-bottom: 20px;
+}
+.mod-school__description .btn,
+.mod-school__description a {
+    display: block;
+    margin-top: 3em;
+    font-weight: bold;
+    font-size: 16px;
+    width: 100%;
+    text-align: right !important;
+}
+
+.mod-school__description a.btn-simple--only-text {
+    font-size: 13px !important;
+}
+
+.mod-school__description a.btn-simple--only-text:hover {
+    text-decoration: none !important;
+}
+
+/* MQ 950 */
+@media screen and (max-width: 950px) {
+    .school-three-col {
+        width: 48%;
+    }
+}
+
+/* MQ 650 */
+@media screen and (max-width: 650px) {
+    .school-three-col, .school-two-col {
+        width: 100%;
+    }
+
+    /* .wrapper-school--flex-start .school-three-col {
+        margin-right: 0;
+    } */
+}

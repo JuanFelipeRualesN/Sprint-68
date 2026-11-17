@@ -1,0 +1,19 @@
+{
+  "LevelId": 2,
+  "CategoryId": 4,
+  "TitleEn": "The Seed from the Stream",
+  "TitleEs": "La semilla de la quebrada",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Diego and Gabriela were walking near a stream when they discovered a seed among the rocks.\nThey decided to take it to the school garden.\nFirst they asked their teacher how to plant it.\nThen they prepared the soil and watered it without wasting water.\nSeveral days went by with no change.\nDiego thought the seed would not grow, but Gabriela asked for patience.\nA week later, a green sprout appeared.\nThe children put up a sign so that no one would step on it.\nIn time, the plant grew its first leaves.\nDiego understood that protecting nature takes information, perseverance, and care.",
+      "TextEs": "Diego y Gabriela paseaban cerca de una quebrada cuando descubrieron una semilla entre las piedras.\nDecidieron llevarla al huerto escolar.\nPrimero preguntaron a su maestra cómo sembrarla.\nDespués prepararon la tierra y la regaron sin desperdiciar agua.\nPasaron varios días sin cambios.\nDiego pensó que la semilla no crecería, pero Gabriela pidió paciencia.\nUna semana después apareció un brote verde.\nLos niños colocaron un letrero para que nadie lo pisara.\nCon el tiempo, la planta dio sus primeras hojas.\nDiego comprendió que proteger la naturaleza requiere información, constancia y cuidado.",
+      "ImageUrl": null
+    }
+  ]
+}

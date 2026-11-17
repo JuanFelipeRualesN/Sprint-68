@@ -1,0 +1,46 @@
+.ssd-dropdown {
+    width: 100%;
+}
+
+.ssd-toggle {
+    width: 100%;
+    text-align: left;
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    color: #212529;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.ssd-toggle.ssd-disabled {
+    cursor: not-allowed;
+}
+
+.ssd-toggle-label {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ssd-menu {
+    max-height: 260px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.ssd-option {
+    padding: 4px 16px;
+}
+
+.ssd-option-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.ssd-checkbox {
+    margin-right: 8px;
+}

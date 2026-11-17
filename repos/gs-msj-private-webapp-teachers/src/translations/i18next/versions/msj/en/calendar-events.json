@@ -1,0 +1,84 @@
+{
+  "title": "Calendar",
+  "nav": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week"
+  },
+  "view": {
+    "timeline": "Timeline",
+    "list": "List"
+  },
+  "week": {
+    "label": "Week",
+    "inProgress": "in progress",
+    "today": "Today",
+    "free": "Free",
+    "hoursScheduled": "{{hours}} h scheduled",
+    "eventCount_one": "{{count}} event",
+    "eventCount_other": "{{count}} events"
+  },
+  "day": {
+    "allDay": "All Day",
+    "empty": {
+      "title": "No events scheduled",
+      "hint": "Enjoy the day, or get a head start on next week."
+    }
+  },
+  "list": {
+    "unit": "Unit {{unit}}"
+  },
+  "days": {
+    "0": "Su",
+    "1": "Mo",
+    "2": "Tu",
+    "3": "We",
+    "4": "Th",
+    "5": "Fr",
+    "6": "Sa"
+  },
+  "months": {
+    "0": "January",
+    "1": "February",
+    "2": "March",
+    "3": "April",
+    "4": "May",
+    "5": "June",
+    "6": "July",
+    "7": "August",
+    "8": "September",
+    "9": "October",
+    "10": "November",
+    "11": "December"
+  },
+  "eventTypes": {
+    "celebration": "Day Celebration",
+    "workshop": "Workshop",
+    "lesson": "Lesson Available",
+    "homework": "Assessment tasks",
+    "lessonQuiz": "Test",
+    "calendarEvent": "General Event"
+  },
+  "events": {
+    "globalWarming": {
+      "title": "Global Warming",
+      "place": "Platform"
+    },
+    "medWorkshop": {
+      "title": "Workshop",
+      "place": "Room 10-1"
+    }
+  },
+  "modal": {
+    "place": "📍 Place",
+    "link": "🔗 Link",
+    "attachment": "📎 Attachment",
+    "downloadFile": "📄 {{filename}} ↓",
+    "time": "⏰ Time",
+    "goToQuiz": "Go to test",
+    "goToLesson": "Go to lesson"
+  },
+  "dateLabel": "{{day}} {{month}} {{year}}",
+  "cellAriaLabel": "{{day}} of {{month}}: {{title}}"
+}

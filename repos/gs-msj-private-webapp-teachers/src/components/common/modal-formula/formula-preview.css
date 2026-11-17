@@ -1,0 +1,26 @@
+.formula-container {
+    display: flex;
+    justify-content: center;
+    border: solid 1px rgb(204, 204, 204);
+    border-radius: 4px;
+    contain: content;
+    overflow-x: auto;
+}
+
+#formula-preview {
+    display: flex;
+    align-items: center;
+    color: rgba(0, 0, 0, 0.87);
+    border: none;
+    margin: 8px 0;
+    height: 75px;
+    width: fit-content;
+}
+
+math-field::part(virtual-keyboard-toggle) {
+    display: none;
+}
+
+math-field::part(menu-toggle) {
+    display: none;
+}

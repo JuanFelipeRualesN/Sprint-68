@@ -1,0 +1,36 @@
+﻿archivo,grado,LevelId,categoria,CategoryId,TitleEs,TitleEn,palabras_es,slides,max_palabras_slide,origen_TextEn
+kinder-es-01-the-moon.json,Kinder,7,scifi,2,La luna,The Moon,28,1,28,traducción automática
+kinder-es-02-my-little-parrot.json,Kinder,7,animals,1,Mi lorita,My Little Parrot,13,1,19,traducción automática
+kinder-es-03-honorato-the-duck.json,Kinder,7,animals,1,El pato Honorato,Honorato the Duck,11,1,13,traducción automática
+kinder-es-04-the-flamingo.json,Kinder,7,animals,1,El flamenco,The Flamingo,12,1,16,traducción automática
+kinder-es-05-the-little-ant.json,Kinder,7,animals,1,La hormiguita,The Little Ant,12,1,13,traducción automática
+kinder-es-06-the-lion.json,Kinder,7,animals,1,El león,The Lion,14,1,17,traducción automática
+kinder-es-07-mimi-and-mila.json,Kinder,7,adventure,4,Mimi y Mila,Mimi and Mila,23,1,23,traducción automática
+kinder-es-08-susi-washes-up.json,Kinder,7,adventure,4,Susise lava,Susi Washes Up,12,1,14,traducción automática
+kinder-es-09-the-moon-and-the-lagoon.json,Kinder,7,adventure,4,La luna y la laguna,The Moon and the Lagoon,21,1,23,traducción automática
+kinder-es-10-tito-and-tita.json,Kinder,7,adventure,4,Tito y Tita,Tito and Tita,16,1,16,traducción automática
+kinder-es-11-pepa-and-the-paper.json,Kinder,7,adventure,4,Pepa y el papel,Pepa and the Paper,16,1,20,traducción automática
+kinder-es-12-nina-and-the-pineapple.json,Kinder,7,adventure,4,Nina y la piña,Nina and the Pineapple,17,1,19,traducción automática
+kinder-es-13-fina-and-the-fruit.json,Kinder,7,adventure,4,Fina y la fruta,Fina and the Fruit,18,1,18,traducción automática
+kinder-es-14-coco-creates.json,Kinder,7,adventure,4,Coco crea,Coco Creates,17,1,20,traducción automática
+kinder-es-15-sol-and-the-tablet.json,Kinder,7,scifi,2,Sol y la tableta,Sol and the Tablet,20,1,23,traducción automática
+kinder-en-01-we-all-play.json,Kinder,7,adventure,4,Todos jugamos,We All Play,10,1,13,original
+kinder-en-02-my-new-pal.json,Kinder,7,adventure,4,Mi nuevo amigo,My New Pal,15,1,15,original
+kinder-en-03-a-turn-for-sam.json,Kinder,7,adventure,4,El turno de Sam,A Turn for Sam,15,1,17,original
+kinder-en-04-the-red-drum.json,Kinder,7,adventure,4,El tambor rojo,The Red Drum,12,1,15,original
+kinder-en-05-my-home-song.json,Kinder,7,adventure,4,La canción de mi casa,My Home Song,14,1,15,original
+kinder-en-06-the-flag-art.json,Kinder,7,history,3,El arte de la bandera,The Flag Art,14,1,15,original
+kinder-en-07-the-clean-sand.json,Kinder,7,adventure,4,La arena limpia,The Clean Sand,12,1,16,original
+kinder-en-08-the-little-seed.json,Kinder,7,adventure,4,La semillita,The Little Seed,17,1,17,original
+kinder-en-09-the-blue-sea.json,Kinder,7,animals,1,El mar azul,The Blue Sea,13,1,16,original
+kinder-en-10-a-box-boat.json,Kinder,7,adventure,4,Un barco de caja,A Box Boat,13,1,15,original
+kinder-en-11-my-big-fix.json,Kinder,7,adventure,4,Mi gran arreglo,My Big Fix,13,1,17,original
+kinder-en-12-the-cup-tower.json,Kinder,7,adventure,4,La torre de vasos,The Cup Tower,13,1,16,original
+kinder-en-13-wash-wash.json,Kinder,7,adventure,4,"¡Lava, lava!","Wash, Wash!",15,1,16,original
+kinder-en-14-i-can-move.json,Kinder,7,adventure,4,Puedo moverme,I Can Move,8,1,12,original
+kinder-en-15-my-red-apple.json,Kinder,7,adventure,4,Mi manzana roja,My Red Apple,14,1,16,original
+kinder-en-16-time-to-rest.json,Kinder,7,adventure,4,Hora de descansar,Time to Rest,15,1,16,original
+kinder-en-17-the-class-tablet.json,Kinder,7,scifi,2,La tableta de la clase,The Class Tablet,11,1,16,original
+kinder-en-18-ask-first.json,Kinder,7,scifi,2,Preguntar primero,Ask First,17,1,17,original
+kinder-en-19-the-star-screen.json,Kinder,7,scifi,2,La estrella en la pantalla,The Star Screen,18,1,20,original
+kinder-en-20-tap-and-stop.json,Kinder,7,scifi,2,Toca y para,Tap and Stop,13,1,15,original

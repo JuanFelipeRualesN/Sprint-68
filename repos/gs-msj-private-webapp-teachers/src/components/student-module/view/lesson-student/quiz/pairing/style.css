@@ -1,0 +1,160 @@
+.student-wrapper-pareo {
+  width: 80%;
+  max-width: 670px;
+  margin: 0 0 0 10%;
+  padding: 0 1.5em 0.5em 1.5em;
+  color: #2C3140;
+}
+
+.student-wrapper-pareo .student-content-response-student-instruction {
+  border-top: 1px solid #d8d8d8;
+  margin-top: 70px;
+}
+
+.student-wrapper-pareo .student-content-response-student-instruction {
+  border-top: 1px solid #d8d8d8;
+  margin-top: 70px;
+}
+
+
+.student-wrapper-pareo p {
+  line-height: 1.5em;
+  font-size: 18px;
+  margin-bottom: 0;
+  margin: 0.5em 0;
+}
+
+/* .student-wrapper-pareo h1 {
+  border-bottom: 1px solid #E7E7E7;
+  padding-bottom: 0.25em;
+  color: #40539D;
+  margin: 1em 0 1.5em 0;    
+} */
+
+
+.student-content-pareo {
+  margin-bottom: 1em;
+  display: -webkit-box; 
+      display: -webkit-flex;  
+      display: -ms-flexbox; 
+      display: flex;
+          -webkit-flex-wrap: wrap;
+          -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+      justify-content: space-between;
+          -webkit-box-pack: justify;
+          -ms-flex-pack: justify;
+    
+  background-image: linear-gradient(#FFF, #F8F9F9);
+  padding: 1em;
+  margin-bottom: 1em;
+  border: 1px solid #e6f2f8;
+}
+
+.student-content-pareo .student-pareo-col-left {
+  /* background-color: #F7F7F7; */
+  width: 50%;
+  }
+  
+  .student-content-pareo .student-pareo-col-right {
+  background-color: #F4F4F4;
+  width: 45%;
+  }
+
+.student-pareo-col-left .student-list-form, .student-pareo-col-right .list-student-question {
+list-style: none;
+margin: 0;
+padding: 0
+}
+
+.student-pareo-col-left .student-list-form li,
+.student-pareo-col-right .list-student-question li {
+padding: 1em 1em 0.25em 1em;
+}
+
+/* .student-pareo-col-right .list-student-question li {
+padding: 1em;
+font-weight: bold;
+} */
+
+.student-pareo-col-right .list-student-question li {
+  padding: 0.25em 1em;
+}
+  
+.student-pareo-col-right .list-student-question li span {
+  font-weight: bold;
+  display: inline-block;
+}
+
+.student-pareo-col-right .list-student-question li img,
+.student-pareo-col-left .student-list-form li img {
+  width: 100%;
+}
+
+
+.student-pareo-col-left .student-list-form span {
+padding-left: 0.5em;
+}
+
+
+
+
+.student-list-form input {
+  max-width: 25%;
+  border: 0;
+  padding: 5px 10px;
+  background: #F7F7F7 no-repeat;
+  font-family: 'Roboto' , Arial , Helvetica , sans-serif;
+  font-size: 18px;
+  
+  background-image: linear-gradient(to bottom, #7C89BF, #40539D), linear-gradient(to bottom, #DDD, #DDD);
+  /* sizes for the 2 images (default state) */
+  background-size: 0 2px, 100% 1px;
+  /* positions for the 2 images. Change both "50%" to "0%" or "100%" and tri again */
+  background-position: 50% 100%, 50% 100%;
+  /* animation solely on background-size */
+  transition: background-size 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+}
+
+.student-list-form input:focus {
+/* sizes for the 2 images (focus state) */
+  background-size: 100% 2px, 100% 1px;
+  outline: none;
+}
+
+.student-list-form input::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+color: #798EAF;
+font-style: italic;
+font-size: 16px;
+opacity: 1; /* Firefox */
+}
+
+.student-list-form input:-ms-input-placeholder { /* Internet Explorer 10-11 */
+color: #798EAF;
+font-size: 16px;
+font-style: italic;
+}
+
+.student-list-form input::-ms-input-placeholder { /* Microsoft Edge */
+color: #798EAF;
+font-size: 16px;
+font-style: italic;
+}
+
+
+/* MQ 750px */
+
+@media screen and (max-width: 750px) { 
+  .student-content-pareo .student-pareo-col-left {
+    width: 100%;
+  }
+
+.student-content-pareo .student-pareo-col-right {
+    width: 100%;
+    margin-top: 1.5em;
+  }
+
+  .student-pareo-col-right .list-student-question li img {
+    width: auto;
+  }
+}

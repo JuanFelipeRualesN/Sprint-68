@@ -1,0 +1,56 @@
+import { createContext } from 'react';
+
+export const initialState = {
+    variables: {
+        SchoolManagementAdmin: true,
+        EnrollmentManagementAdmin: true,
+        UserManagementAdmin: true,
+        MessageManagementAdmin: true,
+        MessageManagementSendAdmin: true,
+        ConfigurationManagerAdmin: true,
+        PasswordManagementAdmin: true,
+        SchoolManagementAdminOre: true,
+        EnrollmentManagementAdminOre: true,
+        UserManagementAdminOre: true,
+        MessageManagementAdminOre: true,
+        MessageManagementSendAdminOre: true,
+        ConfigurationManagerAdminOre: true,
+        PasswordManagementAdminOre: true,
+        UserManagementPrincipal: true,
+        MessageManagementPrincipal: true,
+        MessageManagementSendPrincipal: true,
+        UserManagementTeacher: true,
+        GroupInternalManagementTeacher: true,
+        InvitationManagementTeacher: true,
+        InvitationTeacherToParentManagementTeacher: true,
+        ChatManagementTeacher: true,
+        MessageManagementTeacher: true,
+        MessageManagementSendTeacher: true,
+        TeamMeetsManagementTeacher: true,
+        ConfigurationManagerTeacher: true,
+        InvitationTeacherToStudentManagementTeacher: true,
+        PasswordManagementTeacher: true,
+        ProgressManagementParent: true,
+        InvitationManagementParent: true,
+        ChatManagementParent: true,
+        MessageManagementParent: true,
+        MessageManagementSendParent: true,
+        MicrosoftSSOManagement: true,
+        InternalLoginManagement: true,
+        InternalPasswordReset: true,
+        MessageManagementStudent: true,
+        MessageManagementSendStudent: true,
+        ProgressManagementStudent: true,
+        TeamsManagementStudent: true,
+        ChatManagementStudent: true,
+        ConfigurationManagerParent: true,
+        ConfigurationManagerPrincipal: true,
+        PasswordManagementPrincipal: true,
+        PasswordManagementParent: true
+    },
+    notifications: {
+        hasUnreadNotifications: false,
+    }
+};
+
+export const AppContext = createContext();

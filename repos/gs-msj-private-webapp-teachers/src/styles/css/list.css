@@ -1,0 +1,64 @@
+/* BREADCRUMBS */
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0 !important;
+    font-size: var(--fontSize-tiny);
+    font-weight: 600;
+    color: var(--palette-gray-carbon);
+    margin: 10px 0;
+    background: transparent !important;
+}
+
+nav.breadcrumb {
+    min-height: 18px;
+}
+
+.breadcrumb span:not(:last-child) li::after,
+.breadcrumb li:not(:last-child)::after {
+    display: inline-block;
+    margin: 0 1rem;
+    content: '/';
+    color: var(--palette-gray-carbon);
+    font-weight: 400;
+}
+
+.breadcrumb .breadcrumb--title {
+    font-weight: 800;
+}
+
+.breadcrumb a {
+    color: var(--palette-gray-carbon);
+    text-decoration: underline !important;
+    cursor: pointer;
+}
+
+.breadcrumb a:hover {
+    text-decoration: none;
+}
+
+/* LIST INFORMATION */
+
+.infoList {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--fontSize-sm);
+    font-weight: 400;
+    color: var(--palette-gray-carbon);
+    margin: 8px 0;
+}
+
+.infoList li:not(:last-child)::after {
+    display: inline-block;
+    margin: 0 1rem;
+    content: '|';
+}
+
+.infoList span {
+    font-weight: 700;
+}

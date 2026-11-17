@@ -1,0 +1,98 @@
+.txt-black{
+    color:black;
+    font-size: 12px;
+}
+.sidebar-background{
+    background-color: #446990;
+}
+
+.sidebar-padding-top{
+    padding-top: 110px;
+}
+
+.btn-transparent-selected-no-radius{
+    background-color: rgba(0, 14, 56, 0.29) !important;
+    background-repeat:no-repeat !important;
+    border: none !important;
+    cursor:pointer !important;
+    overflow: hidden !important;
+    outline:none !important;
+}
+
+.white-text{
+    color:#FFF;
+}
+
+.sidenav-icons{
+    max-width: 50px;
+    width:80%;
+    min-width:30px;
+    padding-top:10px;
+    padding-bottom:10px;
+}
+
+.margin-top-mandatory-25{
+    margin-top: 25px !important;
+}
+
+.link-white a{
+    color: #FFFFFF;
+    text-decoration: none;
+}
+.link-white a:hover{
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+
+.link-white {
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+.status-time-test--process {
+    background: #D2E7DD;
+    border: 1px solid #BBDCCC;
+    color: #155232;
+  }
+  
+  .status-time-test--pending {
+    background: #FEF4CE;
+    border: 1px solid #FDEDB6;
+    color: #927312;
+  }
+  
+  .status-time-test--alert {
+    background: #F7D7DA;
+    border: 1px solid #F4C4C9;
+    color: #811E2A;
+  }
+
+  .date-capitalize {
+    text-transform: capitalize;
+  }
+  
+  .wrapper-info-success-academics {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    align-items: center;
+    color: #85A387;
+    padding: 1em;
+    margin-bottom: 10px;
+  }
+  
+  .wrapper-info-academics-details {
+    font-size: 18px;
+  }
+  
+  .wrapper-academics-details-title {
+      color: #808998;
+  }
+  
+  .wrapper-text-danger {
+    color: #D15863;
+  }
+  

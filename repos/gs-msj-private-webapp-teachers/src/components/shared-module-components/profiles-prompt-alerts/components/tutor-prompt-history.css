@@ -1,0 +1,248 @@
+.tutor-prompt-history {
+  max-width: 69.375rem;
+  /* No horizontal margin: the bootstrap column already provides the gutter. */
+  margin: 1.25rem 0 0;
+  border: 1px solid #e4e9f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 0.5rem 1.5rem rgba(39, 70, 108, 0.07);
+  overflow: hidden;
+}
+
+.tutor-prompt-history__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.0625rem 1.1875rem;
+  background: #f8fbfc;
+  border-bottom: 1px solid #e4e9f0;
+}
+
+/* Same eyebrow typography as the safety alert, in the neutral color. */
+.tutor-prompt-history__eyebrow {
+  display: block;
+  color: #6b7a93;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tutor-prompt-history__title {
+  margin: 0.1875rem 0;
+  color: #27466c;
+  font-size: 1.0625rem;
+}
+
+.tutor-prompt-history__description {
+  margin: 0;
+  color: #6b7a93;
+  font-size: 0.75rem;
+}
+
+.tutor-prompt-history__toggle {
+  align-self: center;
+  flex: 0 0 auto;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #27466c;
+  border-radius: 0.375rem;
+  background: #fff;
+  color: #27466c;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tutor-prompt-history__toggle:hover {
+  background: #f8fbfc;
+}
+
+.tutor-prompt-history__filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.9375rem 1.125rem 0;
+}
+
+.tutor-prompt-history__filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  color: #6b7a93;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.tutor-prompt-history__filter input,
+.tutor-prompt-history__filter select {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #d9dee5;
+  border-radius: 0.375rem;
+  background: #fff;
+  color: #27466c;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.tutor-prompt-history__filter input:focus,
+.tutor-prompt-history__filter select:focus {
+  outline: none;
+  border-color: #27466c;
+}
+
+.tutor-prompt-history__filter-clear {
+  padding: 0.4375rem 0.75rem;
+  border: 1px solid #d9dee5;
+  border-radius: 0.375rem;
+  background: #fff;
+  color: #6b7a93;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tutor-prompt-history__filter-clear:hover {
+  background: #f8fbfc;
+  color: #27466c;
+}
+
+.tutor-prompt-history__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.9375rem 1.125rem 1.125rem;
+}
+
+.tutor-prompt {
+  padding: 0.6875rem 0.8125rem;
+  border: 1px solid #e4e9f0;
+  border-left: 0.25rem solid #69aaa7;
+  border-radius: 0.4375rem;
+  background: #fff;
+}
+
+.tutor-prompt--flagged {
+  border-color: #ffc7b7;
+  border-left-color: #cf513b;
+  background: #fff9f7;
+}
+
+/* Unread alert: a soft blue ring draws the eye without overriding the red
+   flagged accent (a new prompt is, by definition, also flagged). */
+.tutor-prompt--new {
+  box-shadow: 0 0 0 2px rgba(29, 111, 184, 0.25);
+}
+
+/* "New" badge inside a prompt's meta row; matches the table indicator. */
+.tutor-prompt__new {
+  display: inline-flex;
+  align-items: center;
+  background: #1d6fb8;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.0625rem 0.4375rem;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* The badge sits first in the meta row, so neutralize the sibling divider. */
+.tutor-prompt__meta .tutor-prompt__new + span {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.tutor-prompt__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  color: #6b7a93;
+  font-size: 0.6875rem;
+}
+
+.tutor-prompt__meta span + span {
+  padding-left: 0.5625rem;
+  border-left: 1px solid #d9dee5;
+  color: #27466c;
+  font-weight: 700;
+}
+
+.tutor-prompt__meta svg {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+
+.tutor-prompt__badge {
+  margin-left: auto;
+  color: #38746e;
+  font-size: 0.625rem;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tutor-prompt__badge--flagged {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #a53825;
+}
+
+.tutor-prompt__text {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 0;
+  color: #33353d;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.tutor-prompt__reason {
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid #ffd6cc;
+  color: #8c2f22;
+  font-size: 0.75rem;
+}
+
+.tutor-prompt-history__empty {
+  padding: 0.3125rem;
+  color: #6b7a93;
+  font-size: 0.8125rem;
+}
+
+/* Dim the list while the next page is loading, so paging feels responsive. */
+.tutor-prompt-history__list--loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.tutor-prompt-history__pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* react-paginate renders a <ul>; drop its default list styling. */
+.tutor-prompt-history__pager .pagination {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .tutor-prompt-history__head {
+    flex-direction: column;
+  }
+
+  .tutor-prompt-history__toggle {
+    align-self: flex-start;
+  }
+
+  .tutor-prompt__badge {
+    margin-left: 0;
+  }
+}

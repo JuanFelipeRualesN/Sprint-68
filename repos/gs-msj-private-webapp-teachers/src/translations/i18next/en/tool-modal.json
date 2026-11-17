@@ -1,0 +1,259 @@
+{
+  "modal": {
+    "eyebrow": "AI Tool",
+    "noImagesNotice": "This tool does not generate images"
+  },
+  "common": {
+    "back": "Back",
+    "backToTools": "Back to tools",
+    "close": "Close",
+    "url": "URL",
+    "text": "Text",
+    "noResults": "No matches",
+    "clear": "Clear"
+  },
+  "upload": {
+    "label": "📎 Upload file",
+    "tooltip": "Upload a PDF, Word document, or text file",
+    "busy": "Reading…"
+  },
+  "form": {
+    "choose": "Choose",
+    "cancel": "Cancel",
+    "generate": "Generate",
+    "ask": "Ask",
+    "createWithAthenas": "Create with Athenas lesson",
+    "regenerate": "Regenerate",
+    "loading": "Loading…"
+  },
+  "output": {
+    "placeholder": "Your result will appear here…",
+    "generating": "Generating…",
+    "saved": "Saved ✓",
+    "result": "Result",
+    "error": "Error",
+    "copy": "Copy",
+    "actionsAriaLabel": "Output actions",
+    "backToDoc": "Back to document",
+    "convertTitle": "Convert to presentation",
+    "convertBtn": "Slides",
+    "converting": "Converting…",
+    "worksheetTitle": "View as worksheet",
+    "worksheetBtn": "Worksheet",
+    "paramsTitle": "Show/hide form parameters",
+    "params": "Parameters",
+    "interactiveTitle": "Create interactive assessment",
+    "interactive": "Interactive",
+    "interventionTitle": "Create intervention plan from this diagnostic",
+    "intervention": "Intervention plan"
+  },
+  "download": {
+    "title": "Download options",
+    "label": "Download",
+    "pdf": "PDF",
+    "pdfShort": "PDF",
+    "word": "Word",
+    "pptx": "PowerPoint",
+    "pptxShort": "PPTX",
+    "worksheet": "Worksheet PDF",
+    "worksheetShort": "Worksheet"
+  },
+  "doc": {
+    "editMode": "Edit",
+    "previewMode": "Preview",
+    "editPlaceholder": "Edit your document here…"
+  },
+  "worksheet": {
+    "nameDate": "Name: __________________ Date: __________________",
+    "editableContent": "Editable content"
+  },
+  "chat": {
+    "athenasActionLabel": "Action",
+    "athenasActionHint": "Choose how the AI should respond to your lesson.",
+    "actions": {
+      "deepen": "Deepen understanding",
+      "practice": "Practice problems",
+      "dok34": "DOK 3–4 questions",
+      "worksheet": "Worksheet",
+      "ppt": "Presentation",
+      "label": "Action",
+      "placeholder": "Choose an action"
+    },
+    "history": "Conversation history ({{count}} exchanges)"
+  },
+  "athenasPrompt": {
+    "instructions": {
+      "deepen": "Write a thorough explanation that deepens student understanding of the key concepts in this lesson. Use analogies, examples, and real-world connections.",
+      "practice": "Create a set of practice problems aligned to the lesson objectives, ranging from basic recall to application-level tasks.",
+      "dok34": "Generate Depth of Knowledge levels 3 and 4 questions that require students to reason strategically and extend thinking beyond the lesson content.",
+      "worksheet": "Design a student-facing worksheet with clear instructions, scaffolded tasks, and response spaces aligned to the lesson objectives.",
+      "ppt": "Outline a presentation with slide-by-slide content that teaches the lesson concepts clearly and engagingly."
+    },
+    "wrapper": "Action: {{actionLabel}}\n\nInstruction: {{instruction}}\n\nLesson reference:\n{{prompt}}"
+  },
+  "units": {
+    "systemBlock": "\n\nAligned units:\n{{block}}"
+  },
+  "standards": {
+    "systemBlock": "\n\nAligned standards:\n{{block}}"
+  },
+  "expectations": {
+    "systemBlock": "\n\nAligned expectations:\n{{block}}"
+  },
+  "fewshot": {
+    "injection": "\n\nExample {{subject}} plan (scope: {{scope}}, unit: {{unit}}{{weekSuffix}}):\n{{text}}",
+    "weekSuffix": ", week"
+  },
+  "convertToPresentation": {
+    "systemPrompt": "You are an expert instructional designer. Convert the provided document into a structured slide deck in Markdown format. Each slide begins with ## Slide Title. Keep the body text concise (3–5 bullet points or a maximum of 2–3 sentences). Do not number slides in the titles. Do not include HTML comments, hidden metadata, or any processing information in the generated Markdown.",
+    "userPrompt": "Convert this document into a slide deck:\n\n{{sourceClean}}"
+  },
+  "convert": {
+    "error": "Conversion failed: {{message}}"
+  },
+  "interventionBridge": {
+    "defaultTopic": "diagnostic topic",
+    "defaultSeverity": "Specific gaps (not global delay)",
+    "gapsSeed": "Based on a diagnostic assessment on \"{{topic}}\", the following gaps were identified:\n\n{{truncated}}"
+  },
+  "imageStatus": {
+    "generating": "Generating images… ({{done}}/{{total}})",
+    "unavailable": "Image unavailable"
+  },
+  "lessonRef": {
+    "header": "Athenas Lesson",
+    "subject": "Subject",
+    "grade": "Grade",
+    "lessonNo": "Lesson",
+    "standardsCovered": "Standards covered:",
+    "fullContent": "Full content:",
+    "description": "Description:",
+    "centralConcept": "Central concept:",
+    "objectives": "Objectives ({{count}}):",
+    "definitions": "Concepts / Definitions ({{count}}):",
+    "examples": "Examples ({{count}}):",
+    "performanceTasks": "Performance tasks ({{count}}):",
+    "strategies": "Strategies ({{count}}):",
+    "themes": "Themes"
+  },
+  "athenas": {
+    "defaultTitle": "Untitled lesson",
+    "grade": "Grade",
+    "lesson": "Lesson",
+    "remove": "Remove lesson",
+    "standards": "standards",
+    "objectives": "objectives",
+    "definitions": "definitions",
+    "examples": "examples",
+    "hideContent": "Hide content ▲",
+    "showContent": "Show content ▼",
+    "centralConcept": "Central concept",
+    "description": "Description",
+    "learningObjectives": "Learning objectives",
+    "conceptsDefinitions": "Concepts / Definitions",
+    "pedagogicalExamples": "Pedagogical examples"
+  },
+  "slide": {
+    "slides": "slides",
+    "duplicate": "Duplicate",
+    "duplicateTitle": "Duplicate this slide",
+    "delete": "Delete",
+    "deleteTitle": "Delete this slide",
+    "present": "Present",
+    "presentTitle": "Start fullscreen presentation",
+    "addSlide": "Add slide",
+    "untitled": "Untitled",
+    "noContent": "No content",
+    "hasImage": "Has image",
+    "railAriaLabel": "Slide list",
+    "toolbarAriaLabel": "Formatting toolbar",
+    "canvasAriaLabel": "Slide {{number}} canvas",
+    "inspectorAriaLabel": "Slide properties",
+    "typography": "Font family",
+    "bodySize": "Body font size",
+    "bold": "Bold",
+    "italic": "Italic",
+    "list": "List",
+    "alignLeft": "Align left",
+    "alignCenter": "Align center",
+    "alignRight": "Align right",
+    "undo": "Undo",
+    "redo": "Redo",
+    "addImage": "Image",
+    "addImageTitle": "Add an image to this slide",
+    "addImageOrAI": "Add image or generate with AI",
+    "addLink": "Link",
+    "addLinkTitle": "Add a hyperlink to this slide",
+    "properties": "Properties",
+    "propertiesTitle": "Toggle slide properties panel",
+    "moveImage": "Drag to reposition image",
+    "imageBoxLabel": "Image",
+    "removeImage": "Remove image",
+    "titleBoxLabel": "Title",
+    "bodyBoxLabel": "Body",
+    "titlePlaceholder": "Slide title",
+    "bodyPlaceholder": "Slide body…",
+    "defaultLinkText": "Learn more",
+    "defaultTitle": "Content",
+    "copySuffix": "(copy)",
+    "newTitle": "New slide",
+    "newBody": "Add your content here.",
+    "newClaim": "Key idea for this slide",
+    "newVisual": "Describe a supporting image",
+    "imageSection": "Image",
+    "imageAlt": "Alt text",
+    "imageAltPlaceholder": "Describe the image for screen readers",
+    "linkSection": "Link",
+    "linkTextPlaceholder": "Link label",
+    "pedagogicalIntent": "Pedagogical intent",
+    "centralIdea": "Central idea",
+    "centralIdeaPlaceholder": "One-sentence key claim",
+    "visual": "Visual intent",
+    "visualPlaceholder": "Describe the ideal supporting image",
+    "teacherNotes": "Teacher notes",
+    "teacherNotesSubtitle": "Not shown in presentation",
+    "notesPlaceholder": "Add notes visible only to you during class preparation…"
+  },
+  "imagePicker": {
+    "title": "Add an image",
+    "aiTitle": "Generate with AI",
+    "aiDescription": "Describe an image and our AI will create it for you.",
+    "aiPlaceholder": "e.g. A colorful diagram showing the water cycle",
+    "generating": "Generating…",
+    "generateBtn": "Generate",
+    "generatingHint": "This usually takes 10–20 seconds…",
+    "uploadTitle": "Upload from your device",
+    "uploadDescription": "Select an image file from your computer.",
+    "selectFile": "Select file",
+    "urlTitle": "Paste an image URL",
+    "urlDescription": "Paste a direct link to any publicly accessible image.",
+    "addUrl": "Add",
+    "readError": "Could not read the file.",
+    "generateError": "Failed to generate image.",
+    "communicationError": "Could not reach the image service."
+  },
+  "presentation": {
+    "ariaLabel": "Fullscreen presentation",
+    "prev": "Previous slide",
+    "next": "Next slide",
+    "goToSlide": "Go to slide {{number}}",
+    "exitTitle": "Exit presentation (Esc)",
+    "exit": "Exit presentation",
+    "hint": "← → arrows to navigate · Esc to exit"
+  },
+  "assignment": {
+    "hint": "When it finishes, the questions are saved as a draft in your assessment tasks so you can review and publish them.",
+    "creating": "Creating the assessment task…",
+    "created": "Assessment task created as a draft: \"{{title}}\" ({{questionCount}} questions).",
+    "open": "Open evidence",
+    "retry": "Retry",
+    "readingHeading": "Reading",
+    "errors": {
+      "noQuestions": "No questions were found to create the assessment task.",
+      "save": "The assessment task could not be saved. Please try again."
+    },
+    "conversionSystem": "Convert into JSON the student questions found in the material. Your job is to COPY them, not to create or improve them.\n\nRespond ONLY with a valid JSON object, with no markdown and no text before or after it:\n{\"title\":\"...\",\"instructions\":\"...\",\"readingText\":\"...\",\"questions\":[ ... ]}\n\nQuestion types (TypeId always as a string):\n- Multiple choice (options A, B, C, D…): {\"TypeId\":\"1\",\"Text\":\"...\",\"Options\":[\"...\",\"...\"],\"CorrectIndex\":0}. Options go without their letter. CorrectIndex is the 0-based position of the correct option according to the material's answer key.\n- True or false: {\"TypeId\":\"4\",\"Text\":\"the statement\",\"CorrectIndex\":0}, with 0 = True and 1 = False according to the key.\n- Short answer, open-ended question, essay, problem or task: {\"TypeId\":\"3\",\"Text\":\"...\"}.\n\nRules:\n- Copy the text of each question and each option as it is: do not correct, rephrase, complete or change options even if they look weak, do not add or remove questions, and keep the order.\n- Remove only the numbering, the option letters and labels.\n- The answer key is only used to mark the correct answers: it is not a question. Neither are rubrics, analysis tables, recommendations, teacher notes, vocabulary or images.\n- If a multiple-choice or true-or-false question is not in the key, mark the correct answer from the content.\n- If there are LaTeX formulas ($...$), write them as readable plain text (for example 3/4, x², √9).\n- title: the topic assessed, in a few words. instructions: how the student should answer, in one or two sentences.\n- readingText: if the questions depend on a reading text (in the material or in the source text), copy it in full, without summarizing; otherwise leave it empty (\"\").\n- Language: the copied content (questions, options, pairs and reading) keeps its original language, even if you are asked to respond in another one; only title and instructions follow the requested language.",
+    "conversionRequest": "Convert the questions in this material.\n\nGenerated material:\n\"\"\"\n{{content}}\n\"\"\"{{sourceBlock}}",
+    "sourceBlock": "\n\nSource text the teacher gave the tool (use it only if the questions depend on it):\n\"\"\"\n{{text}}\n\"\"\""
+  }
+}

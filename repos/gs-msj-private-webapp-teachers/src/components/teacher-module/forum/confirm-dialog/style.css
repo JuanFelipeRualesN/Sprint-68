@@ -1,0 +1,56 @@
+.MuiButton-root {font-family: 'Montserrat', sans-serif !important;}
+.MuiButton-root.button-primary, .MuiButton-root.button-secondary {
+    border-radius: 5px;
+    padding: 0.8em 1.5em;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #FFF;
+    cursor: pointer;
+}
+
+.MuiButton-root.button-primary {
+    background-color: #F2AF2B;
+    border: 1px solid #F2AF2B;
+}
+
+.MuiButton-root.button-secondary {
+    background-color: #27466C;
+  border: 1px solid #27466C;
+}
+
+.MuiButton-root.button-primary:hover {
+    background-color: #B3BCDF;
+    border: 1px solid #B3BCDF;
+}
+  
+.MuiButton-root.button-secondary:hover {
+    background-color: #5A93B6;
+    border: 1px solid #5A93B6;
+}
+
+.MuiDialogContent-root:not(:has(.ql-editor)) p {
+    text-align: center;
+
+}
+
+.MuiDialogContent-root p .fas {    
+    font-size: 35px;    
+    color: #e49a9a;
+    vertical-align: middle;
+    margin-right: 0.25em;
+}
+
+.MuiDialogTitle-root h2 {
+    text-align: center;
+    color: #921111;
+    font-weight: bold;
+    font-size: 30px;
+}
+
+.MuiDialogTitle-root {
+    padding: 25px 24px 0 24px !important;
+}
+
+.MuiDialog-container {
+    background-color: rgba(0, 0, 0, 0.5);
+}

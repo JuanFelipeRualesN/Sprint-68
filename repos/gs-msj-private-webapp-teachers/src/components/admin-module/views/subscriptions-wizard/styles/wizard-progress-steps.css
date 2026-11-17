@@ -1,0 +1,161 @@
+.wrapper-content-wizard {
+  width: 90%;
+  margin: 0 auto 100px auto;
+}
+
+.steps_stept svg.jss48 {
+  color: #DDD;
+  border-radius: 50%;
+}
+
+.steps_stept svg.jss48.jss50 {
+  color: #FFF;
+  border: 2px solid #5CB85C;
+  border-radius: 50%;
+}
+
+.steps_stept svg.jss53.jss48.jss51 {
+  color: #5CB85C;
+  border-radius: 50%;
+}
+
+.steps_stept .jss53 {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.steps_stept svg.jss53.jss48.jss50 .jss49 {
+  fill: #5CB85C
+}
+
+.steps_stept .jss105 {
+  border-color: #DDD
+}
+
+.steps_stept .jss101 {
+  top: 15px
+}
+
+/**/
+
+@media screen and (max-width: 760px) {
+  .wrapper-content-wizard {
+    margin: 0 auto 200px auto;
+  }
+}
+
+
+/**/
+.wrapper-content-wizard .steps_stept svg.jss312 { /*all*/
+  color: #FFF;
+  /* border: 2px solid #DDD; */
+  fill: #DDD;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+}
+
+.wrapper-content-wizard .steps_stept svg.jss309 { /*current*/
+  color: #FFF;
+  /* border: 2px solid #5CB85C; */
+  fill: #5CB85C;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+}
+
+.wrapper-content-wizard .steps_stept svg.jss310 { /*ending*/
+  color: #FFF;
+  /* border: 2px solid #27466C; */
+  fill: #27466C;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+}
+
+.wrapper-content-wizard .steps_stept span.jss364 {
+  border-color: #EDEDED;
+  margin-top: 4px;
+}
+
+/* .steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  color: #DDD;
+  height: 4rem;
+}
+
+.steps > .step {
+  position: relative;
+  display: table-cell;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #939BAE;
+  text-transform: uppercase;
+}
+    
+.step:before {
+  content: attr(data-step);
+  display: block;
+  margin: 0 auto;
+  background: #DDD;
+  border: 2px solid #DDD;
+  color: #AAA;
+  width: 1.5rem;
+  height: 1.5rem;
+  text-align: center;
+  margin-bottom: -3.1rem;
+  line-height: 1.5rem;
+  border-radius: 100%;
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.step:after {
+  content: '';
+  position: absolute;
+  display: block;
+  background: #DDD;
+  width: 100%;
+  height: 0.25rem;
+  top: 0.7rem;
+  left: 50%;
+}
+
+.step:last-child:after {
+  display: none;
+}
+
+.step.is-complete {
+  color:#5CB85C;
+}
+      
+.step.is-complete:before {
+  content:'\2713';
+  font-family: BlinkMacSystemFont;
+  color: #FFF;
+  background: #5CB85C;
+  border: 2px solid #5CB85C;
+}
+
+.step.is-complete:after {
+  background: #5CB85C;
+}
+
+.step.is-active:before {
+  color: #5CB85C;
+  border: 2px solid #5CB85C;
+  background: #FFF;
+} */
+
+/*.step.is-active:before {
+  color: #FFF;
+  border: 2px solid #28476D;
+  background: #28476D;
+}*/

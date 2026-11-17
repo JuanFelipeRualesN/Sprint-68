@@ -1,0 +1,37 @@
+{
+  "LevelId": 3,
+  "CategoryId": 3,
+  "TitleEn": "Little Ravi and the Light of Diwali",
+  "TitleEs": "El Pequeño Ravi y la Luz de Diwali",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Once upon a time there was a boy named Ravi who lived in a small village in India. Ravi was a very curious boy, always exploring his surroundings and asking about his family's traditions. His favorite holiday was Diwali, the Festival of Lights, which they celebrated every year.\nAs Diwali drew near, Ravi was excited. His mother explained that Diwali symbolized the victory of light over darkness and good over evil. During this festival, people decorated their homes with lights and flowers, and shared sweets with friends and family.",
+      "TextEs": "Había una vez un niño llamado Ravi que vivía en un pequeño pueblo de la India. Ravi era un niño muy curioso, siempre explorando su entorno y preguntando sobre las tradiciones de su familia. Su festividad favorita era Diwali, el Festival de las Luces, que celebraban cada año.\nA medida que se acercaba Diwali, Ravi estaba emocionado. Su madre le explicó que Diwali simbolizaba la victoria de la luz sobre la oscuridad y el bien sobre el mal. Durante esta festividad, la gente decoraba sus casas con luces y flores, y compartía dulces con amigos y familiares.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "One day, while helping his mother prepare the sweets, Ravi noticed that his neighbor, old Mr. Patel, had not decorated his house.\nWorried, Ravi decided to visit him.\n“Hello, Mr. Patel!” said Ravi, smiling. “Why haven't you gotten your house ready for Diwali?”\nMr. Patel sighed and answered: “I don't have many lights or the energy to decorate. This year, I feel a little sad.”\nRavi thought for a moment. Then he had a bright idea.\n“I can help you!” he exclaimed. Together, they began to decorate Mr. Patel's house. Ravi brought lights from his home and some flowers too. Soon, the old man's house shone like never before.",
+      "TextEs": "Un día, mientras ayudaba a su madre a preparar los dulces, Ravi notó que su vecino, el anciano señor Patel, no había decorado su casa.\nPreocupado, Ravi decidió visitarlo.\n—¡Hola, señor Patel! —dijo Ravi, sonriendo—. ¿Por qué no has preparado tu casa para Diwali?\nEl señor Patel suspiró y respondió: —No tengo muchas luces ni energía para decorar. Este año, me siento un poco triste.\nRavi pensó por un momento. Entonces, tuvo una idea brillante.\n—¡Puedo ayudarte! —exclamó. Juntos, empezaron a decorar la casa del señor Patel. Ravi trajo luces de su casa y también algunas flores. Pronto, la casa del anciano brillaba como nunca.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "As they worked, Ravi asked Mr. Patel about his memories of Diwali.\n“When I was young, Diwali was a time of joy and togetherness,” the old man told him. “The family would gather and we would share stories under the lights.”\nRavi listened carefully, feeling how Mr. Patel's story lit up his heart.\nFinally, the night of Diwali arrived. The village filled with lights and laughter. Ravi and Mr. Patel joined their neighbors in the square, where everyone lit candles and firecrackers. But the most special moment came when Ravi took the old man to his house, where his family had prepared a big dinner.",
+      "TextEs": "Mientras trabajaban, Ravi le preguntó al señor Patel sobre sus recuerdos de Diwali.\n—Cuando era joven, Diwali era un momento de alegría y unión —contó el anciano—. La familia se reunía y compartíamos historias bajo las luces.\nRavi escuchó atentamente, sintiendo cómo la historia del señor Patel iluminaba su corazón.\nFinalmente, llegó la noche de Diwali. El pueblo se llenó de luces y risas. Ravi y el señor Patel se unieron a sus vecinos en la plaza, donde todos encendieron velas y petardos. Pero, lo más especial fue cuando Ravi llevó al anciano a su casa, donde su familia había preparado una gran cena.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "“Thank you, Ravi,” said Mr. Patel with tears of joy. “Today you have reminded me of the importance of community and friendship.”\nRavi smiled, feeling that he had done something valuable. That night, as the lights of Diwali lit up the sky, Ravi understood that true light came not only from lamps, but from the love and kindness we share with others.\nAnd so, Ravi and Mr. Patel celebrated an unforgettable Diwali, full of laughter, friendship, and, above all, light in their hearts.",
+      "TextEs": "—Gracias, Ravi —dijo el señor Patel con lágrimas de alegría—. Hoy me has recordado la importancia de la comunidad y la amistad.\nRavi sonrió, sintiendo que había hecho algo valioso. Esa noche, mientras las luces de Diwali iluminaban el cielo, Ravi comprendió que la verdadera luz no solo venía de las lámparas, sino del amor y la bondad que compartimos con los demás.\nY así, Ravi y el señor Patel celebraron un Diwali inolvidable, lleno de risas, amistad y, sobre todo, luz en sus corazones.",
+      "ImageUrl": null
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "LevelId": 2,
+  "CategoryId": 3,
+  "TitleEn": "United States, Land of Dreams",
+  "TitleEs": "Estados Unidos, tierra de sueños",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Under the blue sky of endless vastness,\nyour landscapes stretch out, blessed land.\nFrom the rocky mountains to the roaring sea,\nyou are a cradle of dreams, a shared world.\nYour golden prairies, vast and serene,\nwhisper stories of those who break chains.\nYour rivers sing of freedom with mighty force,\nand the wind carries a brave spirit.\nYou are a mosaic of voices, of races and colors,",
+      "TextEs": "Bajo el cielo azul de inmensidad infinita,\nse extienden tus paisajes, tierra bendita.\nDe las rocosas montañas al mar embravecido,\neres cuna de sueños, un mundo compartido.\nTus praderas doradas, vastas y serenas,\nsusurran historias de quienes rompen cadenas.\nTus ríos cantan libertad con fuerza imponente,\ny el viento lleva consigo un espíritu valiente.\nEres mosaico de voces, de razas y colores,",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "of languages that intertwine a thousand flavors.\nNew York and its glow, a beacon of ambition,\nHollywood and its stars, a cradle of illusion.\nUnited States, vast and diverse place,\non your wings of freedom we want to fly.\nWith lights and shadows, promises and dreams,\nyou remain a world of eternal paths.",
+      "TextEs": "de idiomas que entrelazan mil sabores.\nNueva York y su brillo, un faro de ambición,\nHollywood y sus estrellas, cuna de la ilusión.\nEstados Unidos, vasto y diverso lugar,\nen tus alas de libertad queremos volar.\nCon luces y sombras, promesas y sueños,\nsigues siendo un mundo de caminos eternos.",
+      "ImageUrl": null
+    }
+  ]
+}

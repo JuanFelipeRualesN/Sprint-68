@@ -1,0 +1,502 @@
+[
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 1,
+    "titulo": "We All Play",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "We can hop.",
+      "We can run.",
+      "We can all play.",
+      "Play is fun."
+    ],
+    "texto": "We can hop.\nWe can run.\nWe can all play.\nPlay is fun.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "We can hop.",
+      "We can run.",
+      "We can all play.",
+      "Play is fun."
+    ],
+    "id": "kinder-en-01",
+    "palabras": 13
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 2,
+    "titulo": "My New Pal",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see a pal.",
+      "My pal can sit.",
+      "I sit by my pal.",
+      "We grin."
+    ],
+    "texto": "I see a pal.\nMy pal can sit.\nI sit by my pal.\nWe grin.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see a pal.",
+      "My pal can sit.",
+      "I sit by my pal.",
+      "We grin."
+    ],
+    "id": "kinder-en-02",
+    "palabras": 15
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 3,
+    "titulo": "A Turn for Sam",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "Sam has a ball.",
+      "I wait my turn.",
+      "Sam rolls the ball.",
+      "Now it is my turn."
+    ],
+    "texto": "Sam has a ball.\nI wait my turn.\nSam rolls the ball.\nNow it is my turn.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "Sam has a ball.",
+      "I wait my turn.",
+      "Sam rolls the ball.",
+      "Now it is my turn."
+    ],
+    "id": "kinder-en-03",
+    "palabras": 17
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 4,
+    "titulo": "The Red Drum",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see a drum.",
+      "Tap, tap, tap!",
+      "We clap and tap.",
+      "We make a beat."
+    ],
+    "texto": "I see a drum.\nTap, tap, tap!\nWe clap and tap.\nWe make a beat.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see a drum.",
+      "Tap, tap, tap!",
+      "We clap and tap.",
+      "We make a beat."
+    ],
+    "id": "kinder-en-04",
+    "palabras": 15
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 5,
+    "titulo": "My Home Song",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "My mom can hum.",
+      "My dad can hum.",
+      "We sing at home.",
+      "Hum, hum, hum!"
+    ],
+    "texto": "My mom can hum.\nMy dad can hum.\nWe sing at home.\nHum, hum, hum!",
+    "diapositivas": null,
+    "lineas_originales": [
+      "My mom can hum.",
+      "My dad can hum.",
+      "We sing at home.",
+      "Hum, hum, hum!"
+    ],
+    "id": "kinder-en-05",
+    "palabras": 15
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 6,
+    "titulo": "The Flag Art",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see red.",
+      "I see blue.",
+      "I make flag art.",
+      "I show it to you."
+    ],
+    "texto": "I see red.\nI see blue.\nI make flag art.\nI show it to you.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see red.",
+      "I see blue.",
+      "I make flag art.",
+      "I show it to you."
+    ],
+    "id": "kinder-en-06",
+    "palabras": 15
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 7,
+    "titulo": "The Clean Sand",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see sand.",
+      "I see a can.",
+      "I pick up the can.",
+      "The sand is clean."
+    ],
+    "texto": "I see sand.\nI see a can.\nI pick up the can.\nThe sand is clean.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see sand.",
+      "I see a can.",
+      "I pick up the can.",
+      "The sand is clean."
+    ],
+    "id": "kinder-en-07",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 8,
+    "titulo": "The Little Seed",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see a seed.",
+      "I put it in dirt.",
+      "I add some water.",
+      "A plant pops up."
+    ],
+    "texto": "I see a seed.\nI put it in dirt.\nI add some water.\nA plant pops up.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see a seed.",
+      "I put it in dirt.",
+      "I add some water.",
+      "A plant pops up."
+    ],
+    "id": "kinder-en-08",
+    "palabras": 17
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 9,
+    "titulo": "The Blue Sea",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see the sea.",
+      "I see a fish.",
+      "I keep the sea clean.",
+      "Swim, fish, swim!"
+    ],
+    "texto": "I see the sea.\nI see a fish.\nI keep the sea clean.\nSwim, fish, swim!",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see the sea.",
+      "I see a fish.",
+      "I keep the sea clean.",
+      "Swim, fish, swim!"
+    ],
+    "id": "kinder-en-09",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 10,
+    "titulo": "A Box Boat",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I have a box.",
+      "I make a boat.",
+      "The boat can float.",
+      "Go, boat, go!"
+    ],
+    "texto": "I have a box.\nI make a boat.\nThe boat can float.\nGo, boat, go!",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I have a box.",
+      "I make a boat.",
+      "The boat can float.",
+      "Go, boat, go!"
+    ],
+    "id": "kinder-en-10",
+    "palabras": 15
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 11,
+    "titulo": "My Big Fix",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "My box has no lid.",
+      "I find a lid.",
+      "I put it on.",
+      "I can fix it!"
+    ],
+    "texto": "My box has no lid.\nI find a lid.\nI put it on.\nI can fix it!",
+    "diapositivas": null,
+    "lineas_originales": [
+      "My box has no lid.",
+      "I find a lid.",
+      "I put it on.",
+      "I can fix it!"
+    ],
+    "id": "kinder-en-11",
+    "palabras": 17
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 12,
+    "titulo": "The Cup Tower",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I have a cup.",
+      "I add one cup.",
+      "The cups go up.",
+      "My tower is tall!"
+    ],
+    "texto": "I have a cup.\nI add one cup.\nThe cups go up.\nMy tower is tall!",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I have a cup.",
+      "I add one cup.",
+      "The cups go up.",
+      "My tower is tall!"
+    ],
+    "id": "kinder-en-12",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 13,
+    "titulo": "Wash, Wash!",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I wash my hands.",
+      "I rub and rub.",
+      "I rinse my hands.",
+      "My hands are clean."
+    ],
+    "texto": "I wash my hands.\nI rub and rub.\nI rinse my hands.\nMy hands are clean.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I wash my hands.",
+      "I rub and rub.",
+      "I rinse my hands.",
+      "My hands are clean."
+    ],
+    "id": "kinder-en-13",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 14,
+    "titulo": "I Can Move",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I can hop.",
+      "I can skip.",
+      "I can run.",
+      "I can rest."
+    ],
+    "texto": "I can hop.\nI can skip.\nI can run.\nI can rest.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I can hop.",
+      "I can skip.",
+      "I can run.",
+      "I can rest."
+    ],
+    "id": "kinder-en-14",
+    "palabras": 12
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 15,
+    "titulo": "My Red Apple",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see an apple.",
+      "The apple is red.",
+      "I wash the apple.",
+      "I take a bite."
+    ],
+    "texto": "I see an apple.\nThe apple is red.\nI wash the apple.\nI take a bite.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see an apple.",
+      "The apple is red.",
+      "I wash the apple.",
+      "I take a bite."
+    ],
+    "id": "kinder-en-15",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 16,
+    "titulo": "Time to Rest",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I play all day.",
+      "I put toys away.",
+      "I get in bed.",
+      "I rest my head."
+    ],
+    "texto": "I play all day.\nI put toys away.\nI get in bed.\nI rest my head.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I play all day.",
+      "I put toys away.",
+      "I get in bed.",
+      "I rest my head."
+    ],
+    "id": "kinder-en-16",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 17,
+    "titulo": "The Class Tablet",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see a tablet.",
+      "I tap a letter.",
+      "I say its sound.",
+      "I put it away."
+    ],
+    "texto": "I see a tablet.\nI tap a letter.\nI say its sound.\nI put it away.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see a tablet.",
+      "I tap a letter.",
+      "I say its sound.",
+      "I put it away."
+    ],
+    "id": "kinder-en-17",
+    "palabras": 16
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 18,
+    "titulo": "Ask First",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see a phone.",
+      "I want a photo.",
+      "I ask my pal first.",
+      "My pal says yes."
+    ],
+    "texto": "I see a phone.\nI want a photo.\nI ask my pal first.\nMy pal says yes.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see a phone.",
+      "I want a photo.",
+      "I ask my pal first.",
+      "My pal says yes."
+    ],
+    "id": "kinder-en-18",
+    "palabras": 17
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 19,
+    "titulo": "The Star Screen",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I see a star.",
+      "I see it on a screen.",
+      "I look up at night.",
+      "I see a real star!"
+    ],
+    "texto": "I see a star.\nI see it on a screen.\nI look up at night.\nI see a real star!",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I see a star.",
+      "I see it on a screen.",
+      "I look up at night.",
+      "I see a real star!"
+    ],
+    "id": "kinder-en-19",
+    "palabras": 20
+  },
+  {
+    "grado": "Kinder",
+    "idioma": "en",
+    "orden": 20,
+    "titulo": "Tap and Stop",
+    "autor": null,
+    "origen": "Inglés/Kinder.docx",
+    "tipo": "verso?",
+    "parrafos": [
+      "I tap the screen.",
+      "I see a cat.",
+      "I stop and rest.",
+      "I go play."
+    ],
+    "texto": "I tap the screen.\nI see a cat.\nI stop and rest.\nI go play.",
+    "diapositivas": null,
+    "lineas_originales": [
+      "I tap the screen.",
+      "I see a cat.",
+      "I stop and rest.",
+      "I go play."
+    ],
+    "id": "kinder-en-20",
+    "palabras": 15
+  }
+]

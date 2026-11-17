@@ -1,0 +1,55 @@
+{
+  "LevelId": 2,
+  "CategoryId": 4,
+  "TitleEn": "Pedro's Dream",
+  "TitleEs": "El sueño de Pedro",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Once upon a time, in a small Mexican town, there was a boy named Pedro. Pedro lived in a modest house with his mom and dad, who worked hard to give him what he needed to live. Although his parents were not rich, they always made sure that Pedro had food, clean clothes, and a school to attend.",
+      "TextEs": "Había una vez en un pequeño pueblo mexicano, un niño llamado Pedro. Pedro vivía en una casa modesta con su mamá y su papá, quienes trabajaban arduamente para darle lo necesario para vivir. Aunque sus padres no eran ricos, siempre se aseguraban de que Pedro tuviera comida, ropa limpia y una escuela a la que asistir.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Pedro was a dreamer. Every day after school, he sat in front of his house to watch the children of the town playing with their new toys. There was a boy named Luis who had a shiny red bicycle. Pedro could not stop looking at it with envy. He thought that if he had that bicycle, his life would be much better.",
+      "TextEs": "Pedro era un niño soñador. Todos los días, después de la escuela, se sentaba frente a su casa a observar a los niños del pueblo jugando con sus juguetes nuevos. Había un niño llamado Luis que tenía una bicicleta brillante y roja. Pedro no podía dejar de mirarla con envidia. Pensaba que si tuviera esa bicicleta, su vida sería mucho mejor.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "One day, while Pedro was walking through the market with his mom, he saw a cart full of toys. There, a soccer ball shone, so big and colorful that he could hardly stop looking at it. “Mom, please, buy me that ball! It will be the best gift of all!” Pedro exclaimed.\nHis mom, with a warm smile, stroked his head and said to him:",
+      "TextEs": "Un día, mientras Pedro paseaba por el mercado con su mamá, vio un carrito lleno de juguetes. Allí, brillaba una pelota de fútbol, tan grande y colorida que casi no podía dejar de mirarla. “¡Mamá, por favor, cómprame esa pelota! ¡Será el mejor regalo de todos!”, exclamó Pedro.\nSu mamá, con una sonrisa cálida, le acarició la cabeza y le dijo:",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "“Pedro, that ball is a lovely wish, but remember that at home we have an old soccer ball we can use to play, and we have enough to eat and to study. That is the most important thing so that you can have a better future.”",
+      "TextEs": "“Pedro, esa pelota es un hermoso deseo, pero recuerda que en casa tenemos una vieja pelota de fútbol que podemos usar para jugar, y tenemos lo suficiente para comer y estudiar. Eso es lo más importante para que puedas tener un futuro mejor.”",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 5,
+      "TextEn": "Pedro felt a little sad, but he understood. They went back home and Pedro saw the old ball his mom had mentioned. Although it was a bit worn, it was perfect for playing. That afternoon, Pedro and his mom went to the park and started playing with the ball. Pedro realized that, even though he did not have the new ball, he was having a lot of fun and was grateful for what he had.\nA few days later, when Pedro saw Luis with his red bicycle again, he asked him: “Luis, do you like your bicycle a lot?”",
+      "TextEs": "Pedro se sintió un poco triste, pero entendió. Regresaron a casa y Pedro vio la pelota vieja que su mamá había mencionado. Aunque ya estaba algo desgastada, era perfecta para jugar. Esa tarde, Pedro y su mamá fueron al parque y comenzaron a jugar con la pelota. Pedro se dio cuenta de que, a pesar de no tener la pelota nueva, se divertía mucho y estaba agradecido por lo que tenía.\nUnos días después, Pedro, al ver a Luis nuevamente con su bicicleta roja, le preguntó: “Luis, ¿te gusta mucho tu bicicleta?”",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 6,
+      "TextEn": "Luis smiled and answered: “Of course! But what I like most is being able to play with my friends. The bicycle is fun, but it is not the only thing that makes me happy.”\nPedro, hearing those words, understood that sometimes wishes, although exciting, are not the most important thing. The needs of his life, like having a family who loved him, an education, and a roof over his head, were what truly made him happy.",
+      "TextEs": "Luis sonrió y respondió: “¡Claro! Pero lo que más me gusta es poder jugar con mis amigos. La bicicleta es divertida, pero no es lo único que me hace feliz.”\nPedro, al escuchar esas palabras, entendió que a veces los deseos, aunque emocionantes, no son lo más importante. Las necesidades de su vida, como tener una familia que lo quería, una educación y un techo bajo el que vivir, eran lo que realmente lo hacía feliz.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 7,
+      "TextEn": "In time, Pedro learned to value what he had, and although he kept dreaming of many things, he understood that what was essential was what made him feel safe and loved. In this way, he learned to tell the difference between what he truly needed to be happy and what he only wanted for moments.",
+      "TextEs": "Con el tiempo, Pedro aprendió a valorar lo que tenía, y aunque seguía soñando con muchas cosas, comprendió que lo esencial era lo que lo hacía sentir seguro y amado. Así, aprendió a distinguir entre lo que realmente necesitaba para ser feliz y lo que solo deseaba por momentos.",
+      "ImageUrl": null
+    }
+  ]
+}

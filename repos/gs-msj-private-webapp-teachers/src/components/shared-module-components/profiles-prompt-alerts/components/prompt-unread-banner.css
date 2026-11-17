@@ -1,0 +1,22 @@
+/* Viewer-wide unread-alerts banner: shown above the profiles table when the
+   current viewer has prompt alerts they have not seen yet, on ANY page (not just
+   the rows currently rendered). Hidden when the total is zero. */
+.prompt-unread-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffd3c8;
+  color: #a53825;
+  border: 1px solid #e88a72;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.prompt-unread-banner svg {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+}

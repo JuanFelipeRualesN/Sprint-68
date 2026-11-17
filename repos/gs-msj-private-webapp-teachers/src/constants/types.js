@@ -1,0 +1,36 @@
+export const MAX_LENGTH_INPUT_NAME = 50; //maximum characters for inputs of type FirstName
+export const MAX_LENGTH_INPUT_LASTNAME = 50; //maximum characters for inputs of type LastName
+export const MAX_LENGTH_INPUT_USERNAME = 50; //maximum characters for inputs of type UserName
+export const MAX_LENGTH_INPUT_PASSWORD = 30; //maximum characters for inputs of type Password
+export const MAX_LENGTH_INPUT_EMAIL = 255; //maximum characters for inputs of type Email
+export const MAX_LENGTH_INPUT_BODY_CHAT = 500; //maximum characters for input chat to send messages
+export const MAX_LENGTH_INPUT_SUBJECT_MESSAGE = 100; //maximum characters for topic input in messaging area
+export const MAX_LENGTH_INPUT_BODY_MESSAGE = 3000; //maximum characters for message body in messaging area
+export const MAX_LENGTH_INPUT_SIE = 20; //maximum characters for SIE type input
+export const MAX_LENGTH_INPUT_NAME_INSTRUCTIONAL_PLAN = 50; //maximum characters for plan name input
+export const MAX_LENGTH_INPUT_QUIZ_DURATION = 600; //maximum minutes for quiz duration
+export const MAX_LENGTH_INPUT_CORRECTION_FEEDBACK = 3000; //maximum characters for instructor comments in grading area
+export const MAX_LENGTH_INPUT_ANNOTATION = 3000; //maximum characters for input of type Annotation
+export const MAX_LENGTH_INPUT_PHONE_NUMBER = 15; //maximum characters for input of type Phone
+export const MAX_LENGTH_INPUT_USER_ID = 5; //maximum characters for input of type ID
+export const MAX_LENGTH_INPUT_ASSIGNMENT_TITLE = 50; //maximum characters for input of assignment title
+export const MAX_LENGTH_INPUT_ASSIGNMENT_INSTRUCTIONS = 3000; //maximum characters for input of assignment instructions
+export const MAX_LENGTH_INPUT_ASSIGNMENT_QUESTIONS = 3000; //maximum characters for input of assignment questions
+export const MAX_LENGTH_INPUT_ASSIGNMENT_RESPONSE_SELECTION = 3000; //maximum characters for input selection responses
+export const MAX_LENGTH_INPUT_ASSIGNMENT_RESPONSE_MATCH = 3000; //maximum characters for input match responses
+
+export const DROPDOWN_ADD_INSTITUTION = 400;
+
+export const MAX_LENGTH_INPUT_SCHOOL_NAME = 50;
+export const MAX_LENGTH_INPUT_STATE = 50;
+export const MAX_LENGTH_INPUT_CITY = 50;
+export const MAX_LENGTH_INPUT_ZIPCODE = 10;
+export const MAX_LENGTH_INPUT_ADDRESS1 = 500;
+export const MAX_LENGTH_INPUT_ADDRESS2 = 500;
+export const MAX_LENGTH_INPUT_CURRICULAR_DESIGN = 50;
+export const MAX_LENGTH_INPUT_PLAN_NAME = 50;
+export const MAX_LENGTH_INPUT_PLAN_ID = 5;
+export const MAX_LENGTH_INPUT_SUBSCRIPTION_ID = 5;
+export const MAX_LENGTH_INPUT_INTERFACE_NAME = 50;
+export const MAX_LENGTH_INPUT_MED_COURSE_NAME = 50;
+export const MAX_LENGTH_INPUT_POWERDE_COURSE_CODE = 20;

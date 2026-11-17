@@ -1,0 +1,43 @@
+{
+  "LevelId": 2,
+  "CategoryId": 3,
+  "TitleEn": "Cuba",
+  "TitleEs": "Cuba",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Known since colonial times as the “Key to the Gulf” because of its closeness to the entrance of the Gulf of Mexico, Cuba is the largest island of the Greater Antilles and is part of the archipelago known as the Republic of Cuba. Alongside it, another of the most notable islands is the Isle of Youth, as well as many different keys such as Cayo Coco, Cayo Largo del Sur, or Cayo Guillermo.",
+      "TextEs": "Conocida desde la época colonial como \"La llave del Golfo\" por su cercanía a la entrada del Golfo de México, Cuba es la isla más grande de las Antillas Mayores y forma parte del archipiélago conocido como República de Cuba. Junto a ella, otra de las islas más destacadas es Isla Juventud, además de muy diversos cayos como Cayo Coco, Cayo Largo del Sur o Cayo Guillermo.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "With a seasonally humid tropical climate and a notable maritime influence, it is located at a latitude very close to the Tropic of Cancer, which determines the high levels of solar radiation it receives and the warm character of its climate. Its capital, Havana, is the heart of the festivities, a city to be lived at night and strolled through by day. You cannot miss the Malecón, the Old Cathedral, the mojitos at La Bodeguita del Medio, the Vedado neighborhood, the Morro Castle park, and the delicious ice cream at Coppelia.",
+      "TextEs": "Con un clima tropical estacionalmente húmedo, con una notable influencia marítima, se ubica en una latitud muy cercana al trópico de Cáncer, lo que condiciona la recepción de altos valores de radiación solar y determina el carácter cálido de su propio clima. Su capital, La Habana es el núcleo de las fiestas, erigiéndose como una ciudad para vivirla de noche y pasearla de día. No te puedes perder el Malecón, su catedral Vieja, los mojitos de la Bodeguita del Medio, el barrio del Vedado, el parque del Cañón del Morro y los deliciosos helados de Coppelia.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "Another must-see is Varadero, one of the most famous coastal areas of this island, with keys such as Cayo Guillermo, Cayo Coco, or Cayo Largo being especially important.\nThe name of the island of Cuba comes from the term “Cubao,” which means “where the land is abundant.” In this place there are more than 14,000 different species of animals, and the smallest amphibian in the world, known as the pygmy frog or little toad, lives here, measuring less than 12 mm in length.",
+      "TextEs": "Otro de los puntos obligados en Varadero, una de las zonas costeras más famosas de esta isla, siendo especialmente importantes cayos como Cayo Guillermo, Cayo Coco o Cayo Largo.\nEl nombre de la isla de Cuba procede del término \"Cubao\", que significa \"donde la tierra abunda\". En este enclave existen más de 14.000 especies de animales diferentes, habitando en su interior el anfibio más pequeño del mundo conocido como la rana pigmeo o sapito, que mide menos de 12 mm de longitud.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "Cuba was discovered by Christopher Columbus in 1492 and, like other Caribbean islands, was colonized by the Spanish. Cuba became independent from Spain in 1898 after the Spanish-American War, but later became a communist state in 1959 with the Cuban Revolution led by Fidel Castro. Cuba's economy has historically depended on agriculture, particularly sugar cane and tobacco, although in recent decades tourism and economic reforms have become more important. The island is also famous for its rum production and its pharmaceutical industry.",
+      "TextEs": "Cuba fue descubierta por Cristóbal Colón en 1492 y, al igual que otras islas del Caribe, fue colonizada por los españoles. Cuba se independizó de España en 1898 tras la Guerra Hispanoamericana, pero luego se convirtió en un estado comunista en 1959 con la Revolución Cubana liderada por Fidel Castro. La economía de Cuba ha sido históricamente dependiente de la agricultura, en particular de la caña de azúcar y el tabaco, aunque en las últimas décadas el turismo y las reformas económicas han adquirido mayor importancia. La isla también es famosa por su producción de ron y su industria farmacéutica.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 5,
+      "TextEn": "Cuba is known for its music, such as son, salsa, mambo, and rumba, and for its dance and literary traditions. Che (Ernesto Guevara), one of the main icons of the Cuban Revolution, and Cuban dance and music are symbols of its rich cultural heritage.",
+      "TextEs": "Cuba es conocida por su música, como el son, la salsa, el mambo y la rumba, y por su baile y tradiciones literarias. El Che (Ernesto Guevara), uno de los principales iconos de la Revolución Cubana, y la danza y música cubana son símbolos de su rica herencia cultural.",
+      "ImageUrl": null
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+
+.wrapper-library {
+  width: 100%;
+}
+
+/*****************/
+
+.content-list-library {
+  width: 100%;
+  max-width: 1000px;
+  margin: 2em 0;
+}
+
+.wrapper-col {
+padding: 0.25em;
+  display: -webkit-box; 
+      display: -webkit-flex;  
+      display: -ms-flexbox; 
+      display: flex;
+          -webkit-flex-wrap: wrap;
+          -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+}
+
+.two-col {
+width: 48%;
+}
+
+.four-col {
+  width: 24%;
+}
+
+.general-module {
+  padding: 0.5em;
+  margin: 0.25em;
+}
+
+img.image-library {
+  width: 100%;
+  height: 260px;
+  /*max-height: 260px;  review*/
+  object-fit: cover;
+  margin-bottom: 0.5em;
+  border: 1px solid #DDD;
+}
+
+.list-library__aditional {
+  color: #9098ac;
+  font-size: 12px;
+  margin: .25em 0 0;
+}
+
+.list-library__description {
+  font-size: 14px;
+  margin: 0.5em 0;
+  color: #222;
+}
+
+.general-module .selectTrelloGrade {
+  background-color: #EFEFEF;
+}
+
+
+.content-list-library h3 {
+  font-size: 14px;
+  color: #197BAA;
+  /* margin: 0 1em; */
+}
+
+.wrapper-library h2 {
+  border-bottom: 1px solid #D8D8D8;
+  padding-bottom: 0.3em;
+  color: #48AF97;
+}
+
+/* MQ 750px */
+
+@media screen and (max-width: 750px) {
+  .four-col {  width: 32%; }  
+}
+
+/* MQ 600px */
+
+@media screen and (max-width: 600px) {
+  .four-col {  width: 48%; }  
+}
+
+/* MQ 450px */
+
+@media screen and (max-width: 450px) {
+  .four-col {  width: 100%; }
+  .content-list-library .two-col { width: 100%;}
+}

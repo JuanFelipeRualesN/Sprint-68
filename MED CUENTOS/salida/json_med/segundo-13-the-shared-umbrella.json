@@ -1,0 +1,25 @@
+{
+  "LevelId": 2,
+  "CategoryId": 4,
+  "TitleEn": "The Shared Umbrella",
+  "TitleEs": "El paraguas compartido",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Clara left school just as it started to rain.\nShe opened her red umbrella and walked toward the bus stop.\nThere she found Bruno, who was waiting under a small roof.\n“Do you want to walk with me?” Clara asked.\nBruno accepted, but the umbrella barely covered the two of them.\nSo they walked more slowly and stayed close so they would not get wet.",
+      "TextEs": "Clara salió de la escuela cuando comenzó a llover.\nAbrió su paraguas rojo y caminó hacia la parada.\nAllí encontró a Bruno, que esperaba bajo un techo pequeño.\n—¿Quieres caminar conmigo? —preguntó Clara.\nBruno aceptó, pero el paraguas apenas cubría a los dos.\nEntonces caminaron más despacio y se acercaron para no mojarse.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "When they reached the corner, they saw a woman looking for shelter.\nClara and Bruno walked her to a nearby store.\nWhen the rain stopped, the three of them smiled.\nClara understood that sharing does not always mean having a lot; sometimes it is enough to make room for someone else.",
+      "TextEs": "Al llegar a la esquina, vieron a una señora que buscaba refugio.\nClara y Bruno la acompañaron hasta una tienda cercana.\nCuando la lluvia terminó, los tres sonrieron.\nClara comprendió que compartir no siempre significa tener mucho; a veces basta con hacer espacio para alguien más.",
+      "ImageUrl": null
+    }
+  ]
+}

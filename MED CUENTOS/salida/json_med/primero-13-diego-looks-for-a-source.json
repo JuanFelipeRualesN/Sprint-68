@@ -1,0 +1,19 @@
+{
+  "LevelId": 1,
+  "CategoryId": 2,
+  "TitleEn": "Diego Looks for a Source",
+  "TitleEs": "Diego busca una fuente",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Diego wants to know why it rains.\nHe looks at a picture on the tablet, but he does not understand the message.\nHis teacher shows him a science page for kids.\nThere he sees drawings of clouds and drops.\nDiego compares the pictures and asks a question.\nThe teacher explains how to check whether a page is trustworthy.\nDiego learns that not everything that appears on a screen is correct.",
+      "TextEs": "Diego quiere saber por qué llueve.\nMira una imagen en la tableta, pero no entiende el mensaje.\nSu maestra le muestra una página de ciencias para niños.\nAllí ve dibujos de nubes y gotas.\nDiego compara las imágenes y hace una pregunta.\nLa maestra le explica cómo comprobar si una página es confiable.\nDiego aprende que no todo lo que aparece en una pantalla es correcto.",
+      "ImageUrl": null
+    }
+  ]
+}

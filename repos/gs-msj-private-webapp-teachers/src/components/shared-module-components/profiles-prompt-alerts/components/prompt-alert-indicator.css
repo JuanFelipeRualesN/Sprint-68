@@ -1,0 +1,20 @@
+/* Unread-alerts pill: "{n} new alert(s)" in the alert red, highlighted so it
+   stands out. Rendered only when the viewer has unread alerts for the user. */
+.prompt-alert-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #ffd3c8;
+  color: #a53825;
+  border: 1px solid #e88a72;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.prompt-alert-indicator svg {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}

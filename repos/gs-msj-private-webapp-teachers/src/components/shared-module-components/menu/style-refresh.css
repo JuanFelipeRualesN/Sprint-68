@@ -1,0 +1,135 @@
+/**
+ * Created by c3om on 3/29/21.
+ */
+
+.navigation-menu {
+    height: 500px;
+}
+
+.navigation-menu li {
+  padding: 0 0 0.25em 0;
+  display: block;
+}
+.navigation-menu li:last-child {
+  padding-bottom: 120px;
+}
+.navigation-menu--item {
+    display: block;
+}
+
+.navigation-menu--item__lineheight {
+  line-height: 1em;
+}
+.navigation-menu li br {
+  display: none;
+  }
+
+.navigation-menu li a {
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.navigation-menu li a svg {
+  padding: .4em;  
+}
+
+.navigation-menu li img {
+  width: 32%;
+}
+
+.navigation-menu li.active a {
+  font-weight: bold;
+}
+
+/* .navigation-menu::-webkit-scrollbar {
+  display: none;
+} */
+
+
+
+
+/* ROLES ADMIN */
+.wrapper-menu.wrapper-menu-admin  {
+  overflow: auto;
+}
+
+.wrapper-menu-admin  .navigation-menu, .wrapper-menu.wrapper-menu-admin  {
+  scrollbar-width: thin;
+  scrollbar-color: #abafb2 #B6BABD;
+}
+
+
+
+
+@media screen and (max-width: 750px) {
+    .navigation-menu li.active a {
+        color: #FFF;
+    }
+
+    /* ROLES PARENTS */
+    .wrapper-menu-parent .navigation-menu li.active,
+    .wrapper-menu-parent .navigation-menu li:hover  { 
+      background-color: #61805a;
+    }
+
+
+    /* ROLES HOMESCHOOLER */
+
+    .navigation-menu li a:hover svg, .navigation-menu li a:hover img,
+    .wrapper-menu-director .navigation-menu li a:hover svg, 
+    .wrapper-menu-director .navigation-menu li a:hover img {
+      background-color: transparent;
+    } 
+
+    .wrapper-menu {
+      overflow: none;
+      height: 55px;
+    }
+    
+    .navigation-menu {
+        height: auto;
+    }
+
+    .navigation-menu li:last-child {
+      padding-bottom: 0;
+    }
+
+    .navigation-menu li a img {
+      width: 50%;  
+    }
+}
+
+@media screen and (max-width: 500px) {
+  .wrapper-menu {
+    overflow: none;
+    height: 55px;
+  }
+  .navigation-menu li a img {
+    padding: .2em; 
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .wrapper-menu {
+    height: 60px;
+  }
+
+  .navigation-menu li img {
+    width: 80% !important;
+  }
+}
+
+
+/* Demonstrate a "mostly customized" scrollbar
+ * (won't be visible otherwise if width/height is specified) */
+ /* .navigation-menu::-webkit-scrollbar {
+  width: 5px;
+  height: 8px;
+  background-color: #aaa; /* or add it to the track
+} */
+
+/* Add a thumb */
+/* .navigation-menu::-webkit-scrollbar-thumb {
+    background: #000;
+} */
+

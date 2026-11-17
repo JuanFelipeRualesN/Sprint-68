@@ -1,0 +1,51 @@
+{
+  "fields": {
+    "subject": "subject",
+    "grade": "grade"
+  },
+  "status": {
+    "loading": "Loading…",
+    "error": "Error: {{message}}"
+  },
+  "search": {
+    "noResults": "No results for \"{{query}}\"."
+  },
+  "units": {
+    "panel": {
+      "title": "Applicable units"
+    },
+    "status": {
+      "empty": "No units found for {{subject}} in {{grade}}."
+    },
+    "search": {
+      "placeholder": "Search among {{count}} units for {{subject}} · {{grade}}…"
+    }
+  },
+  "standards": {
+    "panel": {
+      "title": "Applicable standards"
+    },
+    "hint": {
+      "chooseMissing": "Choose a {{missing}} above to load standards."
+    },
+    "status": {
+      "empty": "No standards found for {{subject}} in {{grade}}."
+    },
+    "search": {
+      "placeholder": "Search among {{count}} standards for {{subject}} · {{grade}}…"
+    }
+  },
+  "expectations": {
+    "panel": {
+      "title": "Applicable expectations"
+    },
+    "chip": "Expectation {{code}}",
+    "status": {
+      "empty": "No expectations found for {{subject}} in {{grade}}."
+    },
+    "search": {
+      "placeholder": "Search among {{count}} expectations for {{subject}} · {{grade}}…"
+    },
+    "otherGroup": "Other expectations"
+  }
+}

@@ -1,0 +1,109 @@
+.wrapper-content {
+    margin-left: 150px;
+    margin-top: 75px;
+  }
+  
+  /****************************/
+  
+  .center-container {
+    padding: 1em;
+    padding-bottom: 75px;
+  
+    display: -webkit-box; 
+        display: -webkit-flex;  
+        display: -ms-flexbox; 
+        display: flex;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        justify-content: space-between;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+  }
+  
+  .container_two-col {
+  width: 48%;
+  }
+
+    .content-max-width {
+      max-width: 100% !important;
+    }
+  
+    .wrapper-lesson-tabs .wrapper-lessons .title-lesson {
+      font-size: 17px;
+    }
+  
+    .wrapper-lesson-tabs .wrapper-lessons .col-left img {
+      width: 55px;
+      margin-left: 0.5em;
+    }
+  
+    .wrapper-lesson-tabs .wrapper-lessons .lesson-grade {
+      font-size: 25px;
+    }
+  
+    .wrapper-lesson-tabs .wrapper-lessons .col-right svg {
+      left: -26px;
+    }
+  
+    .wrapper-title-subject {
+      font-size: 12px;
+      font-weight: bold;
+    }  
+  
+  
+  /* MQ 920px */
+  
+  @media screen and (max-width: 920px) {
+    .container_two-col {
+      width: 100%;
+      margin-bottom: 1em;
+  }
+  }
+  
+  
+  /* MQ 750px */
+  
+  @media screen and (max-width: 750px) {
+    .wrapper-content {
+        margin-left: 0;
+    }
+  
+    .container_two-col {
+      width: 100%;
+    }
+  
+    .center-container {
+      padding-bottom: 125px;
+    }
+    .wrapper-lesson-tabs .wrapper-lessons .title-lesson {
+      font-size: 15px;
+    }
+  }
+  
+  /* MQ 500px */
+  
+  @media screen and (max-width: 500px) {
+    .center-container {
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+    }
+  }
+  
+  
+  /* Special styles for lesson tabs */
+  .wrapper-lesson-tabs {
+    padding: 1em;
+    padding-bottom: 75px;
+  
+    display: -webkit-box; 
+        display: -webkit-flex;  
+        display: -ms-flexbox; 
+        display: flex;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        justify-content: space-between;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+  }

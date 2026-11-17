@@ -1,0 +1,93 @@
+/* LAYOUT */
+
+.globalContent {
+    position: relative;
+    padding: 1em;
+}
+
+.wrapper-twoCol-highlight {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.wrapperFlex {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 10px;
+}
+
+.wrapperFlex .col {
+    flex: 1;
+}
+
+.FlexAlingEnd {
+    align-items: flex-end;
+}
+
+.wrapper-halfCol {
+    max-width: 650px;
+    width: 100%;
+}
+
+.contentSize-md {
+    width: 70%;
+    gap: 15px;
+}
+
+.wrapper-twoCol-spaceBetween {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Content Planning width Sidebar */
+.containerPlanning {
+    display: flex;
+    /*  flex-wrap: wrap; Activarlo en MEDIA QUERYS*/
+    width: 100%;
+    gap: 30px;
+}
+
+.col-sm {
+    flex: 0 0 300px !important;
+}
+
+.containerPlanning__sidebar {
+    flex: 0 0 250px;
+    /*  outline: 1px solid #F00;*/
+}
+
+.containerPlanning__content {
+    /*  outline: 1px solid #00F;*/
+    flex: 1 1 auto;
+}
+
+@media screen and (max-width: 950px) {
+    .containerPlanning {
+        flex-wrap: wrap;
+        gap: 0;
+    }
+    .containerPlanning__sidebar {
+        flex: 100%;
+    }
+}
+
+@media screen and (max-width: 800px) {
+    .wrapperFlex .col {
+        flex: 1 1 24%;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .wrapperFlex .col {
+        flex: 1 1 49%;
+    }
+}

@@ -1,0 +1,23 @@
+.dropdown-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    background-color: hsl(0, 0%, 100%);
+    border: 1px solid hsl(0, 0%, 80%);
+    border-radius: 4px;
+    
+    min-height: 38px;
+    margin: 0 2px;
+    box-sizing: border-box;
+    color: hsl(0, 0%, 50%);
+    
+    cursor: default;
+    outline: 0 !important;
+    transition: all 100ms;
+    width: 95%;
+}

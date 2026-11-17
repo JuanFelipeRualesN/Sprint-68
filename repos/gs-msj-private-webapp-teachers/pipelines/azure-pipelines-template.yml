@@ -1,0 +1,108 @@
+parameters:
+  - name: staticWebAppToken
+    type: string
+  - name: appVariant
+    type: string
+
+stages:
+  - stage: Dev
+    displayName: 'Deploy to Dev'
+    condition: eq(variables['Build.SourceBranchName'], 'dev')
+    jobs:
+    - deployment: DeployToDev
+      displayName: 'Build and Deploy to Dev'
+      environment: 'Development'
+      variables:
+        - group: teachers-variable-group-dev
+      strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - script: |
+                    echo "Building for dev environment"
+                    npm install --force
+                  displayName: 'Install node dependencies'
+
+                - script: |
+                    npm run build:${{ parameters.appVariant }}-dev
+                  displayName: 'Build for Dev'
+
+                - task: AzureStaticWebApp@0
+                  inputs:
+                    app_location: "build"
+                    api_location: ""
+                    output_location: ""
+                    azure_static_web_apps_api_token: ${{ parameters.staticWebAppToken }}
+                    azure_static_web_apps_name: 'Teachers WebApp Dev'
+                    skip_app_build: true
+                  displayName: 'Deploy to Static WebApp: Teachers WebApp Dev'
+
+  - stage: Uat
+    displayName: 'Deploy to Uat'
+    condition: eq(variables['Build.SourceBranchName'], 'uat')
+    jobs:
+    - deployment: DeployToUat
+      displayName: 'Build and Deploy to Uat'
+      environment: 'Uat'
+      variables:
+        - group: teachers-variable-group-uat
+      strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - script: |
+                    echo "Building for uat environment"
+                    npm install --force
+                  displayName: 'Install node dependencies'
+
+                - script: |
+                    npm run build:${{ parameters.appVariant }}-uat
+                  displayName: 'Build for Uat'
+
+                - task: AzureStaticWebApp@0
+                  inputs:
+                    app_location: "build"
+                    api_location: ""
+                    output_location: ""
+                    azure_static_web_apps_api_token: ${{ parameters.staticWebAppToken }}
+                    azure_static_web_apps_name: 'Teachers WebApp Uat'
+                    skip_app_build: true
+                  displayName: 'Deploy to Static WebApp: Teachers WebApp Uat'
+
+  - stage: Prod
+    displayName: 'Deploy to Prod'
+    condition: eq(variables['Build.SourceBranchName'], 'main')
+    jobs:
+    - deployment: DeployToProd
+      displayName: 'Build and Deploy to Prod'
+      environment: 'Production'
+      variables:
+        - group: teachers-variable-group-prod
+      strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - script: |
+                    echo "Building for prod environment"
+                    npm install --force
+                  displayName: 'Install node dependencies'
+
+                - script: |
+                    npm run build:${{ parameters.appVariant }}
+                  displayName: 'Build for Prod'
+
+                - task: AzureStaticWebApp@0
+                  inputs:
+                    app_location: "build"
+                    api_location: ""
+                    output_location: ""
+                    azure_static_web_apps_api_token: ${{ parameters.staticWebAppToken }}
+                    azure_static_web_apps_name: 'Teachers WebApp Prod'
+                    skip_app_build: true
+                  displayName: 'Deploy to Static WebApp: Teachers WebApp Prod'

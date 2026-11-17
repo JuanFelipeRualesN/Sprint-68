@@ -1,0 +1,47 @@
+.inputs-homeschooler input {
+    display: block;
+    background-color: #EFEFEF;
+    padding-left: 2%;
+    font-size: 15px;
+    border-width: 0;
+    border: 1px solid #EFEFEF;
+    line-height: 1.9;
+    width: 95%;
+    transition: all 0.28s ease;
+    box-shadow: none;
+}
+
+.inputs-homeschooler .css-bg1rzq-control,
+.inputs-homeschooler .css-1szy77t-control {
+    padding: 0;
+    font-size: 15px;
+    height: 20px;
+    background-color: #EFEFEF;
+    border-width: 0;
+    border: 1px solid #EFEFEF;
+    font-size: 15px;
+    box-shadow: none;
+}
+
+.inputs-homeschooler .css-151xaom-placeholder {
+    top: 42%;
+}
+
+.inputs-homeschooler .css-kj6f9i-menu .css-11unzgr {
+    font-size: 13px;
+}
+
+.inputs-homeschooler .css-kj6f9i-menu .css-11unzgr div {
+    padding: 5px 10px
+}
+
+.inputs-homeschooler label {
+    font-size: 12px;
+    margin-top: .25em;
+}
+
+input:focus-visible {
+    border: 1px solid #DDD !important;
+    outline: 0;
+}
+

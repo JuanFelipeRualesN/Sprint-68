@@ -1,0 +1,1042 @@
+/* TEACHER ROLE STYLES */
+
+/* Header styles */
+.main-header {
+    background: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA);
+}
+
+.main-header_GenialSkills-logo img {
+    width: 120px;
+}
+
+.card-title {
+  color: #455878;
+  font-weight: 600;
+}
+
+.double-border--principal {
+    background-image: linear-gradient(#fff,#fff),radial-gradient(circle at top left,#6DBD4B 50%,#48AF97 0);
+}
+
+.user-comp_info-user .double-border {
+    background-image: linear-gradient(#fff,#fff),radial-gradient(circle at top left,#6DBD4B 50%,#48AF97 0);
+}
+
+.double-border--principal img {
+    box-shadow: 0 0 0 3px #FFF;
+}
+
+.user-comp_submenu li a {
+    color: #231F20;
+}
+
+.user-comp_submenu li a:hover, .user-comp_submenu li a:hover .fas {
+    color: #838383;
+}
+
+/* Logout button */
+ul.user-comp_submenu {
+    color: #231F20;
+}
+
+.academic-content-title {
+  color: #27466c;
+}
+
+.planning-select-title {
+  color: #27466c;
+}
+
+/* Student wrapper menu styles  */
+.student-wrapper-menu {
+  background-color: #3093a2;
+}
+
+.student-navigation-menu li a:hover img {
+  background-color: #40539D;
+  border-radius: 6px;
+}
+
+.student-navigation-menu li.active img, .student-navigation-menu li.active:hover img {
+  background-color: #40539D;
+  border-radius: 6px;
+}
+
+.student-navigation-menu li.active a {
+  color: #4f4b44;
+}
+
+/* Wrapper menu styles */
+.wrapper-menu-teacher {
+  background: #3093a2;
+  scrollbar-color : #88aca9  #548d89;
+}
+
+.wrapper-menu-teacher  .navigation-menu  li.active svg, .wrapper-menu-teacher   .navigation-menu li.active:hover svg, 
+.wrapper-menu-teacher  .navigation-menu  li.active:hover img, .wrapper-menu-teacher  .navigation-menu li.active img {
+  background-color: #024f5b;
+}
+
+.wrapper-menu-teacher  .navigation-menu li a:hover svg,
+.wrapper-menu-teacher  .navigation-menu li a:hover img { 
+  background-color: #197d78;
+  border-radius: 6px;
+}
+
+.wrapper-menu-teacher .navigation-menu  li.active a {
+  color: #024f5b;
+}
+/* Wrapper menu styles */
+
+/* Buttons */
+
+/* Buttons when presenting a lesson as a student */
+.student-button-generic {
+  background: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA) !important;
+  border: 1px solid #6DBD4B !important;
+  color: #fff !important;
+}
+
+.student-button-generic:hover {
+  background: linear-gradient(to right,  #197BAA, #48AF97, #6DBD4B) !important;
+  border: 1px solid #8f959b !important;
+    color: #FFF;
+}
+
+/* Old forums btn*/
+.btn-reply-submit {
+    color: #FFF !important;
+    cursor: pointer;
+    background-image: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA) !important;
+    border: 1px solid #6DBD4B !important;
+}
+
+.btn-info {
+  background: linear-gradient(1.07deg, #0f3152e3 27.81%, #0f3152ba 98.95%);
+  padding: 0.375rem 0.75rem;
+  border: 0px;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.btn-info:hover {
+  background-color: #8f959b !important;
+  border: 1px solid #8f959b !important;
+}
+
+.btn-info:disabled,
+.btn-info.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #FFF;
+}
+
+.invitation-btn .btn-success {
+    background: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA);
+    border: 1px solid #6DBD4B !important;
+}
+
+.primary-btn:hover, .invitation-btn .btn-success:hover {
+    background: linear-gradient(to right, #197BAA , #48AF97, #6DBD4B) !important;
+    border: 1px solid #197BAA !important;
+}
+
+.bg-primary {
+  background: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA) !important;
+  color: #fff;
+}
+
+.bg-secondary {
+  background-color: #27466c !important;
+  color: #fff;
+}
+
+.title-secondary {
+  color: #27466c;
+}
+
+.title-primary {
+  color: #6DBD4B;
+}
+
+.btn-secondary {
+  background-color: #79868d;
+  border: 1px solid #79868d;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #8f959b;
+  border: 1px solid #8f959b;
+}
+
+.btn-compose {
+  background-color: #2a486e;
+  border: 1px solid #2a486e;
+}
+
+.btn-compose:hover {
+  background-color: #8f959b;
+  border: 1px solid #8f959b;
+}
+
+.btn-warning {
+  background-image: linear-gradient(275.61deg, #85b870 21.43%, #6eafa0 58.77%, #5e8ea6 122.13%);
+  border: 1px solid #85b870;
+  color: #fff;
+}
+
+.btn-warning:hover {
+  background: linear-gradient(95deg, #197BAA 29.43%, #48AF97 58.77%, #6DBD4B 177.13%) !important;
+  border: 1px solid #197BAA;
+}
+
+/* Pagination button */
+.MuiPagination-root .MuiPaginationItem-page.Mui-focusVisible,
+.MuiPagination-root .MuiPaginationItem-page.Mui-selected,
+.MuiPagination-root .MuiPaginationItem-page.Mui-selected:hover {
+  background-color: #68bb57;
+  color: #FFF;
+}
+
+/* Filter icon students */
+.btn-w-icon {
+    color: #27466c;
+}
+
+.btn-w-icon svg {
+    color: #27466c;
+}
+
+.btn-w-icon:hover, .btn-w-icon:hover svg {
+    color: #8f959b;
+}
+
+.secondary-btn {
+    display: inline-block;
+    font-weight: 400;
+    color: #212529;
+    text-align: center;
+    vertical-align: middle;
+    -webkit-user-select: none;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: .25rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.btn-submit {
+  background: #5da357;
+  color : #FFF;
+}
+
+.btn-submit:disabled,
+.btn-submit.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #FFF;
+}
+
+.btn-yes {
+  background: #5da357;
+  color : #FFF;
+  border: 0px;
+}
+
+.btn-yes:hover{
+  opacity: 0.8;
+}
+
+.btn-yes:disabled,
+.btn-yes.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #FFF;
+}
+
+.btn-cancel {
+  background: #c53f3f;
+  color : #FFF;
+  border: 0px;
+}
+
+.btn-cancel:hover{
+  opacity: 0.8;
+}
+
+.btn-cancel:disabled,
+.btn-cancel.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #FFF;
+}
+
+.btn-primary {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%);
+  border: 1px solid #6DBD4B;
+  color: #fff;
+}
+
+.pl.btn-primary {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%) !important;
+  border: 1px solid #6DBD4B;
+  color: #fff;
+}
+
+.pl.btn-primary:hover {
+  background: linear-gradient(95deg, #6DBD4B 29.43%, #48AF97 58.77%, #197BAA 177.13%) !important;
+  border: 1px solid #6DBD4B;
+}
+
+.button-primary-custom {
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(275.61deg, #85b870 21.43%, #6eafa0 58.77%, #5e8ea6 122.13%);
+  border: 0px;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.button-primary-custom:hover {
+  background: linear-gradient(95deg, #6DBD4B 29.43%, #48AF97 58.77%, #197BAA 177.13%);
+  color: #FFF;
+}
+
+.button-primary-custom:disabled,
+.button-primary-custom.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #FFF;
+}
+
+.button-secondary-custom {
+  background: #4f57a7;
+  padding: 0.375rem 0.75rem;
+  border: 0px;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.button-secondary-custom:hover {
+  background: #8f959b;
+  color: #FFF;
+}
+
+.button-secondary-custom:disabled,
+.button-secondary-custom.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #FFF;
+}
+
+/* Toolbar save btn */
+.quiz-creator--newstyle .btn-group-vertical button#assignment-save-btn {
+    background-color: #6DBD4B;
+    border: 1px solid #6DBD4B;
+    color: #FFF;
+}
+
+/* Back button */
+a.btn-back {
+    text-decoration: none;
+}
+
+.btn-back {
+    color: #197BAA;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-back:hover {
+    color: #8f959b;
+}
+
+/* Planning buttons */
+.pl.btn-secondary {
+  background: #197baa;
+  border-color: #197baa;
+  color: #FFF;
+}
+
+.pl.btn-secondary:hover {
+  background: #838383;
+  border-color: #838383;
+}
+
+
+/* Delete planning buttons */
+.pl.btn-onlyIcon {
+  color: #c02121;
+}
+
+.pl.btn-onlyIcon:hover {
+  color:  #838383;
+}
+
+/* Texts styles */
+
+/* Selected profile text */
+.text-color-custom {
+    color: #27466c;
+}
+
+/* Alert planning*/
+.alert-custom {
+  color: #004085;
+  background-color: #e9f5f4;
+  border-color: #e9f5f4;
+}
+
+/* Table planning titles */
+.ppalTable th {
+  border-bottom: 1px solid var(--palette-gray-silver);
+  color: #197baa !important;
+  background: #e9f5f4;
+}
+
+/* Planning note */
+.wrapper-average-progress {
+    background: #e9f5f4;
+    color: #4ca7a2;
+}
+
+.heading-h1 {
+    color: #c3902a;
+}
+
+.heading-h2 {
+    color: #809cb7;
+}
+
+/* Sidebar menu planning */
+.sidebarMenu--itemTitle {
+    background: #f2faff;
+    color: #c3902a;
+}
+
+.sidebarMenu--itemPpal {
+    background-image: linear-gradient(#70cdf3, #53a5a7);
+    color: #FFF;
+}
+
+/* Item menu planning */
+.sidebarMenu--item {
+    background: #f2faff;
+    color: #424242;
+    border-bottom: 1px solid #bfd6e6;
+}
+
+.sidebarMenu--item.active {
+    background: #ddedf7;
+}
+
+/* Edit planning icons */
+.pl.btn-simple.btn-icon .fas,
+.pl.btn-simple.btn-icon svg {
+  color: #197baa;
+}
+
+/* Planning preview styles */
+.list--item_firstTitle {
+    color: #c3902a;
+}
+.list--item_secondTitle {
+    color: #197baa;
+}
+
+/* Warning pdf */
+.RegionBase-notificaction-simple {
+    color: #c3902a;
+}
+
+/* Preview table */
+.table-pdf-preview .tablePDF__scroll .tablePDF__content th {
+    background-color: #dee6f2;
+    color: #384167;
+}
+
+/* Breadcrumb planning styles */
+.breadcrumb .breadcrumb--title {
+    color: #c3902a;
+}
+
+/* Create planning */
+.form-group-fields select:focus~.control-label,
+.form-group-fields input:focus~.control-label,
+.form-group-fields textarea:focus~.control-label,
+.form-group-fields select:focus~.control-label-w-placeholder,
+.form-group-fields input:focus~.control-label-w-placeholder,
+.form-group-fields textarea:focus~.control-label-w-placeholder {
+    color: #c3902a;
+}
+
+.text-plans-title {
+  color: #197baa
+}
+
+.text-assignments-title {
+    color: #4ca7a2;
+}
+
+/* Invitations styles */
+
+/* Tab underline styles */
+.tabs-strech .underline-div.nav-link {
+    border-bottom: 3px solid #48af97;
+}
+
+.underline-div {
+  color: #e95a71;
+  border-bottom: 3px solid #e95a71;
+  background-color: #FFF;
+}
+
+.tabs-strech .nav-item {
+  flex: 1;
+  color: #ddd;
+  border-top: 1px solid #ECECEC;
+  background-color: #FFF;
+}
+
+/* Messages section styles */
+.tabs-style-message .tab.underline-div {
+  color: #FFF !important;
+  border-bottom: 3px solid #48af97;
+  background-image: linear-gradient(#70cdf3, #53a5a7);
+}
+
+.tabs-style-message .tab {
+  color: #ddd;
+  border-bottom: 3px solid #DDD;
+  border-top: 1px solid #DDD;
+}
+
+/* Envelope icon */
+.fa-envelope-open, 
+.fa-envelope {
+  color: #809cb7
+}
+
+/* Avanza section styles */
+.avanza-text {
+    color: #b4904a;
+}
+
+.learning-gap-tab-selected {
+    background-color: #d5c095 !important;
+    color: #000;
+}
+
+.learning-gap-subtitle {
+  color: #455878;
+  font-weight: 600;
+}
+
+.content-table-data tr {
+    color: #197baa;
+}
+
+/* Catalog section styles */
+.lesson-results-title {
+    color: #197baa;
+}
+
+.lesson-title {
+    color: #197baa;
+}
+
+.clear-filters-btn{
+  color: #197baa;
+}
+
+.search-btn {
+  color: #197baa
+}
+
+.accordion-style .MuiSvgIcon-root {
+  color: #197baa;
+}
+
+.lesson-card-actions:hover {
+    color: #197baa;
+}
+
+/* Home underline */
+.wrapper-home-matter h1:before {
+  background: linear-gradient(90deg, #6DBD4B 49.92%, #48AF97 50.64%, #197BAA) !important;
+
+}
+
+/* Shared underline */
+.title-principal:before,
+.line-title:before {
+  background: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA) !important;
+}
+
+/* Login styles */
+
+/* Login card */
+.container-login-teacher .card-body {
+    background-color: #ececec;
+    color: #0F3152;
+    border: 1px solid #fff;
+}
+
+.title-login-teacher {
+    color: #0F3152;
+}
+
+.login-teacher-link {
+    font-size: 13px;
+    color: #6DBD4B;
+}
+
+.login-teacher-link:hover {
+    color: #0F3152;
+}
+
+.login-btn {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%);
+  color: #FFF
+}
+
+.login-btn:hover {
+  background: linear-gradient(95deg, #6DBD4B 29.43%, #48AF97 58.77%, #197BAA 177.13%);
+  color: #FFF
+}
+
+/* Footer styles */
+.main-footer-students {
+  color: #fff;
+  background-color: #3f3f3f;
+}
+
+/* ADMIN ORE ROLE STYLES */
+.wrapper-menu-admin-ore  {
+  background-color: #3093a2;
+  scrollbar-color: #6ba7cc #4f88ab;
+}
+
+.wrapper-menu-admin-ore .navigation-menu  li.active svg, .wrapper-menu-admin-ore  .navigation-menu li.active:hover svg, 
+.wrapper-menu-admin-ore .navigation-menu  li.active:hover img, .wrapper-menu-admin-ore .navigation-menu li.active img {
+  background-color: #61698e;
+}
+
+.wrapper-menu-admin-ore .navigation-menu li a:hover svg,
+.wrapper-menu-admin-ore .navigation-menu li a:hover img { 
+  background-color: #61698e;
+  border-radius: 6px;
+}
+
+.wrapper-menu-admin-ore .navigation-menu  li.active a {
+  color: #313443;
+}
+
+/* ADMIN ROLE STYLES */
+.wrapper-menu-admin  {
+  background-color: #7d84a5;
+  scrollbar-color: #8a91b2 #7D84A5;
+}
+
+.wrapper-menu-admin .navigation-menu  li.active svg, .wrapper-menu-admin  .navigation-menu li.active:hover svg, 
+.wrapper-menu-admin .navigation-menu  li.active:hover img, .wrapper-menu-admin .navigation-menu li.active img {
+  background-color: #61698e;
+}
+
+.wrapper-menu-admin .navigation-menu li a:hover svg,
+.wrapper-menu-admin .navigation-menu li a:hover img { 
+  background-color: #61698e;
+  border-radius: 6px;
+}
+
+.wrapper-menu-admin .navigation-menu  li.active a {
+  color: #313443;
+}
+
+/* Create school styles */
+.admin-subtitle {
+    color: #197BAA;
+}
+
+/* Curriculum section styles */
+.access-roles-title {
+  color: #27466c;
+}
+
+.access-permissions-title {
+  color: #27466c;
+}
+
+.reports-title {
+  color: #27466c;
+}
+
+.schools-title {
+  color: #27466c;
+}
+
+.subscription-title {
+  color: #27466c;
+}
+
+/* Create subscription btn */
+button.content-wizard--primary {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%);
+  border: 1px solid #6DBD4B;
+}
+
+button.content-wizard--primary:hover {
+  background: linear-gradient(95deg, #6DBD4B 29.43%, #48AF97 58.77%, #197BAA 177.13%);
+  border: 1px solid #6DBD4B;
+}
+
+/* Next step btn */
+.wrapper-button-sec-wizard .next {
+  border-color: #6DBD4B;
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%);
+}
+
+.wrapper-button-sec-wizard .next:hover {
+  background: linear-gradient(95deg, #6DBD4B 29.43%, #48AF97 58.77%, #197BAA 177.13%);
+  color: #FFF;
+  border-color: #8f959b;
+}
+
+.print-pdf-btn {
+  color: #FFF;
+  padding: 5px;
+}
+
+/* Tooltip color */
+.tool {
+  color: #6DBD4B;
+}
+
+.content-table-admin tr:nth-of-type(odd) {
+  background-color: transparent !important;
+}
+
+.content-table-admin tr {
+  background-color: transparent !important;
+}
+
+.nav-link-selected {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%);
+}
+
+.homeschooling-results-header{
+  background-color: transparent !important;
+}
+
+.homeschooling-results-header div {
+  align-items: center;
+  display: flex;
+}
+
+.homeschooling-results-header div svg {
+  height: 1.1rem;
+}
+
+.homeschooling-results-header div span {
+  color: #197baa !important;
+  font-weight: 700;
+  font-size: 18px;
+  /* margin-bottom: .5em; */
+}
+
+
+/* DIRECTOR ROLE STYLES */
+.wrapper-menu-director {
+  background-color: #5bbcc2;
+  scrollbar-color: #5bbcc2 #4a9398;
+}
+
+.wrapper-menu-director .navigation-menu li.active svg, .wrapper-menu-director .navigation-menu li.active:hover svg, 
+.wrapper-menu-director .navigation-menu  li.active:hover img, .wrapper-menu-director .navigation-menu li.active img {
+  background-color: #4a9398;
+}
+
+.wrapper-menu-director .navigation-menu li a:hover svg,
+.wrapper-menu-director .navigation-menu li a:hover img { 
+  background-color: #4a9398;
+  border-radius: 6px;
+}
+
+.wrapper-menu-director .navigation-menu li.active a {
+  color: #58544f;
+}
+
+.list-library__title,
+.list-library__title a {
+    color: #27466c;
+}
+
+.list-library__title a:hover {
+    color: #5A93B6;
+}
+
+.wrapper-library h2 {
+    border-image-source: linear-gradient(90deg, #5E98AF 49.92%, #AB863D 50.64%, #AB863D 52.43%, #AB863D 56.38%);
+}
+
+.message-tabs label {
+    border-image-source: linear-gradient(90deg, #5E98AF 49.92%, #AB863D 50.64%, #AB863D 52.43%, #AB863D 56.38%);
+}
+
+/* CLIENT ROLE STYLES */
+.wrapper-menu-homeschooler {
+  background-color: #a79b85;
+  overflow: auto;
+  scrollbar-color: #a39781 #9b8a6b;
+}
+
+.wrapper-menu-homeschooler .navigation-menu li a:hover svg,
+.wrapper-menu-homeschooler .navigation-menu li a:hover img { 
+  background-color: #938975;
+  border-radius: 6px;
+}
+
+.wrapper-menu-homeschooler .navigation-menu li.active svg, .wrapper-menu-homeschooler .navigation-menu li.active:hover svg, 
+.wrapper-menu-homeschooler .navigation-menu  li.active:hover img, .wrapper-menu-homeschooler .navigation-menu li.active img {
+  background-color: #938975;
+}
+
+.wrapper-menu-homeschooler .navigation-menu li.active a {
+  color: #675532;
+}
+
+/* PARENT ROLE STYLES */
+.wrapper-menu-parent {
+  background-color: #85A57D;
+  overflow: auto;
+  scrollbar-color: #85A57D #61805a;
+}
+
+.wrapper-menu-parent .navigation-menu li a:hover svg,
+.wrapper-menu-parent .navigation-menu li a:hover img { 
+  background-color: #61805a;
+  border-radius: 6px;
+}
+
+.wrapper-menu-parent .navigation-menu li.active a {
+  color: #4b5e47;
+}
+
+.wrapper-menu-parent .navigation-menu li.active svg, .wrapper-menu-parent .navigation-menu li.active:hover svg, 
+.wrapper-menu-parent .navigation-menu  li.active:hover img, .wrapper-menu-parent .navigation-menu li.active img {
+  background-color: #61805a;
+}
+
+.homeschooler-modal-title {
+  color: #197baa;
+}
+
+
+/* Responsive styles */
+@media screen and (max-width: 750px) {
+    .navigation-menu li a:hover img {
+      background-color: transparent;
+    }
+
+    /* Student wrapper */
+    .student-navigation-menu li.active {
+      background-color: #40539D;
+    }
+
+    /* Teacher Wrapper */
+    .wrapper-menu-teacher .navigation-menu li.active,
+    .wrapper-menu-teacher .navigation-menu li:hover{
+      background-color: #024f5b;  
+    }
+
+    /* Homeschooler Wrapper (client) */
+    .wrapper-menu-homeschooler .navigation-menu li.active,
+    .wrapper-menu-homeschooler .navigation-menu li:hover{
+      background-color: #938975;
+    }
+    /* Admin ORE Wrapper */
+    .wrapper-menu-admin-ore .navigation-menu li.active,
+    .wrapper-menu-admin-ore .navigation-menu li:hover { 
+      background-color: #97a0a6;
+    }
+
+    /* Admin Wrapper */
+    .wrapper-menu-admin .navigation-menu li.active,
+    .wrapper-menu-admin .navigation-menu li:hover { 
+      background-color: #97a0a6;
+    }
+
+    /* Director Wrapper */
+    .wrapper-menu-director .navigation-menu li.active,
+    .wrapper-menu-director .navigation-menu li:hover { 
+      background-color: #908c84;
+    }
+
+    /* Parent Wrapper */
+    .wrapper-menu-parent .navigation-menu li.active,
+    .wrapper-menu-parent .navigation-menu li:hover { 
+      background-color: #61805a;
+    }
+}
+
+/* Data analysis module styles */
+.dashboard-title {
+    color: #0F3152;
+}
+
+.dashboard-title:before {
+    background: linear-gradient(90deg, #5E98AF 49.92%, #AB863D 50.64%, #AB863D 52.43%, #AB863D 56.38%);
+}
+
+.button-secondary-data {
+  background-color: #27466c;
+  border: 1px solid #27466c;
+}
+
+.reports-link a:hover h4 {
+  color: #809CB7;
+  text-decoration: none;
+}
+
+.button-download-document {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%) !important;
+  border: 0px solid #f2af2b;
+  color: #fff;
+}
+
+.button-download-document:hover {
+  background: linear-gradient(275.61deg, #6DBD4B 21.43%, #48AF97 58.77%, #197BAA 122.13%) !important;
+}
+
+.mod-planning{
+  background-color: transparent !important;
+}
+
+.mod-planning-title__fixed-size{
+  width: 130px !important;
+  margin-left: -60px !important;
+  margin-top: -45px !important;
+}
+
+.border-greenLight{
+  border-color: #7ec9c5 !important;
+}
+.planning-two-col{
+  border: 1px solid #7ec9c5!important;
+}
+
+.planning-two-col.bg-SmokeGray {
+  background-color: transparent !important;
+}
+
+.chat__headerTitle {
+  background: #48af97;
+}
+
+.chat__center-content__wrapper-mod-contacts{
+  scrollbar-width: thin;
+  scrollbar-color: #4b928e #468884;
+}
+
+.col-chat__contacts{
+  background-color: transparent !important;
+}
+
+.col-chat__contacts__menu {
+  background-color: #197baa !important;
+}
+
+.contacts__menu--item.active {
+  color: #54e0c0 !important;
+}
+
+.contacts__menu--item {
+  color: #798EB0;
+}
+
+.message-create-modal-style h4, .modal-title{
+  font-size: 22px !important;
+  color: #197baa;
+  font-weight: 600;
+}
+
+.__title {
+  color: #197baa;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2em;
+}
+
+.steps-three-col{
+  background-color: transparent !important;
+}
+
+.modal-footer.btn-info{
+  background: #4f57a7 !important;
+  border: 1px solid #4f57a7 !important;
+}
+
+.modal-footer.btn-info:hover {
+  background: #8f959b !important;
+  border: 1px solid #8f959b !important;
+}
+
+ul.user-comp_submenu .nav-item svg{
+  color: #40a69c;
+}
+
+.card-lighGray .card-white{
+  background-color: transparent !important;
+}
+
+.med-sidebar.wrapper-menu-teacher {
+  --b-nav-active: #024f5b;
+  --b-sidebar: linear-gradient(178deg, #31ADC0 0%, #1C7D83 42%, #0D4B48 100%);
+  background: var(--b-sidebar);
+}
+
+.med-sidebar.wrapper-menu-director {
+  --b-nav-active: #4a9398;
+  --b-sidebar: linear-gradient(178deg, #6CC9CF 0%, #34B6B4 42%, #1F8479 100%);
+  background: var(--b-sidebar);
+}
+
+.med-sidebar.wrapper-menu-parent {
+  --b-nav-active: #61805a;
+  --b-sidebar: linear-gradient(178deg, #93B68A 0%, #689956 42%, #4C7037 100%);
+  background: var(--b-sidebar);
+}
+
+.med-sidebar.wrapper-menu-homeschooler {
+  --b-nav-active: #938975;
+  --b-sidebar: linear-gradient(178deg, #B8AB92 0%, #9D815C 42%, #75583C 100%);
+  background: var(--b-sidebar);
+}
+
+.med-sidebar.wrapper-menu-admin {
+  --b-nav-active: #61698e;
+  --b-sidebar: linear-gradient(178deg, #8A92B6 0%, #566699 42%, #374B70 100%);
+  background: var(--b-sidebar);
+}
+
+.med-sidebar.wrapper-menu-admin-ore {
+  --b-nav-active: #61698e;
+  --b-sidebar: linear-gradient(178deg, #31ADC0 0%, #1C7D83 42%, #0D4B48 100%);
+  background: var(--b-sidebar);
+}

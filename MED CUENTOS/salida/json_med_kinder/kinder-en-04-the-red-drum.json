@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "The Red Drum",
+  "TitleEs": "El tambor rojo",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I see a drum.\nTap, tap, tap!\nWe clap and tap.\nWe make a beat.",
+      "TextEs": "Veo un tambor.\n¡Tap, tap, tap!\nAplaudimos y tocamos.\nHacemos un ritmo.",
+      "ImageUrl": null
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "LevelId": 1,
+  "CategoryId": 3,
+  "TitleEn": "My Friend Popi",
+  "TitleEs": "Mi amigo Popi",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Popi lives in Mali, a country on the African continent.\nMirsa lives in Puerto Rico, an island in the Caribbean.\nPopi has a mom, a dad, and a sister. Mirsa has a mom, a grandma, and a brother.\nPopi eats mango with his mom. Mirsa cooks with her grandma.\nPopi runs on the savanna. Mirsa plays at the beach.\nThey both look at the stars.\nPopi and Mirsa are friends under the same sky.",
+      "TextEs": "Popi vive en Mali, un país en el continente africano.\nMirsa vive en Puerto Rico, una isla en el Caribe.\nPopi tiene una mamá, un papá y una hermana. Mirsa tiene una mamá, una abuela y un hermano.\nPopi come mangó con su mamá. Mirsa cocina con su abuela.\nPopi corre en la sabana. Mirsa juega en la playa.\nLos dos miran las estrellas.\nPopi y Mirsa son amigos bajo el mismo cielo.",
+      "ImageUrl": null
+    }
+  ]
+}

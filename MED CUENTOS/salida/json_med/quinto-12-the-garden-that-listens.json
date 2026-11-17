@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 4,
+  "TitleEn": "The Garden That Listens",
+  "TitleEs": "El jardín que escucha",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Andrea's group was designing a school garden. They had chosen a stone path and several tall planters. During the presentation, Mateo explained that some parts would be hard to use for students with reduced mobility. Andrea felt frustrated: they had worked hard and she did not want to start over. Still, she decided to listen. Together with her classmates, she reviewed the plan, consulted accessibility guidelines, and changed the route.",
+      "TextEs": "El grupo de Andrea diseñaba un jardín escolar. Habían elegido un camino de piedras y varias macetas altas. Durante la presentación, Mateo explicó que algunas partes serían difíciles de utilizar para estudiantes con movilidad reducida. Andrea se sintió frustrada: habían trabajado mucho y no quería comenzar de nuevo. Sin embargo, decidió escuchar. Junto con sus compañeros revisó el plano, consultó orientaciones de accesibilidad y modificó el recorrido.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "They also added spaces where everyone could take part in caring for the plants. When they opened the garden, Andrea understood that changing a project does not always mean failing. Sometimes it is an opportunity to make it fairer and more useful.",
+      "TextEs": "También incorporaron espacios donde todos pudieran participar en el cuidado de las plantas. Cuando inauguraron el jardín, Andrea comprendió que cambiar un proyecto no siempre significa fracasar. A veces representa una oportunidad para hacerlo más justo y útil.",
+      "ImageUrl": null
+    }
+  ]
+}

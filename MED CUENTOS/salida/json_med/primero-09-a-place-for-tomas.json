@@ -1,0 +1,19 @@
+{
+  "LevelId": 1,
+  "CategoryId": 4,
+  "TitleEn": "A Place for Tomás",
+  "TitleEs": "Un lugar para Tomás",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Tomás arrives at a new school.\nIn the yard he sees two kids with a ball.\n“Can I play?” he asks.\nAna passes him the ball.\nTomás catches it and laughs.\nAfter a while, Sara arrives, and she wants to play too.\nAna suggests taking turns.\nEveryone plays and no one is left out.\nWhen the bell rings, Tomás already has new friends.",
+      "TextEs": "Tomás llega a una escuela nueva.\nEn el patio ve a dos niños con una pelota.\n—¿Puedo jugar? —pregunta.\nAna le pasa la pelota.\nTomás la atrapa y se ríe.\nAl rato llega Sara, que también quiere jugar.\nAna propone hacer turnos.\nTodos juegan y nadie queda fuera.\nAl sonar la campana, Tomás ya tiene nuevos amigos.",
+      "ImageUrl": null
+    }
+  ]
+}

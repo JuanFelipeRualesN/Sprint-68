@@ -1,0 +1,47 @@
+.sidebar-background{
+    background-color: #446990;
+}
+
+.sidebar-padding-top{
+    padding-top: 110px;
+}
+
+.btn-transparent-selected-no-radius{
+    background-color: rgba(0, 14, 56, 0.29) !important;
+    background-repeat:no-repeat !important;
+    border: none !important;
+    cursor:pointer !important;
+    overflow: hidden !important;
+    outline:none !important;
+}
+
+.white-text{
+    color:#FFF;
+}
+
+.sidenav-icons{
+    max-width: 50px;
+    width:80%;
+    min-width:30px;
+    padding-top:10px;
+    padding-bottom:10px;
+}
+
+.margin-top-mandatory-25{
+    margin-top: 25px !important;
+}
+
+.link-white a{
+    color: #FFFFFF;
+    text-decoration: none;
+}
+.link-white a:hover{
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+
+.link-white {
+    color: #FFFFFF;
+    text-decoration: none;
+}

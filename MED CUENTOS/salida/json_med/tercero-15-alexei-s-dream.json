@@ -1,0 +1,43 @@
+{
+  "LevelId": 3,
+  "CategoryId": 4,
+  "TitleEn": "Alexei's Dream",
+  "TitleEs": "El Sueño de Alexei",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Once upon a time there was a boy named Alexei who lived in a small village in Russia, surrounded by vast fields and snow-covered mountains. Alexei was a dreamer, always imagining adventures and explorations in the nature around him.\nOne day, while walking in the nearby forest, Alexei heard a strange sound coming from behind some bushes. As he got closer, he saw a little fox caught in a trap. Its eyes were sad and frightened. Alexei, who had always loved animals, felt deep empathy for the little fox.",
+      "TextEs": "Había una vez un niño llamado Alexei que vivía en un pequeño pueblo en Rusia, rodeado de vastos campos y montañas cubiertas de nieve. Alexei era un niño soñador, siempre imaginando aventuras y exploraciones en la naturaleza que lo rodeaba.\nUn día, mientras paseaba por el bosque cercano, Alexei escuchó un sonido extraño que venía de detrás de unos arbustos. Al acercarse, vio a un pequeño zorro atrapado en una trampa. Sus ojos eran tristes y asustados. Alexei, que siempre había amado a los animales, sintió una profunda empatía por el zorrillo.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "“Don't worry, little friend,” Alexei whispered. “I will help you.”\nVery carefully, Alexei managed to free the fox from the trap. The animal, though scared, stayed still, looking at him with gratitude. Then, to Alexei's surprise, the fox gave him a small nudge with its snout, as if thanking him from the heart. Then, with an agile leap, the fox disappeared among the trees. That night, Alexei had a wonderful dream. In his dream, the fox appeared again, but this time it was not alone. At its side were other animals of the forest: a wise owl, a playful hare, and an elegant deer. The fox spoke to him:",
+      "TextEs": "—No te preocupes, pequeño amigo —susurró Alexei—. Te ayudaré.\nCon mucho cuidado, Alexei logró liberar al zorro de la trampa. El animal, aunque asustado, se quedó quieto, mirándolo con gratitud. Entonces, para sorpresa de Alexei, el zorro le dio un pequeño empujón con su hocico, como si le agradeciera de corazón. Después, con un salto ágil, el zorro desapareció entre los árboles. Esa noche, Alexei tuvo un sueño maravilloso. En su sueño, el zorro apareció de nuevo, pero esta vez no estaba solo. A su lado había otros animales del bosque: un búho sabio, una liebre juguetona y un ciervo elegante. El zorro le habló:",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "“Thank you for saving me, Alexei. Tonight, I will take you to a magical place.”\nThe fox guided him to a moonlit clearing, where all the animals were gathering to celebrate. There was music and laughter, and the air was full of joy. Alexei joined them, dancing and playing. In that place, he felt free and happy, surrounded by friends.\nWhen Alexei woke up, he felt that the dream had been more than just an illusion. He decided he had to do something special for the animals of the forest.",
+      "TextEs": "—Gracias por salvarme, Alexei. Esta noche, te llevaré a un lugar mágico.\nEl zorro lo guió a un claro iluminado por la luna, donde todos los animales se reunían para celebrar. Había música y risas, y el aire estaba lleno de alegría. Alexei se unió a ellos, bailando y jugando. En ese lugar, se sentía libre y feliz, rodeado de amigos.\nCuando Alexei despertó, sintió que el sueño había sido más que solo una ilusión. Decidió que debía hacer algo especial por los animales del bosque.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "So he began to collect food and leave it near his house, making sure there was always something for those who could not find enough in winter. As the days went by, Alexei saw that the animals began to come closer, leaving tracks in the snow and enjoying the treats he had left. One day, the fox appeared again, and this time it stayed close to him, like a loyal companion. From that moment on, Alexei and the fox became inseparable friends.",
+      "TextEs": "Así que comenzó a recoger comida y dejarla cerca de su casa, asegurándose de que siempre hubiera algo para los que no podían encontrar suficiente en invierno. Con el paso de los días, Alexei vio que los animales comenzaban a acercarse, dejando huellas en la nieve y disfrutando de las golosinas que había dejado. Un día, el zorro volvió a aparecer, y esta vez se quedó cerca e él, como un compañero leal. A partir de ese momento, Alexei y el zorro se convirtieron en amigos inseparables.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 5,
+      "TextEn": "Together they explored the forest, discovering new trails and sharing many adventures. Alexei learned to care for and respect animals, and every day their friendship grew stronger.",
+      "TextEs": "Juntos exploraron el bosque, descubriendo nuevos senderos y compartiendo muchas aventuras. Alexei aprendió a cuidar y respetar a los animales, y cada día su amistad crecía más fuerte.",
+      "ImageUrl": null
+    }
+  ]
+}

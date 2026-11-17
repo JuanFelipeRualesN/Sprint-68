@@ -1,0 +1,480 @@
+ai-assistant.json :: assistant.user-prompt
+  -  Conversación hasta ahora:  {{transcript}}  Responde al último mensaje del maestro.
+  +  Conversación hasta ahora:  {{transcript}}  Responde al último mensaje del docente.
+
+ai-assistant.json :: assistant.suggestion-1
+  -  Una rúbrica de comprensión lectora para 4to grado
+  +  Una rúbrica de comprensión lectora para grado 4
+
+ai-tools.json :: planning
+  -  Planificación
+  +  Planeación
+
+ai-tools.json :: placeholder
+  -  Ej.: una rúbrica de comprensión lectora para 4to grado…
+  +  Ej.: una rúbrica de comprensión lectora para grado 4…
+
+ai-tools.json :: question
+  -  ¿Cómo explico la multiplicación de fracciones utilizando un modelo visual a estudiantes de 5.º grado?
+  +  ¿Cómo explico la multiplicación de fracciones utilizando un modelo visual a estudiantes de grado 5?
+
+ai-tools.json :: question
+  -  Traduzca esta instrucción al inglés para estudiantes con un nivel de vocabulario de 3.er grado.
+  +  Traduzca esta instrucción al inglés para estudiantes con un nivel de vocabulario de grado 3.
+
+ai-tools.json :: question
+  -  Estrategias SIOP para una clase de ciencias de 5.º grado con estudiantes de inglés como lengua extranjera en nivel emergente.
+  +  Estrategias SIOP para una clase de ciencias de grado 5 con estudiantes de inglés como lengua extranjera en nivel emergente.
+
+ai-tools.json :: name
+  -  Planificar mi clase
+  +  Planear mi clase
+
+ai-tools.json :: name
+  -  Planificador de unidades STEM
+  +  Planeador de unidades STEM
+
+ai-tools.json :: subtitle
+  -  Varía las estrategias de instrucción para todos los alumnos
+  +  Varía las estrategias de instrucción para todos los estudiantes
+
+ai-tools.json :: subtitle
+  -  Enseña y refuerza el vocabulario específico de la materia
+  +  Enseña y refuerza el vocabulario específico de la asignatura
+
+ai-tools.json :: subtitle
+  -  Tu co-docente de IA para estudios sociales
+  +  Tu co-docente de IA para ciencias sociales
+
+athenas-lesson-picker.json :: cacheTooltip
+  -  Usando cache local — elige materia y grado
+  +  Usando cache local — elige asignatura y grado
+
+athenas-lesson-picker.json :: subject
+  -  Materia
+  +  Asignatura
+
+athenas-lesson-picker.json :: sci-so
+  -  Estudios Sociales
+  +  Ciencias Sociales
+
+athenas-lesson-picker.json :: emptyHint
+  -  Elige una <strong>materia</strong> y un <strong>grado</strong> para ver el catálogo de Athenas.
+  +  Elige una <strong>asignatura</strong> y un <strong>grado</strong> para ver el catálogo de Athenas.
+
+calendar-events.json :: homework
+  -  Evidencias del aprendizaje
+  +  Evidencias de aprendizaje
+
+common.json :: submit
+  -  Someter
+  +  Enviar
+
+common.json :: edit-info-subtitle
+  -  Actualice su dirección postal, luego presione "Someter" 
+  +  Actualice su dirección postal, luego presione "Enviar" 
+
+common.json :: file-uploaded-some-error
+  -  Archivo subido, pero se detectaron algunos errores. Por favor, revise, corrija y vuelva a subir el archivo. 
+  +  Archivo subido, pero se detectaron algunos errores. Por favor, revise, califique y vuelva a subir el archivo. 
+
+common.json :: instructions
+  -  Arrastre el archivo .CSV aquí. Recuerde que el .csv debe tener las siguientes columnas en este orden específico: <0/><1>Nombre de Usuario, Contraseña, Nombre, Apellido, Fecha de nacimiento (opcional, si no está, dejar columna en blanco), Género (opcional, si no está, dejar columna en blanco), SIE de maestro o estudiante, se añadirá automáticamente. Si prefiere que no se añada automáticamente, por favor, asegúrese de tener el SIE al subir este archivo, seguido por el campo opcional de correo electrónico. Si la institución utiliza Teams y desea la opción de video llamadas, es necesario que el correo sea el mismo que el de Teams y, en ese caso, se requeriría el correo. Estos campos deben incluirse en la primera fila y deben seguir el orden especificado.</1> <0/> Es un archivo .CSV, así que evite que los datos dentro de cada columna contengan comas.   Nota: Este proceso no actualiza ninguna contraseña, ID de escuela, de usuario ni nombre de usuario. Si el usuario ya existe (validado por el identificador escolar del usuario), el sistema actualiza el nombre completo, correo electrónico, género y fecha de nacimiento si difieren de la información que el usuario tiene en la base de datos.
+  +  Arrastre el archivo .CSV aquí. Recuerde que el .csv debe tener las siguientes columnas en este orden específico: <0/><1>Nombre de Usuario, Contraseña, Nombre, Apellido, Fecha de nacimiento (opcional, si no está, dejar columna en blanco), Género (opcional, si no está, dejar columna en blanco), SIE de docente o estudiante, se añadirá automáticamente. Si prefiere que no se añada automáticamente, por favor, asegúrese de tener el SIE al subir este archivo, seguido por el campo opcional de correo electrónico. Si la institución utiliza Teams y desea la opción de video llamadas, es necesario que el correo sea el mismo que el de Teams y, en ese caso, se requeriría el correo. Estos campos deben incluirse en la primera fila y deben seguir el orden especificado.</1> <0/> Es un archivo .CSV, así que evite que los datos dentro de cada columna contengan comas.   Nota: Este proceso no actualiza ninguna contraseña, ID de institución educativa, de usuario ni nombre de usuario. Si el usuario ya existe (validado por el identificador escolar del usuario), el sistema actualiza el nombre completo, correo electrónico, género y fecha de nacimiento si difieren de la información que el usuario tiene en la base de datos.
+
+common.json :: apple-computers
+  -  (Computadoras Apple)
+  +  (Computadores Apple)
+
+events.json :: audience-director
+  -  Directores
+  +  Rectores
+
+events.json :: audience-teacher
+  -  Maestros
+  +  Docentes
+
+events.json :: audience-schools
+  -  Escuelas
+  +  Instituciones educativas
+
+events.json :: pill-school
+  -  Por escuela
+  +  Por institución educativa
+
+events.json :: schools-label
+  -  Buscador de escuelas
+  +  Buscador de instituciones educativas
+
+events.json :: schools-placeholder
+  -  Busca y selecciona escuelas
+  +  Busca y selecciona instituciones educativas
+
+events.json :: school-users-placeholder
+  -  Si no seleccionas usuarios, el evento aplica a todos los usuarios de las escuelas elegidas
+  +  Si no seleccionas usuarios, el evento aplica a todos los usuarios de las instituciones educativas elegidas
+
+events.json :: filter-school-label
+  -  Escuela
+  +  Institución educativa
+
+events.json :: filter-school-placeholder
+  -  Filtra por escuela
+  +  Filtra por institución educativa
+
+events.json :: select-school-or-role-first-placeholder
+  -  Selecciona una escuela o un rol primero
+  +  Selecciona una institución educativa o un rol primero
+
+events.json :: selected-schools-heading
+  -  Escuelas:
+  +  Instituciones educativas:
+
+events.json :: selected-school-users-heading
+  -  Usuarios (escuela):
+  +  Usuarios (institución educativa):
+
+export-utils.json :: activityClaim
+  -  Actividad rápida para convertir la explicación en evidencia del aprendizaje.
+  +  Actividad rápida para convertir la explicación en evidencia de aprendizaje.
+
+navigation.json :: planning
+  -  Planificación
+  +  Planeación
+
+navigation.json :: schools
+  -  Escuelas
+  +  Instituciones educativas
+
+navigation.json :: student-lesson-average
+  -  Puntuación de lección del estudiante según plan instruccional seleccionado
+  +  Calificación de lección del estudiante según plan de aula seleccionado
+
+navigation.json :: teachers
+  -  Maestros
+  +  Docentes
+
+navigation.json :: assignments
+  -  Evidencias del aprendizaje
+  +  Evidencias de aprendizaje
+
+navigation.json :: and-for-parents
+  -  Y para padres y maestros...
+  +  Y para acudientes y docentes...
+
+navigation.json :: curriculum-1
+  -  Nuestras materias, Matemáticas, Español, Inglés, Estudios Sociales y Ciencias, cuentan con 10 o más lecciones que ayudan al estudiante a cubrir las destrezas del año escolar.
+  +  Nuestras asignaturas, Matemáticas, Español, Inglés, Ciencias Sociales y Ciencias, cuentan con 10 o más lecciones que ayudan al estudiante a cubrir las destrezas del año escolar.
+
+navigation.json :: curriculum-3
+  -  Nuestras lecciones son creadas por <0><1>maestros y profesores</1></0> certificados y especializados en distintas materias y grados. Tenemos especialistas en materia que trabajan diariamente con 
+  +  Nuestras lecciones son creadas por <0><1>docentes y profesores</1></0> certificados y especializados en distintas asignaturas y grados. Tenemos especialistas en asignatura que trabajan diariamente con 
+
+navigation.json :: history
+  -  Estudios Sociales
+  +  Ciencias Sociales
+
+navigation.json :: percent-off-explain
+  -  5 materias por $25
+  +  5 asignaturas por $25
+
+navigation.json :: subject
+  -  Materia
+  +  Asignatura
+
+navigation.json :: subjects
+  -  Materias
+  +  Asignaturas
+
+navigation.json :: subjects-main
+  -  <0> Español • Inglés • Matemáticas <1> • Estudios Sociales• Ciencias </0>
+  +  <0> Español • Inglés • Matemáticas <1> • Ciencias Sociales• Ciencias </0>
+
+navigation.json :: subjects-subtitle
+  -  Puedes elegir entre estas materias. Lo mejor: Si te suscribes a alguna materia, tendrás acceso a todos los grados de la materia. 
+  +  Puedes elegir entre estas asignaturas. Lo mejor: Si te suscribes a alguna asignatura, tendrás acceso a todos los grados de la asignatura. 
+
+navigation.json :: testimonial-3
+  -  <0>“¡Me encanta mantener al día el progreso de mis estudiantes, y el servicio al cliente de Material Educativo Digital es simplemente el mejor!”</0><1/> - Sra. Díaz, maestra de escuela elemental.
+  +  <0>“¡Me encanta mantener al día el progreso de mis estudiantes, y el servicio al cliente de Material Educativo Digital es simplemente el mejor!”</0><1/> - Sra. Díaz, docente de básica primaria.
+
+navigation.json :: add-new-plan-subtitle
+  -  Añada nuevas materias, como español, matemáticas, inglés y suscriba a sus estudiantes.
+  +  Añada nuevas asignaturas, como español, matemáticas, inglés y suscriba a sus estudiantes.
+
+navigation.json :: pending-assignment-subtitle
+  -  Acceda aquí para ver las evidencias del aprendizaje pendientes a corregir.
+  +  Acceda aquí para ver las evidencias de aprendizaje pendientes a calificar.
+
+navigation.json :: must-select
+  -  Debe seleccionar la materia para ver las lecciones.
+  +  Debe seleccionar la asignatura para ver las lecciones.
+
+navigation.json :: pending-assignments
+  -  Evidencias del aprendizaje
+  +  Evidencias de aprendizaje
+
+navigation.json :: pending-assignments-subtitle
+  -  Verifique las evidencias del aprendizaje pendientes del estudiante.
+  +  Verifique las evidencias de aprendizaje pendientes del estudiante.
+
+navigation.json :: planning
+  -  Planificación
+  +  Planeación
+
+navigation.json :: planning-subtitle
+  -  Planifique sus clases, seleccione las lecciones, cree y envíe evidencias del aprendizaje a sus estudiantes.
+  +  Planee sus clases, seleccione las lecciones, cree y envíe evidencias de aprendizaje a sus estudiantes.
+
+navigation.json :: profile-analysis-subtitle
+  -  Vea el análisis del estudiante, de acuerdo a sus puntuaciones en los exámenes. 
+  +  Vea el análisis del estudiante, de acuerdo a sus calificaciones en los exámenes. 
+
+navigation.json :: schools
+  -  Escuelas
+  +  Instituciones educativas
+
+navigation.json :: school-subtitle
+  -  Cree o maneje escuelas existentes, matrículas, y más.
+  +  Cree o maneje instituciones educativas existentes, matrículas, y más.
+
+navigation.json :: school-subtitle-read
+  -  Vea los detalles generales de las escuelas.
+  +  Vea los detalles generales de las instituciones educativas.
+
+navigation.json :: select-subject
+  -  Seleccione la materia.
+  +  Seleccione la asignatura.
+
+profile.json :: select-summer-school
+  -  Seleccione la escuela que representa el Programa de verano
+  +  Seleccione la institución educativa que representa el Programa de verano
+
+profile.json :: summer-school-id
+  -  ID de escuela de verano
+  +  ID de institución educativa de verano
+
+profile.json :: data-cache-use-cases
+  -  <0>Casos de uso:</0> <1> <2>No se refleja un curso que fue recientemente añadido en los cursos de los estudiantes o maestros.</2> <2> No se refleja un curso que fue añadido en la plataforma de contenido académico. </2> <2>No se refleja el cambio de rol a uno de los usuarios. </2> <2>Un usuario tiene accesos activos a pesar de haber sido removidos. </2> </1>
+  +  <0>Casos de uso:</0> <1> <2>No se refleja un curso que fue recientemente añadido en los cursos de los estudiantes o docentes.</2> <2> No se refleja un curso que fue añadido en la plataforma de contenido académico. </2> <2>No se refleja el cambio de rol a uno de los usuarios. </2> <2>Un usuario tiene accesos activos a pesar de haber sido removidos. </2> </1>
+
+profile.json :: role-teacher
+  -  Maestros
+  +  Docentes
+
+profile.json :: role-director
+  -  Director
+  +  Rector
+
+profile.json :: management-school
+  -  Manejo de escuelas
+  +  Manejo de instituciones educativas
+
+profile.json :: parent-invitations
+  -  Invitaciones a padres
+  +  Invitaciones a acudientes
+
+profile.json :: ai-quotas-ai-enabled-explanation
+  -  Interruptor maestro para generación con IA. Al desactivarlo, todos los servicios de IA quedarán bloqueados para los usuarios, sin importar su saldo restante.
+  +  Interruptor docente para generación con IA. Al desactivarlo, todos los servicios de IA quedarán bloqueados para los usuarios, sin importar su saldo restante.
+
+profile.json :: ai-quotas-limits
+  -  Límites por rol, escuela y usuario
+  +  Límites por rol, institución educativa y usuario
+
+profile.json :: ai-quotas-limits-explanation
+  -  Todos los usuarios ya están cubiertos por el límite general (si el control de cuotas está activo), así que agregue una excepción aquí solo para un rol, una escuela o un usuario que necesite un límite distinto. Cuando varias excepciones aplican a un mismo usuario, gana la más específica: primero usuario, luego escuela, luego rol y por último el límite general. Al eliminar o desactivar una excepción, ese destino pasa al siguiente nivel que le aplique, no necesariamente al límite general.
+  +  Todos los usuarios ya están cubiertos por el límite general (si el control de cuotas está activo), así que agregue una excepción aquí solo para un rol, una institución educativa o un usuario que necesite un límite distinto. Cuando varias excepciones aplican a un mismo usuario, gana la más específica: primero usuario, luego institución educativa, luego rol y por último el límite general. Al eliminar o desactivar una excepción, ese destino pasa al siguiente nivel que le aplique, no necesariamente al límite general.
+
+profile.json :: ai-quotas-scope-school
+  -  Escuela
+  +  Institución educativa
+
+profile.json :: ai-quotas-limit-school-search
+  -  Buscar por nombre de escuela…
+  +  Buscar por nombre de institución educativa…
+
+profile.json :: ai-quotas-usage-explanation
+  -  Usuarios que han consumido IA en el período vigente, del que más gastó al que menos. La tabla de arriba muestra los límites configurados; esta muestra quién los está gastando, incluyendo a los usuarios cubiertos por un límite de escuela o por el límite general, que no aparecen como excepción.
+  +  Usuarios que han consumido IA en el período vigente, del que más gastó al que menos. La tabla de arriba muestra los límites configurados; esta muestra quién los está gastando, incluyendo a los usuarios cubiertos por un límite de institución educativa o por el límite general, que no aparecen como excepción.
+
+profile.json :: ai-quotas-limit-reset-notice
+  -  Al agregar, quitar o cambiar el destino de una excepción, el conteo del usuario empieza desde cero bajo el nuevo límite: el consumo no se transfiere entre límites. Por ejemplo, si ya gastó 90,000 tokens bajo el límite de su escuela y le asigna un límite personal de 50,000, dispondrá de los 50,000 completos por el resto del período. El historial completo queda registrado para auditoría.
+  +  Al agregar, quitar o cambiar el destino de una excepción, el conteo del usuario empieza desde cero bajo el nuevo límite: el consumo no se transfiere entre límites. Por ejemplo, si ya gastó 90,000 tokens bajo el límite de su institución educativa y le asigna un límite personal de 50,000, dispondrá de los 50,000 completos por el resto del período. El historial completo queda registrado para auditoría.
+
+quiz.json :: error-match-score-empty
+  -  Se requiere la puntuación de la opción {0} de la premisa {1}.
+  +  Se requiere la calificación de la opción {0} de la premisa {1}.
+
+quiz.json :: error-match-score-exceeds-maximum
+  -  La puntuación de la opción {0} de la premisa {1} debe tener un valor de 1 a 100.
+  +  La calificación de la opción {0} de la premisa {1} debe tener un valor de 1 a 100.
+
+quiz.json :: warning-save
+  -  Guarde la evidencia del aprendizaje antes de cerrarla o volver atrás.
+  +  Guarde la evidencia de aprendizaje antes de cerrarla o volver atrás.
+
+quiz.json :: score
+  -  Puntuación
+  +  Calificación
+
+quiz.json :: write-title-extend
+  -  Escriba el título para la evidencia del aprendizaje.
+  +  Escriba el título para la evidencia de aprendizaje.
+
+quiz.json :: attach-to-instructional-plan
+  -  Adjuntar al plan instruccional
+  +  Adjuntar al plan de aula
+
+quiz.json :: ai-panel-greeting-assignment
+  -  ¡Hola! Soy tu asistente para crear evidencias del aprendizaje. Puedo generar preguntas automáticamente. ¿Empezamos?
+  +  ¡Hola! Soy tu asistente para crear evidencias de aprendizaje. Puedo generar preguntas automáticamente. ¿Empezamos?
+
+quiz.json :: ai-panel-greeting-planning
+  -  ¡Hola! Soy tu asistente de planificación. Puedo ayudarte a llenar cualquier sección del cotejo. ¿Por dónde empezamos?
+  +  ¡Hola! Soy tu asistente de planeación. Puedo ayudarte a llenar cualquier sección del cotejo. ¿Por dónde empezamos?
+
+quiz.json :: ai-panel-title-assignment
+  -  Asistente de evidencias del aprendizaje
+  +  Asistente de evidencias de aprendizaje
+
+quiz.json :: ai-panel-title-planning
+  -  Asistente de planificación
+  +  Asistente de planeación
+
+quiz.json :: ai-panel-chip-assignment-1
+  -  Genera 4 preguntas de selección sobre fotosíntesis para 6to grado
+  +  Genera 4 preguntas de selección sobre fotosíntesis para grado 6
+
+quiz.json :: ai-panel-chip-assignment-3
+  -  2 preguntas abiertas de matemáticas 5to grado
+  +  2 preguntas abiertas de matemáticas grado 5
+
+right-column.json :: planning
+  -  Planificación
+  +  Planeación
+
+right-column.json :: socialStudies
+  -  Estudios Sociales
+  +  Ciencias Sociales
+
+right-column.json :: subtitle
+  -  Pídele a la IA cualquier cosa que necesites como maestro.
+  +  Pídele a la IA cualquier cosa que necesites como docente.
+
+right-column.json :: requestPlaceholder
+  -  Ej: una rúbrica de comprensión lectora para 4to grado…
+  +  Ej: una rúbrica de comprensión lectora para grado 4…
+
+standards-picker.json :: subject
+  -  materia
+  +  asignatura
+
+tool-modal.json :: injection
+  -    Ejemplo de planificación de {{subject}} (alcance: {{scope}}, unidad: {{unit}}{{weekSuffix}}): {{text}}
+  +    Ejemplo de planeación de {{subject}} (alcance: {{scope}}, unidad: {{unit}}{{weekSuffix}}): {{text}}
+
+tool-modal.json :: subject
+  -  Materia
+  +  Asignatura
+
+tool-modal.json :: uploadDescription
+  -  Selecciona un archivo de imagen desde tu computadora.
+  +  Selecciona un archivo de imagen desde tu computador.
+
+tools-config.json :: adaptLesson
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. REGLA CRÍTICA DE FIDELIDAD A LA LECCIÓN ORIGINAL: La lección provista al final del mensaje del usuario es la ÚNICA fuente de verdad para esta adaptación. Si viene del catálogo Athenas verás encabezados como "📘 LECCIÓN DE ATHENAS", "Descripción / cuerpo de la lección", "Conceptos / Definiciones", "Ejemplos pedagógicos", "Objetivos de aprendizaje" y "Estándares cubiertos". DEBES: - Leer y analizar ese contenido antes de generar la adaptación. - Anclar cada sección de la adaptación en elementos específicos de esa lección (conceptos, definiciones, ejemplos, vocabulario, objetivos). - Citar textualmente o parafrasear pasajes concretos cuando sea pedagógicamente útil — el maestro debe poder rastrear cada idea de tu adaptación hasta el contenido original. - NO inventar conceptos, definiciones, ejemplos ni vocabulario que no aparezcan en la lección original. Si la lección no cubre un punto, dilo explícitamente en vez de fabricarlo. - Si el campo de lección está vacío o es genérico, pide al maestro que provea/elija una lección antes de continuar.  Cuando el perfil sea "Rezago académico" (1 grado atrás, 2+ grados, o prerrequisitos): - Identifica explícitamente qué prerrequisitos del grado/grados anteriores faltan - Baja el vocabulario al nivel del estudiante (no al de su grado nominal) - Divide cada paso del proceso en sub-pasos atomizados - Agrega sentence frames para apoyar respuesta - Incluye "puentes" — actividades cortas que conectan lo que sabe con lo nuevo - Tono que preserve dignidad — el estudiante NO debe sentirse "atrasado"
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. REGLA CRÍTICA DE FIDELIDAD A LA LECCIÓN ORIGINAL: La lección provista al final del mensaje del usuario es la ÚNICA fuente de verdad para esta adaptación. Si viene del catálogo Athenas verás encabezados como "📘 LECCIÓN DE ATHENAS", "Descripción / cuerpo de la lección", "Conceptos / Definiciones", "Ejemplos pedagógicos", "Objetivos de aprendizaje" y "Estándares cubiertos". DEBES: - Leer y analizar ese contenido antes de generar la adaptación. - Anclar cada sección de la adaptación en elementos específicos de esa lección (conceptos, definiciones, ejemplos, vocabulario, objetivos). - Citar textualmente o parafrasear pasajes concretos cuando sea pedagógicamente útil — el docente debe poder rastrear cada idea de tu adaptación hasta el contenido original. - NO inventar conceptos, definiciones, ejemplos ni vocabulario que no aparezcan en la lección original. Si la lección no cubre un punto, dilo explícitamente en vez de fabricarlo. - Si el campo de lección está vacío o es genérico, pide al docente que provea/elija una lección antes de continuar.  Cuando el perfil sea "Rezago académico" (1 grado atrás, 2+ grados, o prerrequisitos): - Identifica explícitamente qué prerrequisitos del grado/grados anteriores faltan - Baja el vocabulario al nivel del estudiante (no al de su grado nominal) - Divide cada paso del proceso en sub-pasos atomizados - Agrega sentence frames para apoyar respuesta - Incluye "puentes" — actividades cortas que conectan lo que sabe con lo nuevo - Tono que preserve dignidad — el estudiante NO debe sentirse "atrasado"
+
+tools-config.json :: differentiateContent
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Para esta herramienta específicamente: el Nivel 1 (Soporte) SIEMPRE debe incluir un tag [IMAGE: ...] como apoyo visual indispensable. Opcionalmente uno adicional en Nivel 2 o 3 si aporta.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Para esta herramienta específicamente: el Nivel 1 (Soporte) SIEMPRE debe incluir un tag [IMAGE: ...] como apoyo visual indispensable. Opcionalmente uno adicional en Nivel 2 o 3 si aporta.
+
+tools-config.json :: interventionPlan
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Para esta herramienta de intervención de rezago:  PRINCIPIOS: - El estudiante NO es el problema. Las adaptaciones preservan dignidad. - Trabajar SOBRE prerrequisitos faltantes con destrezas del grado anterior, mientras se conecta con el contenido del grado actual. - Cada mini-lección es CORTA, FOCALIZADA, REPETIBLE. - Progresión: fluidez automática → comprensión conceptual → aplicación → transferencia. - Monitoreo frecuente (cada 2 semanas mínimo) para ajustar.  INVESTIGACIÓN APLICABLE: - Multi-tiered system of supports (MTSS / RTI) - High-leverage practices (HLPs) de instrucción intensiva - Error analysis estructurado - Spaced retrieval / repaso espaciado - Modelado explícito "I do → We do → You do.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Para esta herramienta de intervención de rezago:  PRINCIPIOS: - El estudiante NO es el problema. Las adaptaciones preservan dignidad. - Trabajar SOBRE prerrequisitos faltantes con destrezas del grado anterior, mientras se conecta con el contenido del grado actual. - Cada mini-lección es CORTA, FOCALIZADA, REPETIBLE. - Progresión: fluidez automática → comprensión conceptual → aplicación → transferencia. - Monitoreo frecuente (cada 2 semanas mínimo) para ajustar.  INVESTIGACIÓN APLICABLE: - Multi-tiered system of supports (MTSS / RTI) - High-leverage practices (HLPs) de instrucción intensiva - Error analysis estructurado - Spaced retrieval / repaso espaciado - Modelado explícito "I do → We do → You do.
+
+tools-config.json :: mathExam
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Para esta herramienta de matemáticas específicamente: - Usa LaTeX entre $...$ inline y $$...$$ para bloques (fracciones, exponentes, ecuaciones). Para fracciones SIEMPRE $\\frac{a}{b}$, nunca "a/b" en texto plano. - Las imágenes [IMAGE: ...] son útiles para CONTEXTO VISUAL de problemas (no para mediciones precisas). Usa estilo: "math textbook illustration, clean, friendly, age-appropriate, single concept per image, white background". - Buenos usos de imagen en exámenes de matemáticas:   • Problemas verbales con contexto (3 niños compartiendo pizza, productos en mercado, etc.)   • Modelos visuales de fracciones (barras, círculos divididos, modelos de área)   • Geometría conceptual (figuras 3D, simetrías, transformaciones)   • Patrones y secuencias visuales   • Coordenadas y planos cartesianos (pero las medidas exactas siempre en LaTeX) - NO uses imagen para: ángulos exactos en grados, mediciones precisas, números específicos en gráficas — para eso describe con LaTeX o ASCII art. - Idealmente 2–4 imágenes por examen de 10 problemas, en los problemas que más se benefician visualmente.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Para esta herramienta de matemáticas específicamente: - Usa LaTeX entre $...$ inline y $$...$$ para bloques (fracciones, exponentes, ecuaciones). Para fracciones SIEMPRE $\\frac{a}{b}$, nunca "a/b" en texto plano. - Las imágenes [IMAGE: ...] son útiles para CONTEXTO VISUAL de problemas (no para mediciones precisas). Usa estilo: "math textbook illustration, clean, friendly, age-appropriate, single concept per image, white background". - Buenos usos de imagen en exámenes de matemáticas:   • Problemas verbales con contexto (3 niños compartiendo pizza, productos en mercado, etc.)   • Modelos visuales de fracciones (barras, círculos divididos, modelos de área)   • Geometría conceptual (figuras 3D, simetrías, transformaciones)   • Patrones y secuencias visuales   • Coordenadas y planos cartesianos (pero las medidas exactas siempre en LaTeX) - NO uses imagen para: ángulos exactos en grados, mediciones precisas, números específicos en gráficas — para eso describe con LaTeX o ASCII art. - Idealmente 2–4 imágenes por examen de 10 problemas, en los problemas que más se benefician visualmente.
+
+tools-config.json :: assessmentCreator
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Para esta herramienta: - Construye un assessment alineado a los Estándares Básicos de Competencias y los DBA (cita códigos cuando los selecciones). - Variedad de niveles cognitivos (DOK 1–3 mínimo; DOK 4 en assessments sumativos). - Para Performance task: rúbrica analítica al final (criterios × niveles). - Para Exit ticket: máximo 3–5 items, foco en el objetivo del día. - Formato compatible con assessment interactivo: items numerados (1., 2., 3.), opciones (A., B., C., D.) y hoja de respuestas con clave "1. A", "2. C", etc.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Para esta herramienta: - Construye un assessment alineado a los Estándares Básicos de Competencias y los DBA (cita códigos cuando los selecciones). - Variedad de niveles cognitivos (DOK 1–3 mínimo; DOK 4 en assessments sumativos). - Para Performance task: rúbrica analítica al final (criterios × niveles). - Para Exit ticket: máximo 3–5 items, foco en el objetivo del día. - Formato compatible con assessment interactivo: items numerados (1., 2., 3.), opciones (A., B., C., D.) y hoja de respuestas con clave "1. A", "2. C", etc.
+
+tools-config.json :: diagnosticTests
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Para esta herramienta de prueba diagnóstica: - El propósito NO es calificar — es identificar qué saben los estudiantes ANTES de enseñar. - Mezcla items de prerequisitos (lo que deben saber del grado anterior / unidad anterior) con items que anticipan el contenido nuevo (sin esperar dominio). - Vocabulario claro al grado, instrucciones breves. - Variedad: selección múltiple para diagnosticar concepto, respuesta corta para diagnosticar proceso, una pregunta abierta para diagnosticar comprensión. - AL FINAL incluye una GUÍA INTERPRETATIVA con 3 niveles:   • Listo (80%+) → puede empezar la unidad sin scaffolding   • Parcial (50–79%) → necesita repaso focalizado de X conceptos   • Necesita base (≤49%) → requiere intervención previa o adaptación - Y una sección "RECOMENDACIONES DE DIFERENCIACIÓN" según los resultados. - Formato compatible con assessment interactivo (items 1./2./3., opciones A./B./C./D., clave en hoja de respuestas).
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Para esta herramienta de prueba diagnóstica: - El propósito NO es calificar — es identificar qué saben los estudiantes ANTES de enseñar. - Mezcla items de prerequisitos (lo que deben saber del grado anterior / unidad anterior) con items que anticipan el contenido nuevo (sin esperar dominio). - Vocabulario claro al grado, instrucciones breves. - Variedad: selección múltiple para diagnosticar concepto, respuesta corta para diagnosticar proceso, una pregunta abierta para diagnosticar comprensión. - AL FINAL incluye una GUÍA INTERPRETATIVA con 3 niveles:   • Listo (80%+) → puede empezar la unidad sin scaffolding   • Parcial (50–79%) → necesita repaso focalizado de X conceptos   • Necesita base (≤49%) → requiere intervención previa o adaptación - Y una sección "RECOMENDACIONES DE DIFERENCIACIÓN" según los resultados. - Formato compatible con assessment interactivo (items 1./2./3., opciones A./B./C./D., clave en hoja de respuestas).
+
+tools-config.json :: leveledReading
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Para esta herramienta específicamente: incluye SIEMPRE una imagen de portada justo después del título (un solo [IMAGE: ...] tag por lectura, no más).
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Para esta herramienta específicamente: incluye SIEMPRE una imagen de portada justo después del título (un solo [IMAGE: ...] tag por lectura, no más).
+
+tools-config.json :: mathAssistant
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Eres especialista en matemáticas K-12. Explicas con modelos visuales cuando ayude. Usa LaTeX entre $...$ para fórmulas.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Eres especialista en matemáticas K-12. Explicas con modelos visuales cuando ayude. Usa LaTeX entre $...$ para fórmulas.
+
+tools-config.json :: scienceAssistant
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Eres especialista en ciencias naturales K-12, alineado a los Estándares Básicos de Competencias en Ciencias Naturales. Sugiere experimentos seguros y materiales accesibles.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Eres especialista en ciencias naturales K-12, alineado a los Estándares Básicos de Competencias en Ciencias Naturales. Sugiere experimentos seguros y materiales accesibles.
+
+tools-config.json :: languageAssistant
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Eres especialista en español, inglés, francés, italiano y portugués, con contexto bilingüe colombiano. Cuando traduzcas, preserva el registro y nivel apropiado al grado.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Eres especialista en español, inglés, francés, italiano y portugués, con contexto bilingüe colombiano. Cuando traduzcas, preserva el registro y nivel apropiado al grado.
+
+tools-config.json :: socialStudiesAssistant
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Eres especialista en ciencias sociales con énfasis en Colombia, el Caribe y América Latina. Cita fuentes históricas cuando sea relevante.
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Eres especialista en ciencias sociales con énfasis en Colombia, el Caribe y América Latina. Cita fuentes históricas cuando sea relevante.
+
+tools-config.json :: specialEdCoach
+  -  Genera el texto de acuerdo al lenguaje enviado. Si se envía la materia, entonces de acuerdo al lenguaje de la materia. Eres asesor especialista en educación inclusiva (Decreto 1421 de 2017). Respondes con estrategias prácticas, basadas en evidencia, respetuosas del estudiante, alineadas al PIAR (Plan Individual de Ajustes Razonables). Sugiere siempre adaptaciones específicas y accionables (no genéricas).
+  +  Genera el texto de acuerdo al lenguaje enviado. Si se envía la asignatura, entonces de acuerdo al lenguaje de la asignatura. Eres asesor especialista en educación inclusiva (Decreto 1421 de 2017). Respondes con estrategias prácticas, basadas en evidencia, respetuosas del estudiante, alineadas al PIAR (Plan Individual de Ajustes Razonables). Sugiere siempre adaptaciones específicas y accionables (no genéricas).
+
+tools-config.json :: subject
+  -  Materia
+  +  Asignatura
+
+tools-config.json :: question
+  -  Ej: ¿Cómo explico la multiplicación de fracciones con un modelo visual a 5to grado?
+  +  Ej: ¿Cómo explico la multiplicación de fracciones con un modelo visual a grado 5?
+
+tools-config.json :: question
+  -  Ej: Traduce esta instrucción al inglés con vocabulario apropiado para 3er grado…
+  +  Ej: Traduce esta instrucción al inglés con vocabulario apropiado para grado 3…
+
+tools-config.json :: question
+  -  Ej: Estrategias SIOP para una clase de ciencias en 5to grado con 6 estudiantes ELL nivel emergente…
+  +  Ej: Estrategias SIOP para una clase de ciencias en grado 5 con 6 estudiantes ELL nivel emergente…
+
+tools-config.json :: adapt-lesson
+  -  Adapta la lección provista para un estudiante con perfil "{{profile}}" (grado actual del estudiante: {{grade}}). Genera el contenido adaptado estructurado como una PRESENTACIÓN DE DIAPOSITIVAS LISTA PARA ENSEÑAR (utiliza formato Markdown de títulos '#' para la portada y '##' para cada diapositiva posterior). No escribas "Diapositiva 1:", "Diapositiva 2:", "Slide 1:" ni variantes en los títulos o en el cuerpo; usa solamente títulos pedagógicos.  Estructura exactamente la respuesta en las siguientes diapositivas:  # Portada y Foco de la Adaptación - Título de la lección adaptada (usa el título real de la lección original) - Perfil del estudiante: {{profile}} - Grado: {{grade}} Notas del maestro: Explicación de la meta pedagógica.  ## Análisis de la Lección Original - Concepto central identificado - Objetivos originales detectados - Vocabulario clave de la lección - Ejemplos pedagógicos disponibles - Estándares cubiertos Notas del maestro: Identifica QUÉ partes específicas representan barreras para el perfil "{{profile}}".  ## Resumen de Adaptaciones y Prerrequisitos - Resumen de adaptaciones aplicadas - Prerrequisitos clave a activar Notas del maestro: Instrucciones de activación de prerrequisitos (5–10 min).  ## Activación y Vocabulario (Inicio) - Vocabulario académico adaptado - Pregunta o reto inicial Notas del maestro: Cómo modelar el vocabulario.  ## Instrucción Guiada — Concepto Central (Desarrollo Parte 1) - Explicación con pasos atómicos - Sentence frames Notas del maestro: Guía I Do – We Do.  ## Práctica de Aplicación (Desarrollo Parte 2) - Actividad interactiva - Apoyos visuales sugeridos Notas del maestro: Cómo monitorear y dar retroalimentación.  ## Práctica Independiente / Reto (Desarrollo Parte 3) - Ejercicios adaptados - Opciones de producto final diferenciadas Notas del maestro: Acomodaciones durante la práctica.  ## Cierre y Evaluación (Exit Ticket) - Mini-evaluación alineada al objetivo adaptado - Criterios de éxito observables Notas del maestro: Cómo evaluar sin penalizar la condición.  ## Acomodaciones Específicas e Indicadores de Progreso - Acomodaciones específicas aplicadas - 3 indicadores observables de progreso Notas del maestro: Notas de seguimiento.  Lección original a adaptar: """ {{lesson}} """
+  +  Adapta la lección provista para un estudiante con perfil "{{profile}}" (grado actual del estudiante: {{grade}}). Genera el contenido adaptado estructurado como una PRESENTACIÓN DE DIAPOSITIVAS LISTA PARA ENSEÑAR (utiliza formato Markdown de títulos '#' para la portada y '##' para cada diapositiva posterior). No escribas "Diapositiva 1:", "Diapositiva 2:", "Slide 1:" ni variantes en los títulos o en el cuerpo; usa solamente títulos pedagógicos.  Estructura exactamente la respuesta en las siguientes diapositivas:  # Portada y Foco de la Adaptación - Título de la lección adaptada (usa el título real de la lección original) - Perfil del estudiante: {{profile}} - Grado: {{grade}} Notas del docente: Explicación de la meta pedagógica.  ## Análisis de la Lección Original - Concepto central identificado - Objetivos originales detectados - Vocabulario clave de la lección - Ejemplos pedagógicos disponibles - Estándares cubiertos Notas del docente: Identifica QUÉ partes específicas representan barreras para el perfil "{{profile}}".  ## Resumen de Adaptaciones y Prerrequisitos - Resumen de adaptaciones aplicadas - Prerrequisitos clave a activar Notas del docente: Instrucciones de activación de prerrequisitos (5–10 min).  ## Activación y Vocabulario (Inicio) - Vocabulario académico adaptado - Pregunta o reto inicial Notas del docente: Cómo modelar el vocabulario.  ## Instrucción Guiada — Concepto Central (Desarrollo Parte 1) - Explicación con pasos atómicos - Sentence frames Notas del docente: Guía I Do – We Do.  ## Práctica de Aplicación (Desarrollo Parte 2) - Actividad interactiva - Apoyos visuales sugeridos Notas del docente: Cómo monitorear y dar retroalimentación.  ## Práctica Independiente / Reto (Desarrollo Parte 3) - Ejercicios adaptados - Opciones de producto final diferenciadas Notas del docente: Acomodaciones durante la práctica.  ## Cierre y Evaluación (Exit Ticket) - Mini-evaluación alineada al objetivo adaptado - Criterios de éxito observables Notas del docente: Cómo evaluar sin penalizar la condición.  ## Acomodaciones Específicas e Indicadores de Progreso - Acomodaciones específicas aplicadas - 3 indicadores observables de progreso Notas del docente: Notas de seguimiento.  Lección original a adaptar: """ {{lesson}} """
+
+tools-config.json :: intervention-plan
+  -  Diseña un plan de intervención de **{{weeks}} semanas** para {{count}} estudiantes de {{grade}} grado con rezago en {{subject}}.  **Severidad:** {{severity}} **Tiempo disponible:** {{time}}  **Brechas identificadas:** """ {{gaps}} """  Devuelve el plan en este formato:  ## 1. Análisis del rezago - Prerrequisitos faltantes (cita códigos DBA / EBC del grado anterior donde corresponda) - Hipótesis de causa (procesual, conceptual, fluidez, vocabulario, etc.) - Por qué este plan funcionará (1–2 oraciones)  ## 2. Objetivos SMART del plan 3 objetivos específicos, medibles, alcanzables en {{weeks}} semanas  ## 3. Cronograma semanal (tabla markdown) Semana | Foco | Destreza específica | Conexión con grado actual  ## 4. Mini-lecciones secuenciadas Para CADA semana, 3–5 mini-lecciones según el tiempo disponible. Para cada mini-lección: - **Título** + **destreza objetivo** - **Materiales** (mantén bajo — papel, lápiz, manipulativos comunes) - **Estructura**: hook 2 min → modelado 5 min → práctica guiada → independiente → cierre - **Ejemplos concretos** (no genéricos) - **Verificación rápida** (exit ticket de 1–2 preguntas)  ## 5. Checkpoints de monitoreo Cada 2 semanas: qué medir + cómo interpretar + qué ajustar.  ## 6. Estrategias específicas para este grupo - Cómo agrupar dentro del grupo - Cómo dar feedback sin desmotivar - Cómo usar peer tutoring - Recursos del catálogo Athenas marcados como Gap-Closing si están disponibles  ## 7. Comunicación con la familia Plantilla breve para informar a los padres sobre el plan.  ## 8. Indicadores de éxito 3–4 señales observables de que el plan está funcionando.  Tono: profesional, esperanzador, accionable. NO uses lenguaje deficitario.
+  +  Diseña un plan de intervención de **{{weeks}} semanas** para {{count}} estudiantes de {{grade}} grado con rezago en {{subject}}.  **Severidad:** {{severity}} **Tiempo disponible:** {{time}}  **Brechas identificadas:** """ {{gaps}} """  Devuelve el plan en este formato:  ## 1. Análisis del rezago - Prerrequisitos faltantes (cita códigos DBA / EBC del grado anterior donde corresponda) - Hipótesis de causa (procesual, conceptual, fluidez, vocabulario, etc.) - Por qué este plan funcionará (1–2 oraciones)  ## 2. Objetivos SMART del plan 3 objetivos específicos, medibles, alcanzables en {{weeks}} semanas  ## 3. Cronograma semanal (tabla markdown) Semana | Foco | Destreza específica | Conexión con grado actual  ## 4. Mini-lecciones secuenciadas Para CADA semana, 3–5 mini-lecciones según el tiempo disponible. Para cada mini-lección: - **Título** + **destreza objetivo** - **Materiales** (mantén bajo — papel, lápiz, manipulativos comunes) - **Estructura**: hook 2 min → modelado 5 min → práctica guiada → independiente → cierre - **Ejemplos concretos** (no genéricos) - **Verificación rápida** (exit ticket de 1–2 preguntas)  ## 5. Checkpoints de monitoreo Cada 2 semanas: qué medir + cómo interpretar + qué ajustar.  ## 6. Estrategias específicas para este grupo - Cómo agrupar dentro del grupo - Cómo dar feedback sin desmotivar - Cómo usar peer tutoring - Recursos del catálogo Athenas marcados como Gap-Closing si están disponibles  ## 7. Comunicación con la familia Plantilla breve para informar a los acudientes sobre el plan.  ## 8. Indicadores de éxito 3–4 señales observables de que el plan está funcionando.  Tono: profesional, esperanzador, accionable. NO uses lenguaje deficitario.
+
+tools-config.json :: assessment-creator
+  -  Crea un assessment de {{subject}} para {{grade}} grado sobre "{{topic}}". Tipo: {{type}} Cantidad: {{count}} ítems Formato: {{format}}  Incluye: 1. **Título** del assessment + propósito breve (1 línea) 2. **Instrucciones para el estudiante** (2–3 líneas, claras al grado) 3. **Estándares medidos** (lista con códigos DBA / EBC + descripción breve) 4. **Items numerados** con dificultad progresiva 5. **Hoja de respuestas / clave** al final con explicación breve por item 6. **Nota para el maestro**: cómo interpretar resultados + qué destreza mide cada bloque
+  +  Crea un assessment de {{subject}} para {{grade}} grado sobre "{{topic}}". Tipo: {{type}} Cantidad: {{count}} ítems Formato: {{format}}  Incluye: 1. **Título** del assessment + propósito breve (1 línea) 2. **Instrucciones para el estudiante** (2–3 líneas, claras al grado) 3. **Estándares medidos** (lista con códigos DBA / EBC + descripción breve) 4. **Items numerados** con dificultad progresiva 5. **Hoja de respuestas / clave** al final con explicación breve por item 6. **Nota para el docente**: cómo interpretar resultados + qué destreza mide cada bloque
+
+tools-config.json :: diagnostic-tests
+  -  Crea una **prueba diagnóstica** de {{subject}} para {{grade}} grado. Unidad/tema próximo: "{{unit}}" Momento: {{moment}} Cantidad: {{count}} ítems  Estructura: 1. **Título** + propósito diagnóstico (1–2 líneas: qué quieres descubrir) 2. **Mensaje al estudiante** que reduzca ansiedad: "Esto NO cuenta para nota, es para ayudarme a planificar mejor las clases." 3. **Bloque A — Prerrequisitos** (4–6 ítems): lo que necesitan dominar del grado/unidad previa 4. **Bloque B — Anticipación** (resto de ítems): items que tocan el contenido NUEVO 5. **Hoja de respuestas / clave** con explicación breve de cada respuesta 6. **Guía interpretativa**: tabla de 3 niveles (Listo / Parcial / Necesita base) con qué hacer en cada caso 7. **Recomendaciones de diferenciación** específicas 8. **Tabla de seguimiento** (markdown) para registrar resultados por estudiante
+  +  Crea una **prueba diagnóstica** de {{subject}} para {{grade}} grado. Unidad/tema próximo: "{{unit}}" Momento: {{moment}} Cantidad: {{count}} ítems  Estructura: 1. **Título** + propósito diagnóstico (1–2 líneas: qué quieres descubrir) 2. **Mensaje al estudiante** que reduzca ansiedad: "Esto NO cuenta para nota, es para ayudarme a planear mejor las clases." 3. **Bloque A — Prerrequisitos** (4–6 ítems): lo que necesitan dominar del grado/unidad previa 4. **Bloque B — Anticipación** (resto de ítems): items que tocan el contenido NUEVO 5. **Hoja de respuestas / clave** con explicación breve de cada respuesta 6. **Guía interpretativa**: tabla de 3 niveles (Listo / Parcial / Necesita base) con qué hacer en cada caso 7. **Recomendaciones de diferenciación** específicas 8. **Tabla de seguimiento** (markdown) para registrar resultados por estudiante
+
+users.json :: safety-description
+  -  Revise la conversación marcada. El tutor no entregó respuestas directas y registró el intento para seguimiento del maestro.
+  +  Revise la conversación marcada. El tutor no entregó respuestas directas y registró el intento para seguimiento del docente.
+
+users.json :: summary-record
+  -  Núm. de récord
+  +  Núm. de registro
+
+welcome.json :: pendingAndMessages
+  -  Tienes <b>{{pendingCount}} entrega(s) por corregir</b> y <b>{{messageCount}} mensaje(s) nuevo(s)</b>.
+  +  Tienes <b>{{pendingCount}} entrega(s) por calificar</b> y <b>{{messageCount}} mensaje(s) nuevo(s)</b>.
+
+welcome.json :: toReview
+  -  Por corregir
+  +  Por calificar
+

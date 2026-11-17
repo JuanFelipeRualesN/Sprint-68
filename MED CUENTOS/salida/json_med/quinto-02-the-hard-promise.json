@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 4,
+  "TitleEn": "The Hard Promise",
+  "TitleEs": "La promesa difícil",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Mariana was preparing for an academic competition when a classmate showed her photographs of questions that, according to him, would appear on the test. “We could win easily,” he said. Mariana felt a mix of excitement and worry. She had worked for weeks and wanted to represent her school well, but she knew that using those images would be unfair. She thought about staying quiet to avoid trouble.",
+      "TextEs": "Mariana se preparaba para una competencia académica cuando un compañero le mostró fotografías de preguntas que, según él, aparecerían en la prueba. —Podríamos ganar fácilmente —dijo. Mariana sintió una mezcla de entusiasmo y preocupación. Había trabajado durante semanas y deseaba representar bien a su escuela, pero sabía que utilizar aquellas imágenes sería injusto. Pensó en guardar silencio para evitar problemas.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Then she remembered that her teammates trusted the team's honesty. She decided to talk to the teacher and explain what had happened without exaggerated accusations. The school looked into the situation and took steps to ensure a fair competition. The team did not win first prize, but Mariana came away satisfied. She discovered that acting with integrity can be uncomfortable and still be the right decision.",
+      "TextEs": "Después recordó que sus compañeros confiaban en la honestidad del equipo. Decidió hablar con la maestra y explicar lo ocurrido sin acusaciones exageradas. La escuela revisó la situación y tomó medidas para garantizar una competencia justa. El equipo no ganó el primer premio, pero Mariana salió satisfecha. Descubrió que actuar con integridad puede resultar incómodo y, aun así, ser la decisión correcta.",
+      "ImageUrl": null
+    }
+  ]
+}

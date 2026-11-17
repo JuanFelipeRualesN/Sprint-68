@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="132px" height="105px" viewBox="0 0 132 105" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>LessonDefault-icon</title>
+    <defs>
+        <linearGradient x1="21.2925517%" y1="51.9081655%" x2="78.6819422%" y2="48.1809648%" id="linearGradient-1">
+            <stop stop-color="#A5B1B7" offset="0%"></stop>
+            <stop stop-color="#D3E4E8" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="LessonDefault-icon" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="icono-general-03" transform="translate(11.000000, 6.000000)">
+            <g id="Group_361_3_" fill-rule="nonzero">
+                <g id="Group_359_3_">
+                    <ellipse id="Ellipse_46_3_" fill="#2C3E50" cx="55.5" cy="45.46" rx="55.5" ry="39"></ellipse>
+                    <g id="matematica-42_3_" transform="translate(9.414000, 0.000000)" fill="#FFFFFF" stroke="#2C3E50" stroke-width="3">
+                        <path d="M28.8,0.5 L62.98,0.5 C78.87,0.55 91.73,13.41 91.78,29.3 L91.78,63.48 C91.73,79.37 78.87,92.23 62.98,92.28 L28.8,92.28 C12.91,92.23 0.05,79.37 0,63.48 L0,29.3 C0.05,13.41 12.91,0.55 28.8,0.5 Z" id="Path_221_3_"></path>
+                    </g>
+                </g>
+            </g>
+            <g id="Group" transform="translate(13.000000, 8.000000)">
+                <polygon id="Path" fill="#2C3E50" points="85.08 29.86 81.84 28.61 67.16 66.38 39.61 59.42 69.13 70.82"></polygon>
+                <polygon id="Path" fill="#2C3E50" points="17.96 3.95 21.2 5.2 4.74 42.29 29.66 55.58 0.14 44.19"></polygon>
+                <polygon id="Path" fill="url(#linearGradient-1)" points="26.07 0.44 50.1 16.12 33.38 56.32 8.32 40.99"></polygon>
+            </g>
+            <path d="M79.99,57.84 C79.82,57.42 79.7,56.98 79.62,56.53 L72.39,54.52 L66.49,58.01 C66.87,58.03 67.26,58.07 67.64,58.14 C68.79,58.27 69.94,58.47 71.06,58.75 L76.63,60.3 L75.17,65.56 L67.72,63.49 C66.22,63.06 65.01,61.94 64.49,60.47 C63.82,58.81 63.75,56.97 64.27,55.26 C64.71,53.51 65.73,51.95 67.17,50.86 C68.36,49.84 69.98,49.48 71.49,49.88 L80.27,52.13 L80.28,52.12 C80.71,51.24 81.36,50.49 82.17,49.94 C83.2,49.17 84.53,48.91 85.77,49.25 L85.78,49.25 L72.68,45.6 C69.97,44.83 67.06,45.32 64.75,46.92 C62.22,48.54 60.4,51.06 59.66,53.97 C58.8,56.83 59.08,59.92 60.44,62.58 C61.61,65.12 63.84,67.01 66.53,67.76 L78.17,70.99 L81.34,59.8 L81.32,59.74 C80.72,59.23 80.27,58.58 79.99,57.84 Z" id="logoG-27" fill="#FFFFFF" fill-rule="nonzero"></path>
+        </g>
+    </g>
+</svg>

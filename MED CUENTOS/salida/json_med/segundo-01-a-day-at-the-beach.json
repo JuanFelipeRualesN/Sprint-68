@@ -1,0 +1,25 @@
+{
+  "LevelId": 2,
+  "CategoryId": 4,
+  "TitleEn": "A Day at the Beach",
+  "TitleEs": "Un día de playa",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "On Friday, Mom told us that on Saturday we would go to the beach. My brothers and I were happy. We started packing the toys we would take in a bag. My brother Jaime grabbed a beach ball. My little sister Lili packed her favorite doll. I looked for a container to collect snails.\nOn Saturday we left early. We arrived at a beautiful beach in Loíza.\nMom set our things down under some palm trees. Right away we wanted to take out the toys. Then we realized we had left the bag by the front door. Lili would not stop crying.",
+      "TextEs": "El viernes, mamá nos dijo que el sábado iríamos a la playa. Mis hermanos y yo nos pusimos felices. Empezamos a guardar en un bulto los juguetes que llevaríamos. Mi hermano Jaime, cogió una bola de playa. Mi hermanita Lili puso su muñeca favorita. Yo busqué un envase para recoger caracoles.\nEl sábado salimos temprano. Llegamos a una hermosa playa en Loíza.\nMamá acomodó las cosas debajo de unas palmas. Enseguida quisimos sacar los juguetes. Entonces nos dimos cuenta de que habíamos dejado el bulto frente a la puerta. Lili no paraba de llorar.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "After thinking about what we could do without the toys, we decided to build a sandcastle. We used cups to build tall towers. Then we played at swimming like dolphins. Before we knew it, it was time to go back home.",
+      "TextEs": "Después de pensar qué podíamos hacer sin los juguetes, decidimos hacer un castillo de arena. Usamos vasos para construir grandes torres. Luego, jugamos a nadar como delfines. Antes de que nos diéramos cuenta, ya era hora de regresar a casa.",
+      "ImageUrl": null
+    }
+  ]
+}

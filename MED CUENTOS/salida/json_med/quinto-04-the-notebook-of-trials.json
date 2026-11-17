@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 2,
+  "TitleEn": "The Notebook of Trials",
+  "TitleEs": "El cuaderno de los ensayos",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Valeria wanted to find out what conditions favored the germination of some seeds. She prepared three containers with seeds of the same type, but changed the amount of water in each one. She recorded her observations for two weeks. At first she believed the dampest container would produce the tallest plants. However, several seeds did not germinate. Her teacher asked her whether she had also controlled the light and the temperature.",
+      "TextEs": "Valeria quería descubrir qué condiciones favorecían la germinación de unas semillas. Preparó tres recipientes con semillas del mismo tipo, pero cambió la cantidad de agua en cada uno. Anotó sus observaciones durante dos semanas. Al principio creyó que el recipiente más húmedo produciría las plantas más altas. Sin embargo, varias semillas no germinaron. Su maestro le preguntó si había controlado también la luz y la temperatura.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Valeria admitted that she had not and that her conclusions were limited. Instead of hiding the mistakes, she included them in the report and proposed repeating the experiment. Her classmates valued the clarity of her explanations. Valeria understood that investigating does not mean proving that we are always right, but learning from the evidence.",
+      "TextEs": "Valeria reconoció que no lo había hecho y que sus conclusiones eran limitadas. En lugar de ocultar los errores, los incluyó en el informe y propuso repetir el experimento. Sus compañeros valoraron la claridad de sus explicaciones. Valeria comprendió que investigar no consiste en demostrar que siempre tenemos razón, sino en aprender de la evidencia.",
+      "ImageUrl": null
+    }
+  ]
+}

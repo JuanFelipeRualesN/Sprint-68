@@ -1,0 +1,43 @@
+@import url("fonts.css");
+@import url("center-container.css");
+@import url("table-admin.css");
+
+
+body {
+	font-family: 'Poppins' ,  Arial , Helvetica , sans-serif;
+	margin: 0;
+}
+
+:focus {
+	outline: none;
+}
+
+h1, h2, h3, h4, h5 {
+	/*font-family: 'Montserrat' , Arial , Helvetica , sans-serif;*/
+	color: #333;
+}
+        
+.events-dropzone {
+	text-align: center;
+	min-height: 200px;
+	background: whitesmoke;
+	padding: 20px;
+	border-radius: 10px;
+	border: dashed #8DA5C2;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.events-dropzone--active {
+	background: #EBF5FA;
+	border-color: #197BAA;
+}
+
+.text-danger-styled-bold {
+  color: #fa2626;
+  font-size: 11px;
+  margin: auto;
+  padding: 0 0 0.25em 0;
+  text-align: left;
+  font-weight: bold;
+}

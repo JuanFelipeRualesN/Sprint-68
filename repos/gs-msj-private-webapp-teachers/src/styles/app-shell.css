@@ -1,0 +1,62 @@
+.med-app-root .wrapper-header {
+  position: sticky;
+  top: 0;
+  width: auto;
+  z-index: 20;
+  flex: 0 0 auto;
+}
+
+.med-app-main > .wrapper-header {
+  flex-shrink: 0;
+}
+
+.med-app-root .container-padding {
+  padding-top: 0;
+}
+
+@media (max-width: 992px) {
+  .med-app-root .med-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 1050;
+  }
+
+  .med-app-root .med-sidebar.drawer-open {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, .35);
+  }
+  .med-app-root .med-app-main {
+    width: 100%;
+  }
+}
+
+.med-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  margin-right: 8px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.med-hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  border-radius: 2px;
+  background: white;
+}
+
+@media (max-width: 992px) {
+  .med-app-root .med-hamburger {
+    display: inline-flex;
+  }
+}

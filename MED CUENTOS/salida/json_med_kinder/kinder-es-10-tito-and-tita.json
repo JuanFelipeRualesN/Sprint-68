@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "Tito and Tita",
+  "TitleEs": "Tito y Tita",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Tito takes a turn.\nTita takes a turn.\nTito looks at Tita.\nEveryone takes a turn!",
+      "TextEs": "Tito toma un turno.\nTita toma un turno.\nTito mira a Tita.\n¡Todos toman su turno!",
+      "ImageUrl": null
+    }
+  ]
+}

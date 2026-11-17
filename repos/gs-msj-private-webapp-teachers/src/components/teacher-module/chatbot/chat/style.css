@@ -1,0 +1,126 @@
+.chat-content-box {
+    max-width: 1000px;
+    width: 80vw;
+    height: 85vh;
+    background-color: #fefefe;
+    border-radius: 10px;
+    padding: 20px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-empty-state {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-height: 1024px;
+  padding-top: 60px;
+}
+
+.chat-message-gpt {
+  margin-bottom: 20px;
+  max-width: 80%;
+  display: flex;
+  min-width: 500px;
+  flex-direction: column;
+}
+
+.chat-message-gpt-min-width {
+  max-width: 500px;
+  margin-bottom: 20px;
+}
+
+.chat-input {
+  position: sticky;
+  bottom: 0;
+  flex: 0 0 100px;
+  padding-top: 12px;
+  padding-bottom: 20px;
+  padding-left: 12px;
+  padding-right: 12px;
+  width: 100%;
+  max-width: 1028px;
+}
+
+.chat-message-stream {
+  flex-grow: 1;
+  max-height: 1024px;
+  max-width: 1028px;
+  width: 100%;
+  overflow-y: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 0; 
+  overflow: hidden;
+}
+
+.chat-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1), transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.chat-intro-hide {
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+}
+
+.chatbot-title {
+  font-size: 38px;
+}
+
+.chat-description {
+  font-size: 16px;
+}
+
+.chat-actions {
+  width: 100%;
+  max-width: 1028px;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.chat-restart-button {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  min-height: 28px;
+}
+
+
+@media screen and (max-width: 750px) {
+    .chat-content-box {
+        width: 95vw;
+        height: 80vh;
+    }
+}
+
+@media screen and (max-width: 420px) {
+  .chatbot-title {
+    font-size: 24px;
+  }
+
+  .chat-description {
+    font-size: 13px;
+  }
+}

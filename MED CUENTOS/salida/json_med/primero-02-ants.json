@@ -1,0 +1,25 @@
+{
+  "LevelId": 1,
+  "CategoryId": 1,
+  "TitleEn": "Ants",
+  "TitleEs": "Las hormigas",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/animals.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Ants are very interesting insects. They can live underground, on the ground, or in trees. Ants are very organized. They work together like a team. They share the tasks. Each one does a different job. Ants live in large groups. The place where they live is called an anthill. Each anthill is led by a queen. Her job is to lay many eggs. Many worker ants also live in the anthill. They are the most common and the hardest working.",
+      "TextEs": "Las hormigas son insectos muy interesantes. Pueden vivir bajo la tierra, en el suelo o en los árboles. Las hormigas son muy organizadas. Trabajan juntas como un equipo. Ellas se reparten las tareas. Cada una hace un trabajo diferente. Las hormigas viven en grupos grandes. El lugar donde viven se llama hormiguero. Cada hormiguero está dirigido por una reina. Su trabajo es poner muchos huevos. En el hormiguero también viven muchas hormigas obreras. Son las más comunes y las más trabajadoras.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "They take care of the eggs the queen lays. They are also in charge of looking for food. Ants communicate through smells. They smell with their antennae. When they walk, they leave a special scent. That is how they recognize the path back to the anthill. The scent also warns them when there is danger. The next time you see a line of ants, try to follow them. You will have fun watching them.",
+      "TextEs": "Ellas cuidan los huevos que pone la reina. También se encargan de buscar comida. Las hormigas se comunican a través de los olores. Ellas huelen con sus antenas. Cuando caminan, sueltan un olor especial. Así reconocen el camino para volver al hormiguero. El olor también les avisa cuando hay peligros. La próxima vez que veas una fila de hormigas, intenta seguirlas. Te divertirás observándolas.",
+      "ImageUrl": null
+    }
+  ]
+}

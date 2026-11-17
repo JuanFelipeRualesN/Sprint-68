@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 4,
+  "TitleEn": "The Ending That Wasn't Written",
+  "TitleEs": "El final que no estaba escrito",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Alicia finished a novel whose last chapter did not explain what had happened to one of the characters. She thought the author had forgotten to close the story. Andrés proposed another interpretation: perhaps the ending invited the reader to imagine possibilities. In the book club, the teacher asked them to identify clues from the earlier chapters. Alicia found a letter in which the character talked about going back home; Andrés pointed to a conversation in which the character expressed a desire to travel.",
+      "TextEs": "Alicia terminó una novela cuyo último capítulo no explicaba qué había sucedido con uno de los personajes. Pensó que el autor había olvidado cerrar la historia. Andrés propuso otra interpretación: quizás el final invitaba al lector a imaginar posibilidades. En el club de lectura, la maestra pidió identificar pistas de los capítulos anteriores. Alicia encontró una carta donde el personaje hablaba de regresar a casa; Andrés señaló una conversación en la que expresaba deseos de viajar.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "They each built different endings and defended their ideas with evidence from the text. Then they wrote a collective ending that combined elements of both proposals. Alicia understood that creating also requires listening, revising, and justifying decisions. The story did not have a single answer, but it had many opportunities to think.",
+      "TextEs": "Ambos construyeron finales diferentes y defendieron sus ideas con evidencias del texto. Luego escribieron un desenlace colectivo que combinaba elementos de ambas propuestas. Alicia comprendió que crear también requiere escuchar, revisar y fundamentar decisiones. La historia no tenía una sola respuesta, pero sí muchas oportunidades para pensar.",
+      "ImageUrl": null
+    }
+  ]
+}

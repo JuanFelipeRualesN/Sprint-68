@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 4,
+  "TitleEn": "The Seed Business",
+  "TitleEs": "El negocio de las semillas",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Irene and her classmates wanted to raise funds to buy books for the classroom. They thought of selling small plants grown in reused containers. Before starting, they calculated the cost of soil and seeds, asked families whether they wanted to take part, and agreed on reasonable prices. The first week they planted too many seeds and did not have enough room to take care of them. Irene proposed reducing the amount and organizing watering shifts.",
+      "TextEs": "Irene y sus compañeros querían reunir fondos para comprar libros para el salón. Pensaron vender plantas pequeñas cultivadas en envases reutilizados. Antes de comenzar, calcularon el costo de la tierra y las semillas, preguntaron a las familias si deseaban participar y acordaron precios razonables. La primera semana sembraron demasiadas semillas y no tenían espacio suficiente para cuidarlas. Irene propuso reducir la cantidad y organizar turnos de riego.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "They also set aside some plants to donate to the community garden. At the end, the group reviewed how much it had spent and how much it had raised. They did not make a big profit, but they were able to buy several books. Irene understood that starting a business requires planning, responsibility, and attention to the well-being of others.",
+      "TextEs": "También reservaron algunas plantas para donar al huerto comunitario. Al finalizar, el grupo revisó cuánto había gastado y cuánto había reunido. No obtuvieron una gran ganancia, pero pudieron comprar varios libros. Irene comprendió que emprender requiere planificación, responsabilidad y atención al bienestar de otros.",
+      "ImageUrl": null
+    }
+  ]
+}

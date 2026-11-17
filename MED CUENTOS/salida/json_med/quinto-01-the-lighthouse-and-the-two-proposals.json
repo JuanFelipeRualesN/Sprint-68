@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 3,
+  "TitleEn": "The Lighthouse and the Two Proposals",
+  "TitleEs": "El faro y las dos propuestas",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "The town's old lighthouse had been closed for decades. When a plan to tear it down was announced, different opinions arose. Some neighbors wanted to build a parking lot that would make it easier to reach the coast; others defended the building's historical value. Valentina decided to do research before taking sides. She looked at photographs, interviewed fishermen, and asked specialists what work would be needed to preserve the lighthouse.",
+      "TextEs": "El antiguo faro del pueblo llevaba décadas cerrado. Cuando se anunció un plan para derribarlo, surgieron opiniones distintas. Algunos vecinos querían construir un estacionamiento que facilitara el acceso a la costa; otros defendían el valor histórico del edificio. Valentina decidió investigar antes de tomar partido. Consultó fotografías, entrevistó a pescadores y preguntó a especialistas qué obras serían necesarias para conservar el faro.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "She discovered that restoring it would cost money and require safety measures. At a meeting she presented a third possibility: to study its recovery as a cultural space and improve the parking in another area. Not everyone accepted the idea, but they agreed to evaluate its advantages and limitations. Valentina understood that community decisions get better when opinions are backed by evidence and different perspectives are heard.",
+      "TextEs": "Descubrió que restaurarlo costaría dinero y requeriría medidas de seguridad. En una reunión presentó una tercera posibilidad: estudiar su recuperación como espacio cultural y mejorar el estacionamiento en otra zona. No todos aceptaron la idea, pero acordaron evaluar sus ventajas y limitaciones. Valentina comprendió que las decisiones comunitarias mejoran cuando las opiniones se apoyan en evidencia y se escuchan perspectivas diferentes.",
+      "ImageUrl": null
+    }
+  ]
+}

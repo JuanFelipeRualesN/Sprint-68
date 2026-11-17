@@ -1,0 +1,37 @@
+{
+  "LevelId": 2,
+  "CategoryId": 1,
+  "TitleEn": "Fable: The Tortoise and the Rabbit of the Panama Canal",
+  "TitleEs": "Fábula: La Tortuga y el Conejo del Canal de Panamá",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/animals.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "On the green plains near the Panama Canal, a very fast rabbit and a very wise tortoise lived together, although their ways of life were very different.\nOne day, while they were walking near the waters of the canal, the rabbit, full of pride in his speed, boasted:\n“I am the fastest animal in all of Panama! No one can beat me in a race!”\nThe tortoise, known for her slowness but also for her cleverness, decided it was time to teach the vain rabbit a lesson.",
+      "TextEs": "En las verdes llanuras cerca del Canal de Panamá, un conejo muy veloz y una tortuga muy sabia vivían juntos, aunque sus estilos de vida eran muy diferentes.\nUn día, mientras paseaban cerca de las aguas del canal, el conejo, lleno de orgullo por su velocidad, se jactó:\n— ¡Soy el animal más rápido de todo Panamá! ¡Nadie puede ganarme en una carrera!\nLa tortuga, conocida por su lentitud, pero también por su astucia, decidió que era hora de enseñarle una lección al vanidoso conejo.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "“If you are so fast, why don't we have a race?” the tortoise proposed.\nThe rabbit, laughing at the idea that a tortoise could compete with him, accepted the challenge without thinking twice.\n“I'm going to beat you easily!” said the rabbit, sure of his victory.\nThe starting line was drawn near the canal, among the trees of the tropical forests. All the animals of the forest, including some birds and curious monkeys, gathered to watch the competition.",
+      "TextEs": "— Si eres tan rápido, ¿por qué no competimos en una carrera? —le propuso la tortuga.\nEl conejo, riendo ante la idea de que una tortuga pudiera competir con él, aceptó el desafío sin pensarlo dos veces.\n— ¡Te voy a ganar sin problema! —dijo el conejo, seguro de su victoria.\nSe trazó la línea de salida cerca del canal, entre los árboles de las selvas tropicales. Todos los animales del bosque, incluidos algunos pájaros y monos curiosos, se reunieron a observar la competencia.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "The race began, and as expected, the rabbit quickly took the lead. He ran so fast that he soon disappeared from the tortoise's sight. However, the rabbit, confident that his lead was unbeatable, decided to rest a little in the shade of a tree, near a beautiful river that flowed through the forest.\nThe tortoise, at her slow but steady pace, kept going without stopping. As she advanced, she took in the scenery, the colors of the birds, and the beautiful trees that decorated the Panamanian forest.",
+      "TextEs": "La carrera comenzó, y como era de esperar, el conejo rápidamente tomó la delantera. Corrió tan rápido que pronto desapareció de la vista de la tortuga. Sin embargo, el conejo, confiado en que su ventaja era insuperable, decidió descansar un poco bajo la sombra de un árbol, cerca de un hermoso río que fluía a lo largo de la selva.\nLa tortuga, en su lento pero constante paso, siguió su camino sin detenerse. A medida que avanzaba, observaba el paisaje, el colorido de las aves y los hermosos árboles que adornaban el bosque de Panamá.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "Meanwhile, the rabbit kept sleeping.\nWhen he finally woke up, he saw that the tortoise had almost reached the finish line. Desperate, he began to run at full speed, but it was too late. The tortoise had already crossed the finish line and won the race.\nThe animals that had watched the race celebrated the tortoise's victory, and she smiled and said:\n“Patience and perseverance always beat haste and arrogance.”",
+      "TextEs": "Mientras tanto, el conejo seguía durmiendo.\nCuando finalmente despertó, vio que la tortuga ya casi había llegado a la meta. Desesperado, comenzó a correr a toda velocidad, pero fue demasiado tarde. La tortuga ya había cruzado la línea de meta y ganó la carrera.\nLos animales que habían observado la carrera celebraron la victoria de la tortuga, que sonrió y dijo:\n— La paciencia y la perseverancia siempre vencen a la prisa y la arrogancia.",
+      "ImageUrl": null
+    }
+  ]
+}

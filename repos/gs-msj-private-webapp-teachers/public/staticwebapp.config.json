@@ -1,0 +1,26 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",          // SWA built-in API
+      "/teachersapi/*",  // your external/internal API path
+      "/gswebapi/*",     // your external/internal API path
+      "/usersapi/*",
+      "/subscriptionsapi/*",
+      "/messagesapi/*",
+      "/schoolsapi/*",
+      "/addressapi/*",
+      "/*.css",
+      "/*.js",
+      "/*.png",
+      "/*.jpg",
+      "/*.mp4",
+      "/*.mp3",
+      "/*.svg",
+      "/assets/*"
+    ]
+  },
+  "responseOverrides": {
+    "404": { "rewrite": "/index.html", "statusCode": 200 }
+  }
+}

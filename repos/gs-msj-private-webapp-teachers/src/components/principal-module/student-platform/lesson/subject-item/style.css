@@ -1,0 +1,153 @@
+.wrapper-lessons .total-wrapper_lessons {
+    width: 100%;
+}
+
+.wrapper-lessons .total-wrapper_lessons h2 {
+    font-weight: 800;
+    font-size: 18px;
+    margin: 0 0 0.5em 0;
+    border-bottom: 1px solid #DDD;
+    padding-bottom: 0.5em;
+}
+
+/******/
+
+.wrapper-lessons a {
+    background-color: #FFF;
+    border: 3px solid #D9E8F2;
+    border-radius: 15px;
+    margin-bottom: 0.25em;
+    cursor: pointer;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    position: relative;
+}
+
+.wrapper-lessons a {
+    text-decoration: none;
+}
+
+.wrapper-lessons a:hover {
+    background-color: #D9E8F2;
+}
+
+.wrapper-lessons .item-active {
+    background-color: #D9E8F2;
+}
+
+.wrapper-lessons .col-left {
+    width: 80%;
+}
+
+.wrapper-lessons .col-right {
+    position: relative;
+    display: flex;
+    align-items: center;
+    /* background cambiante */
+    background-color: #4662E5;
+    border-bottom-right-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.wrapper-lessons .arrow-right {
+    fill: #4662E5;
+}
+
+.wrapper-lessons .title-lesson {
+    background-color:transparent;
+    font-size: 25px;
+    color: #222;
+    font-weight: 700;
+    margin-left: 0.25em;
+    font-family: Poppins, sans-serif;
+}
+
+.wrapper-lessons .lesson-grade {
+    color: #FFF;
+    font-size: 30px;
+    padding: 0 0.5em 0 0.25em;
+    font-weight: bold
+}
+
+.wrapper-lessons .col-left img,
+.wrapper-lessons .col-left span {
+    vertical-align: middle;
+}
+
+.wrapper-lessons .col-left img {
+    width: 60px;
+    margin-left: 0.8em;
+    padding: 0.25em 0;
+}
+
+.wrapper-lessons .col-right svg {
+    vertical-align: middle;
+    display: inline-block;
+    position: absolute;
+    height: 100%;
+    left: -29px
+}
+
+.wrapper-lessons .col-right span {
+    margin: auto
+}
+
+/* MQ 750px */
+
+@media screen and (max-width: 750px) {
+    .wrapper-lessons .title-lesson {
+        font-size: 20px;
+    }
+
+    .wrapper-lessons .col-left img {
+        width: 60px;
+    }
+
+    .wrapper-lessons .lesson-grade {
+        font-size: 30px;
+    }
+
+    .wrapper-lessons .col-right svg {
+        left: -26px
+    }
+}
+
+/* MQ 500px */
+
+@media screen and (max-width: 500px) {
+    .wrapper-lessons .title-lesson {
+        font-size: 16px;
+    }
+
+    .wrapper-lessons .col-left img {
+        width: 40px;
+    }
+
+    .wrapper-lessons .lesson-grade {
+        font-size: 20px;
+    }
+
+    .wrapper-lessons .col-right svg {
+        left: -20px
+    }
+}
+
+/* MQ 450px */
+
+@media screen and (max-width: 500px) {
+    .wrapper-lessons .title-lesson {
+        font-size: 15px;
+    }
+
+    .wrapper-lessons .col-left img {
+        margin-left: 0.4em;
+    }
+}

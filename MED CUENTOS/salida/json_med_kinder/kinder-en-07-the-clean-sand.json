@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "The Clean Sand",
+  "TitleEs": "La arena limpia",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I see sand.\nI see a can.\nI pick up the can.\nThe sand is clean.",
+      "TextEs": "Veo arena.\nVeo una lata.\nRecojo la lata.\nLa arena está limpia.",
+      "ImageUrl": null
+    }
+  ]
+}

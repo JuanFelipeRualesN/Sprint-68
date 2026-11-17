@@ -1,0 +1,21 @@
+{
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "line": "{{greeting}}, {{firstName}}"
+  },
+  "eyebrow": {
+    "dateWeek": "{{date}}"
+  },
+  "summary": {
+    "pendingAndMessages": "You have <b>{{pendingCount}} submission(s) to review</b> and <b>{{messageCount}} new message(s)</b>."
+  },
+  "kpis": {
+    "toReview": "To review",
+    "activeStudents": "Students",
+    "groups": "Groups",
+    "newMessages": "New messages"
+  },
+  "defaultTeacherName": "John"
+}

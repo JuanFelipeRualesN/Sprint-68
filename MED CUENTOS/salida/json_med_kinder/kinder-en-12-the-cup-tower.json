@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "The Cup Tower",
+  "TitleEs": "La torre de vasos",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I have a cup.\nI add one cup.\nThe cups go up.\nMy tower is tall!",
+      "TextEs": "Tengo un vaso.\nAñado un vaso.\nLos vasos suben.\n¡Mi torre es alta!",
+      "ImageUrl": null
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+.form-group-fields .mantine-Select-input,
+.form-group-fields .mantine-MultiSelect-input {
+    color: var(--palette-gray-charcoal);
+    display: block;
+    background-color: var(--palette-gray-grayLigther);
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: var(--fontSize-xsm);
+    border-width: 0;
+    border-color: transparent;
+    line-height: 1.9;
+    transition: all 0.28s ease;
+    box-shadow: none;
+    font-family: inherit;
+    border-radius: 0;
+    width: 100%;
+}
+
+.form-group-fields .mantine-Select-input,
+.form-group-fields .mantine-MultiSelect-input {
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+}
+
+.form-group-fields .mantine-Select-root:has(div[role="combobox"][aria-expanded="true"])~.bar::before,
+.form-group-fields .mantine-MultiSelect-root:has(div[role="combobox"][aria-expanded="true"])~.bar::before {
+    width: 100%;
+    left: 0;
+}
+
+.mantine-Select-root,
+.mantine-Select-input,
+.mantine-Select-wrapper {
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+}
+
+.mantine-Select-rightSection {
+    background-color: #eeefef;
+}
+
+.form-group-fields .mantine-Select-root input.mantine-Select-input[disabled]~.mantine-Select-rightSection {
+    background-color: #f5f5f5;
+}
+
+.mantine-Select-rightSection svg,
+.mantine-MultiSelect-rightSection svg {
+    color: #868e96;
+}
+
+.mantine-MultiSelect-input {
+    background-color: var(--palette-gray-grayLigther) !important;
+}
+
+.mantine-MultiSelect-input .mantine-MultiSelect-value {
+    background-color: #fff;
+    border-radius: 4px;
+}

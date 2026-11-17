@@ -1,0 +1,11 @@
+.pron-lessons-selectors {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+@media screen and (max-width: 750px) {
+  .pron-lessons-selectors {
+    display: block;
+  }
+}

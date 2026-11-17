@@ -1,0 +1,36 @@
+.Formula-Panel {
+    margin-bottom: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f6f6f6;
+
+    .MuiTab-root {
+        padding: 0;
+        height: 25px;
+
+        .MuiTab-wrapper {
+            text-transform: none;
+        }
+    }
+
+    .MuiTabs-scroller {
+        background-color: #e0e0e0;
+    }
+}
+
+.Tab {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px;
+    contain: content;
+
+    div.Tab {
+        margin-right: 8px;
+    }
+}
+
+.Tab>button {
+    flex: 1 0 auto;
+    width: 25%;
+    margin: 4px;
+}

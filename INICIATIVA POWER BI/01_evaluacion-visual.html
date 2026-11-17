@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente IA para Power BI Embedded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Memo técnico para decidir: columna de lectura con figuras anchas. Verde azulado del producto como único acento. */
+  --bg:#f6f8f8; --surface:#ffffff; --ink:#1a2a30; --muted:#566971; --line:#d7e0e3; --accent:#24606d; --accent-soft:#e3eff1;
+  --ok-bg:#e2f3e6; --ok:#1d5e30; --warn-bg:#fdf1d3; --warn:#6e4f00; --no-bg:#fbe7e6; --no:#8c2620; --test-bg:#e6edf9; --test:#27457f;
+  --display:"IBM Plex Serif",Georgia,serif; --body:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#111a1d;--surface:#19252a;--ink:#e6eef0;--muted:#9fb1b8;--line:#30424a;--accent:#7cc1cf;--accent-soft:#1f3a41;--ok-bg:#183a24;--ok:#97dcaa;--warn-bg:#40320c;--warn:#f0d28a;--no-bg:#472120;--no:#f4b1ac;--test-bg:#1f2f52;--test:#b3c8f2}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111a1d;--surface:#19252a;--ink:#e6eef0;--muted:#9fb1b8;--line:#30424a;--accent:#7cc1cf;--accent-soft:#1f3a41;--ok-bg:#183a24;--ok:#97dcaa;--warn-bg:#40320c;--warn:#f0d28a;--no-bg:#472120;--no:#f4b1ac;--test-bg:#1f2f52;--test:#b3c8f2}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);font-variant-numeric:tabular-nums}
+.wrap{max-width:1040px;margin:0 auto;padding:32px 20px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{text-wrap:balance}
+h1{font:600 clamp(28px,4.4vw,40px)/1.15 var(--display);margin:0 0 10px}
+h2{font:600 24px/1.25 var(--display);margin:0 0 6px}
+h3{font:600 15px/1.3 var(--body);margin:0 0 6px}
+p{margin:0 0 10px;max-width:68ch}
+p:last-child{margin-bottom:0}
+a{color:var(--accent)}
+.lead{color:var(--muted);font-size:17px}
+.meta{font-size:13.5px;color:var(--muted)}
+section>.intro{margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.answer{background:var(--accent-soft);border-left:4px solid var(--accent);padding:18px 20px}
+.answer b{font-weight:600}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.three ul{margin:0;padding-left:18px;font-size:14.5px}
+.three li{margin-bottom:6px}
+figure{margin:0}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:10px;max-width:72ch}
+.scroll{overflow-x:auto}
+svg{display:block;margin:0 auto;height:auto;color:var(--ink)}
+.sv-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.sv-on{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.sv-q{fill:var(--warn-bg);stroke:var(--warn);stroke-width:1}
+.sv-group{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:5 4}
+.sv-t{fill:var(--ink);font:500 13px var(--body)}
+.sv-s{fill:var(--muted);font:400 12px var(--body)}
+.sv-l{fill:var(--muted);font:400 11.5px var(--body)}
+.sv-line{fill:none;stroke:var(--muted);stroke-width:1.4}
+.sv-key{fill:none;stroke:var(--accent);stroke-width:2}
+.sv-dash{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:5 4}
+.sv-bar{fill:var(--accent)}
+.sv-bar2{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1}
+.sv-gate{fill:var(--warn-bg);stroke:var(--warn);stroke-width:1.2}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface);margin-bottom:12px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:8px 14px;font:500 14px var(--body);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+table{width:100%;border-collapse:collapse;background:var(--surface);font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:600;font-size:13px;color:var(--muted);background:var(--surface)}
+tr:last-child td{border-bottom:0}
+.tbl{border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.tbl table{min-width:760px}
+td b{font-weight:600}
+.pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.ok{background:var(--ok-bg);color:var(--ok)}.warn{background:var(--warn-bg);color:var(--warn)}.no{background:var(--no-bg);color:var(--no)}.test{background:var(--test-bg);color:var(--test)}
+[data-scenario="app"] [data-s="user"],[data-scenario="user"] [data-s="app"]{display:none}
+.steps{margin:0;padding-left:22px;font-size:14.5px;max-width:72ch}
+.steps li{margin-bottom:7px}
+.calc{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fields label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.fields input{font:15px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+.err{color:var(--no);font-size:13px;min-height:18px;margin-top:8px}
+.result{border-left:1px solid var(--line);padding-left:18px}
+.big{font:600 34px/1.1 var(--display);margin:2px 0 10px}
+.result dl{display:grid;grid-template-columns:1fr auto;gap:5px 14px;margin:0;font-size:14px}
+.result dt{color:var(--muted)}.result dd{margin:0;text-align:right}
+.src{margin:0;padding-left:18px;font-size:14px}.src li{margin-bottom:6px}
+.note{font-size:13.5px;color:var(--muted)}
+@media(max-width:720px){.three,.calc{grid-template-columns:minmax(0,1fr)}.result{border-left:0;border-top:1px solid var(--line);padding:14px 0 0}.fields{grid-template-columns:minmax(0,1fr)}.wrap{gap:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="meta">REQ-3741 · Estudia y Avanza · Versión inicial, 4 nov 2026 · Entrega prevista: 13 nov 2026</p>
+  <h1>Asistente IA para Power BI Embedded</h1>
+  <p class="lead">Evaluación inicial de cómo responder preguntas en lenguaje natural dentro del área de reportes. Se actualizará después de la reunión con Andrés Guevara.</p>
+</header>
+
+<section class="card answer">
+  <h2>Recomendación preliminar</h2>
+  <p><b>Si los usuarios entran con el login de la app, lo nativo de Power BI no alcanza.</b> En ese caso, la opción para llevar a prueba es un agente en Azure AI Foundry con herramientas de consulta fijas, donde nuestro backend aplica los permisos.</p>
+  <p>Falta confirmar cómo entran los usuarios y demostrar que los permisos por usuario se respetan. Hasta entonces, esta recomendación es una hipótesis.</p>
+</section>
+
+<section>
+  <div class="three">
+    <div class="card"><h3>Lo que ya se sabe</h3><ul>
+      <li>Q&amp;A se retira: febrero de 2027 según Learn.</li>
+      <li>La narrativa de Copilot en app owns data está en preview y resume solo lo visible.</li>
+      <li>La herramienta Fabric data agent de Foundry se deprecia el 6 nov 2026.</li>
+    </ul></div>
+    <div class="card"><h3>Lo que falta confirmar</h3><ul>
+      <li>Tipo de embed y capacidad actual.</li>
+      <li>Cómo funciona RLS en el modelo.</li>
+      <li>Si el modelo tiene los datos de áreas, escuelas y maestros.</li>
+      <li>Quién usaría el asistente.</li>
+    </ul></div>
+    <div class="card"><h3>Decisiones para liderazgo</h3><ul>
+      <li>Aprobar una PoC con datos reales cuando se confirme la ruta.</li>
+      <li>Definir quién revisa el uso de datos de menores con IA.</li>
+      <li>Acotar la fase 1 a preguntas de solo lectura.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Cómo se decide</h2>
+  <p class="intro">Una sola respuesta de la reunión cambia casi toda la evaluación. El HTML de referencia sugiere un login propio, pero no lo prueba.</p>
+  <figure class="card">
+    <div class="scroll"><svg viewBox="0 0 720 500" width="720" role="img" aria-label="La ruta depende de la cuenta de los usuarios. Con login propio se llega a un agente en Foundry. Con cuenta Microsoft se prueba lo nativo y, si no responde las preguntas, también se pasa a Foundry.">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6"/></marker></defs>
+      <rect class="sv-q" x="190" y="10" width="340" height="56" rx="6"/>
+      <text class="sv-t" x="360" y="33" text-anchor="middle">¿Con qué cuenta entran los usuarios?</text>
+      <text class="sv-s" x="360" y="52" text-anchor="middle">Primera pregunta para Andrés Guevara</text>
+      <path class="sv-line" d="M360 66V86H180V106" marker-end="url(#a1)"/><path class="sv-line" d="M360 66V86H540V106" marker-end="url(#a1)"/>
+      <rect class="sv-box" x="50" y="108" width="260" height="56" rx="6"/><text class="sv-t" x="180" y="131" text-anchor="middle">Login propio de la app</text><text class="sv-s" x="180" y="150" text-anchor="middle">App owns data</text>
+      <rect class="sv-box" x="410" y="108" width="260" height="56" rx="6"/><text class="sv-t" x="540" y="131" text-anchor="middle">Cuenta Microsoft o Entra</text><text class="sv-s" x="540" y="150" text-anchor="middle">User owns data</text>
+      <path class="sv-line" d="M180 164V204" marker-end="url(#a1)"/><path class="sv-line" d="M540 164V204" marker-end="url(#a1)"/>
+      <rect class="sv-box" x="50" y="206" width="260" height="56" rx="6"/><text class="sv-t" x="180" y="229" text-anchor="middle">Lo nativo no alcanzaría</text><text class="sv-s" x="180" y="248" text-anchor="middle">Copilot: solo narrativa, en preview</text>
+      <rect class="sv-box" x="410" y="206" width="260" height="56" rx="6"/><text class="sv-t" x="540" y="229" text-anchor="middle">Lo nativo es posible</text><text class="sv-s" x="540" y="248" text-anchor="middle">Revisar capacidad y licencias</text>
+      <path class="sv-key" d="M180 262V302" marker-end="url(#a1)"/><path class="sv-line" d="M540 262V302" marker-end="url(#a1)"/>
+      <rect class="sv-on" x="50" y="304" width="260" height="56" rx="6"/><text class="sv-t" x="180" y="327" text-anchor="middle">Agente propio en Foundry</text><text class="sv-s" x="180" y="346" text-anchor="middle">El backend aplica los permisos</text>
+      <rect class="sv-q" x="410" y="304" width="260" height="56" rx="6"/><text class="sv-t" x="540" y="327" text-anchor="middle">¿Responde las preguntas del ticket?</text><text class="sv-s" x="540" y="346" text-anchor="middle">Probar con la matriz de validación</text>
+      <path class="sv-line" d="M410 332H314" marker-end="url(#a1)"/><text class="sv-l" x="360" y="324" text-anchor="middle">No</text>
+      <path class="sv-key" d="M180 360V400H330V428" marker-end="url(#a1)"/><path class="sv-line" d="M540 360V400H390V428" marker-end="url(#a1)"/><text class="sv-l" x="552" y="384">Sí: nativo</text>
+      <rect class="sv-on" x="210" y="430" width="300" height="56" rx="6"/><text class="sv-t" x="360" y="453" text-anchor="middle">Recomendación final</text><text class="sv-s" x="360" y="472" text-anchor="middle">Entrega prevista: 13 nov 2026</text>
+    </svg></div>
+    <figcaption>En ambas ramas se responde primero lo que pide el ticket: evaluar lo nativo. La línea resaltada es la ruta que hoy parece más probable.</figcaption>
+  </figure>
+</section>
+
+<section id="comparativo" data-scenario="app">
+  <h2>Comparativo de opciones</h2>
+  <p class="intro">Elige el escenario para ver cómo cambia cada opción. Ninguna se ha probado todavía: esto refleja documentación e inferencias.</p>
+  <div class="seg" role="group" aria-label="Escenario de acceso">
+    <button type="button" id="scApp" data-v="app" aria-pressed="true">Login propio de la app</button>
+    <button type="button" id="scUser" data-v="user" aria-pressed="false">Cuenta Microsoft o Entra</button>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:21%">Opción</th><th>Preguntas del ticket</th><th>Permisos por usuario</th><th style="width:15%">Madurez y esfuerzo</th><th style="width:15%">Veredicto</th></tr></thead>
+    <tbody>
+    <tr><td><b>Q&amp;A de Power BI</b></td><td>Lenguaje natural con visuales, pero sin conversación tipo asistente.</td><td>Soporta RLS.</td><td>En retiro.</td><td><span class="pill no">Descartar</span></td></tr>
+    <tr><td><b>A. Copilot nativo</b></td>
+      <td><span data-s="app">La narrativa no conversa y solo usa lo visible. No encontré documentación de chat para app owns data.</span><span data-s="user">Hay que probar si el panel de Copilot funciona en nuestro embed y responde las comparaciones.</span></td>
+      <td><span data-s="app">Por confirmar con el token de embed.</span><span data-s="user">Usa la identidad del usuario. Cada usuario puede requerir Pro o PPU, salvo P o F64 en adelante.</span></td>
+      <td><span data-s="app">Preview. Esfuerzo bajo.</span><span data-s="user">Esfuerzo técnico bajo. Licencias por revisar.</span></td>
+      <td><span data-s="app"><span class="pill no">No alcanza</span></span><span data-s="user"><span class="pill test">Probar primero</span></span></td></tr>
+    <tr><td><b>B. Foundry con Fabric IQ</b></td>
+      <td>Consulta modelos semánticos. Hay que medir la exactitud.</td>
+      <td><span data-s="app">Requiere contexto Entra u OAuth. Una cuenta compartida perdería el filtro por usuario (inferencia).</span><span data-s="user">Trabaja con el usuario y su RLS. Cada usuario necesita licencia Fabric.</span></td>
+      <td>Preview. Esfuerzo medio. Requiere región con Fabric completo.</td>
+      <td><span data-s="app"><span class="pill no">No encaja</span></span><span data-s="user"><span class="pill test">Alternativa</span></span></td></tr>
+    <tr><td><b>C. Foundry con herramientas propias</b><br><span class="note">DAX sobre el modelo semántico</span></td>
+      <td>Cubre las preguntas si el modelo tiene los datos. Usa las mismas medidas del reporte.</td>
+      <td>El backend fija el alcance desde la sesión. RLS con service principal: <b>hay que probarlo</b>.</td>
+      <td>Más desarrollo. Esfuerzo alto. La API no aparece marcada como preview.</td>
+      <td><span data-s="app"><span class="pill ok">Llevar a PoC</span></span><span data-s="user"><span class="pill warn">Si lo nativo falla</span></span></td></tr>
+    <tr><td><b>D. Foundry con vista SQL diaria</b></td>
+      <td>Cubre las preguntas, pero hay que duplicar la lógica de las medidas y vigilar diferencias con el reporte.</td>
+      <td>Todo depende del backend y de la vista.</td>
+      <td>Tecnología conocida. Esfuerzo alto. Datos con un día de atraso.</td>
+      <td><span class="pill warn">Plan B</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:10px">Fuentes en la última sección. La API DAX limita quién puede usar <code>effectiveUsername</code> y <code>roles</code>, así que la prueba de permisos sería el primer paso de una PoC.</p>
+</section>
+
+<section>
+  <h2>Arquitectura candidata</h2>
+  <p class="intro">La idea central es que el modelo de lenguaje decide qué herramienta usar, pero nunca decide qué datos puede ver cada persona.</p>
+  <figure class="card">
+    <div class="scroll"><svg viewBox="0 0 990 350" width="990" role="img" aria-label="El chat envía la pregunta al backend. El backend consulta al agente en Foundry y, cuando el agente pide datos, ejecuta una herramienta fija con el alcance del usuario contra el modelo semántico. El resultado agregado vuelve al agente, que redacta la respuesta.">
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6"/></marker></defs>
+      <rect class="sv-group" x="10" y="24" width="225" height="232" rx="8"/><text class="sv-l" x="22" y="44">Navegador del usuario</text>
+      <rect class="sv-box" x="30" y="56" width="185" height="58" rx="6"/><text class="sv-t" x="122" y="80" text-anchor="middle">Asistente (chat)</text><text class="sv-s" x="122" y="99" text-anchor="middle">Ícono abajo a la derecha</text>
+      <rect class="sv-box" x="30" y="178" width="185" height="58" rx="6"/><text class="sv-t" x="122" y="202" text-anchor="middle">Reporte Power BI</text><text class="sv-s" x="122" y="221" text-anchor="middle">iframe, igual que hoy</text>
+      <path class="sv-line" d="M122 178V116" marker-end="url(#a2)"/><text class="sv-l" x="130" y="143">filtros y</text><text class="sv-l" x="130" y="158">página activa</text>
+      <path class="sv-line" d="M215 85H262V180H298" marker-end="url(#a2)"/>
+      <rect class="sv-box" x="300" y="24" width="170" height="70" rx="6"/><text class="sv-t" x="385" y="52" text-anchor="middle">Agente en Foundry</text><text class="sv-s" x="385" y="72" text-anchor="middle">Elige herramienta y redacta</text>
+      <rect class="sv-on" x="300" y="150" width="170" height="82" rx="6"/><text class="sv-t" x="385" y="180" text-anchor="middle">Backend de la app</text><text class="sv-s" x="385" y="200" text-anchor="middle">Sesión y permisos</text><text class="sv-s" x="385" y="217" text-anchor="middle">Registro de consultas</text>
+      <path class="sv-line" d="M345 150V96" marker-end="url(#a2)"/><text class="sv-l" x="338" y="127" text-anchor="end">pregunta</text>
+      <path class="sv-line" d="M425 94V148" marker-end="url(#a2)"/><text class="sv-l" x="432" y="127">herramienta y parámetros</text>
+      <path class="sv-key" d="M470 176H578" marker-end="url(#a2)"/><text class="sv-l" x="524" y="150" text-anchor="middle">parámetros +</text><text class="sv-l" x="524" y="166" text-anchor="middle">alcance del usuario</text>
+      <path class="sv-line" d="M580 208H472" marker-end="url(#a2)"/><text class="sv-l" x="526" y="226" text-anchor="middle">resultado agregado</text>
+      <rect class="sv-box" x="580" y="150" width="160" height="82" rx="6"/><text class="sv-t" x="660" y="180" text-anchor="middle">Herramientas fijas</text><text class="sv-s" x="660" y="200" text-anchor="middle">Ranking, comparación</text><text class="sv-s" x="660" y="217" text-anchor="middle">y tendencia</text>
+      <path class="sv-line" d="M740 180H798" marker-end="url(#a2)"/><text class="sv-l" x="769" y="170" text-anchor="middle">DAX</text>
+      <rect class="sv-box" x="800" y="150" width="175" height="82" rx="6"/><text class="sv-t" x="887" y="180" text-anchor="middle">Modelo semántico</text><text class="sv-s" x="887" y="200" text-anchor="middle">Medidas oficiales y RLS</text>
+      <rect class="sv-box" x="800" y="40" width="175" height="58" rx="6" stroke-dasharray="5 4"/><text class="sv-t" x="887" y="64" text-anchor="middle">Vista SQL diaria</text><text class="sv-s" x="887" y="83" text-anchor="middle">Solo si falla la otra vía</text>
+      <path class="sv-dash" d="M660 150V70H798" marker-end="url(#a2)"/>
+      <path class="sv-line" d="M122 236V316H887V234" marker-end="url(#a2)"/><text class="sv-l" x="500" y="335" text-anchor="middle">como hoy: token de embed generado por la aplicación</text>
+    </svg></div>
+    <figcaption>La línea resaltada es el punto de control: el alcance sale de la sesión, no del texto de la pregunta ni del modelo de lenguaje. Se probaría con la hoja de seguridad de la matriz.</figcaption>
+  </figure>
+  <div class="card" style="margin-top:12px">
+    <h3>Recorrido de una pregunta</h3>
+    <ol class="steps">
+      <li>El usuario pregunta: "¿Qué escuelas tuvieron menor actividad en mayo?".</li>
+      <li>El chat agrega los filtros del reporte, leídos con <code>getFilters</code>. Los slicers se validarían en la PoC.</li>
+      <li>El backend identifica al usuario por su sesión y envía la pregunta al agente.</li>
+      <li>El agente pide la herramienta de ranking con período mayo y orden ascendente.</li>
+      <li>El backend agrega el alcance del usuario y consulta el modelo. El modelo de lenguaje no ve datos individuales de estudiantes.</li>
+      <li>El agente redacta la respuesta con los números recibidos e indica período, filtros y permisos aplicados.</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <h2>Costo de operación de la opción C</h2>
+  <p class="intro">Calculadora con supuestos editables. Sirve para ver qué pesa más. Los precios provienen de terceros y hay que confirmarlos en la calculadora de Azure antes de presentarlos como firmes.</p>
+  <form class="card calc" id="calc" novalidate>
+    <div>
+      <div class="fields">
+        <label for="c-users">Usuarios activos al mes<input id="c-users" type="number" min="0" value="200"></label>
+        <label for="c-q">Preguntas por usuario al mes<input id="c-q" type="number" min="0" value="20"></label>
+        <label for="c-in">Tokens de entrada por pregunta<input id="c-in" type="number" min="0" value="6000"></label>
+        <label for="c-out">Tokens de salida por pregunta<input id="c-out" type="number" min="0" value="500"></label>
+        <label for="c-pin">USD por millón, entrada<input id="c-pin" type="number" min="0" step="0.01" value="0.25"></label>
+        <label for="c-pout">USD por millón, salida<input id="c-pout" type="number" min="0" step="0.01" value="2.00"></label>
+        <label for="c-host">Backend y monitoreo (USD al mes)<input id="c-host" type="number" min="0" value="50"></label>
+        <label for="c-cap">Capacidad adicional (USD al mes)<input id="c-cap" type="number" min="0" value="0"></label>
+      </div>
+      <p class="err" id="c-err" role="alert"></p>
+    </div>
+    <div class="result" aria-live="polite">
+      <span class="meta">Total estimado al mes</span>
+      <div class="big" id="r-total">—</div>
+      <dl>
+        <dt>Preguntas al mes</dt><dd id="r-q">—</dd>
+        <dt>Modelo de lenguaje</dt><dd id="r-model">—</dd>
+        <dt>Backend y monitoreo</dt><dd id="r-host">—</dd>
+        <dt>Capacidad adicional</dt><dd id="r-cap">—</dd>
+      </dl>
+      <p class="note" style="margin-top:12px">Precio de referencia: GPT-5 mini según rastreadores externos. Foundry no cobra por agentes nativos, pero sí por tokens. Valores como F2 (~USD 263) o A1 (~USD 735) al mes también provienen de terceros.</p>
+    </div>
+  </form>
+  <p class="note" style="margin-top:10px">Tokens por pregunta, usuarios y costo de backend son supuestos míos. Con Cuenta Microsoft habría que sumar licencias por usuario, y las consultas del bot también consumen la capacidad donde corren los reportes.</p>
+</section>
+
+<section>
+  <h2>El HTML de referencia frente al ticket</h2>
+  <p class="intro">El HTML sirve como guía de experiencia: sus respuestas están escritas a mano y no hay IA detrás. Además propone funciones que el ticket no pide.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Función en el HTML</th><th>¿Está en el ticket?</th><th>Propuesta</th></tr></thead>
+    <tbody>
+    <tr><td>Ícono y chat abajo a la derecha, preguntas sugeridas</td><td>Sí</td><td><span class="pill ok">Fase 1</span></td></tr>
+    <tr><td>Respuestas según filtros y permisos</td><td>Sí</td><td><span class="pill ok">Fase 1</span></td></tr>
+    <tr><td>Búsqueda en lenguaje natural sobre el reporte</td><td>No</td><td><span class="pill test">Fase 2</span> Puede usar el mismo agente.</td></tr>
+    <tr><td>Resumen ejecutivo y exportar PDF</td><td>No</td><td><span class="pill test">Fase 2</span></td></tr>
+    <tr><td>Alertas proactivas y proyecciones</td><td>No</td><td><span class="pill test">Fase 2</span> Requiere definir reglas y método.</td></tr>
+    <tr><td>Datos de talleres</td><td>No</td><td><span class="pill warn">Confirmar</span> Depende de si existen en el modelo.</td></tr>
+    <tr><td>"Riesgo IA" por usuario</td><td>No</td><td><span class="pill no">Revisión legal</span> Clasifica personas, posiblemente menores.</td></tr>
+    <tr><td>Mensajes generados y enviados a usuarios</td><td>No</td><td><span class="pill no">Revisión legal</span> Es una acción, no una consulta; el pie menciona COPPA.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="card" style="margin-top:12px">
+    <h3>Cifras del HTML que no cuadran</h3>
+    <p style="font-size:14.5px;margin-bottom:6px">Dice que las 3 escuelas principales suman 38% del total; con sus datos son 2,478 de 102,334, o 2.4%. También dice que 3 escuelas superan 500 conexiones, cuando sus datos muestran 5, y usa 83%, 79% y 77% para indicadores parecidos de conexión.</p>
+    <p class="note">Por eso estas preguntas entraron a la matriz como pruebas de exactitud, y el prototipo calcula sus respuestas desde datos ficticios coherentes.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Riesgos principales</h2>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:9%">Nivel</th><th style="width:30%">Riesgo</th><th>Respuesta propuesta</th></tr></thead>
+    <tbody>
+    <tr><td><span class="pill no">Alto</span></td><td>Un usuario ve datos fuera de su alcance. Microsoft limita RLS con service principal.</td><td>Alcance fijado por el backend, herramientas fijas y pruebas por rol antes de avanzar.</td></tr>
+    <tr><td><span class="pill no">Alto</span></td><td>Datos de menores llegan a un servicio de IA sin aprobación.</td><td>Solo agregados, mínimo de agregación y revisión del responsable de cumplimiento.</td></tr>
+    <tr><td><span class="pill warn">Medio</span></td><td>El modelo no tiene los datos o las definiciones de las preguntas.</td><td>Mapear cada pregunta a tablas con Andrés. Si falta, ajustar el modelo o usar la vista SQL.</td></tr>
+    <tr><td><span class="pill warn">Medio</span></td><td>Respuestas incorrectas dichas con seguridad.</td><td>Números solo desde herramientas, período siempre visible y pruebas contra valores del reporte.</td></tr>
+    <tr><td><span class="pill warn">Medio</span></td><td>Servicios en preview cambian o se retiran.</td><td>Evitar depender de ellos en la ruta principal y revisar el estado antes del 13 nov.</td></tr>
+    <tr><td><span class="pill warn">Medio</span></td><td>Las consultas afectan los reportes o alcanzan el límite de 120 por minuto por usuario de la API.</td><td>Caché de consultas, límites por usuario y medir el consumo de capacidad en la PoC.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Cronograma hasta el 13 de noviembre</h2>
+  <figure class="card">
+    <div class="scroll"><svg viewBox="0 0 900 250" width="900" role="img" aria-label="Del 4 al 5 de noviembre artefactos iniciales. Del 5 al 6 reunión con Andrés Guevara, de la cual depende lo demás. Del 9 al 11 ajuste con datos reales. Del 12 al 13 recomendación final y entrega.">
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6"/></marker></defs>
+      <g class="sv-l" text-anchor="middle"><text x="70" y="20">Mié 4</text><text x="180" y="20">Jue 5</text><text x="290" y="20">Vie 6</text><text x="400" y="20">Lun 9</text><text x="510" y="20">Mar 10</text><text x="620" y="20">Mié 11</text><text x="730" y="20">Jue 12</text><text x="840" y="20">Vie 13</text></g>
+      <g stroke="currentColor" stroke-opacity=".14"><line x1="70" x2="70" y1="30" y2="240"/><line x1="180" x2="180" y1="30" y2="240"/><line x1="290" x2="290" y1="30" y2="240"/><line x1="400" x2="400" y1="30" y2="240"/><line x1="510" x2="510" y1="30" y2="240"/><line x1="620" x2="620" y1="30" y2="240"/><line x1="730" x2="730" y1="30" y2="240"/><line x1="840" x2="840" y1="30" y2="240"/></g>
+      <rect class="sv-bar2" x="70" y="42" width="110" height="28" rx="4"/><text class="sv-t" x="192" y="61">Artefactos iniciales y prototipo</text>
+      <rect class="sv-bar2" x="180" y="90" width="110" height="28" rx="4"/><text class="sv-t" x="302" y="109">Reunión con Andrés Guevara</text>
+      <path class="sv-gate" d="M290 96L300 104L290 112L280 104Z"/>
+      <rect class="sv-bar2" x="400" y="138" width="220" height="28" rx="4"/><text class="sv-t" x="632" y="157">Ajuste con el entorno real</text>
+      <path class="sv-dash" d="M290 118V152H398" marker-end="url(#a3)"/>
+      <rect class="sv-bar" x="730" y="186" width="110" height="28" rx="4"/><text class="sv-t" x="722" y="205" text-anchor="end">Recomendación final y entrega</text>
+    </svg></div>
+    <figcaption>El rombo marca la dependencia: si la reunión se retrasa, el 13 nov se entrega una recomendación condicionada a esos datos.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Estado de los criterios de aceptación</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Criterio del ticket</th><th style="width:16%">Estado</th><th>Qué falta</th></tr></thead>
+    <tbody>
+    <tr><td>Documentar la evaluación de alternativas</td><td><span class="pill warn">En curso</span></td><td>Ajustar con el entorno real.</td></tr>
+    <tr><td>Identificar costos y requisitos técnicos</td><td><span class="pill warn">Preliminar</span></td><td>Confirmar precios, SKU y licencias.</td></tr>
+    <tr><td>Determinar cómo acceder a datos actualizados y seguros</td><td><span class="pill warn">Hipótesis</span></td><td>Confirmar refresco y RLS.</td></tr>
+    <tr><td>Validar que responde bien las preguntas de ejemplo</td><td><span class="pill no">Pendiente de PoC</span></td><td>El prototipo no lo demuestra. La matriz ya está lista.</td></tr>
+    <tr><td>Presentar una recomendación fundamentada</td><td><span class="pill warn">Preliminar</span></td><td>Cerrar después de la reunión.</td></tr>
+    <tr><td>Definir la integración con el área de reportes</td><td><span class="pill warn">Propuesta</span></td><td>Revisar la aplicación real y el contexto de filtros.</td></tr>
+    <tr><td>Coordinar con Andrés Guevara</td><td><span class="pill no">Pendiente</span></td><td>Agendar la reunión. La guía ya está lista.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Fuentes</h2>
+  <p class="note intro">Páginas de Microsoft revisadas el 4 nov 2026, salvo lo indicado. Este tema cambia rápido: revisar de nuevo antes de la entrega.</p>
+  <ul class="src">
+    <li><a href="https://learn.microsoft.com/en-us/power-bi/natural-language/q-and-a-limitations">Límites de Q&amp;A</a>: retiro en febrero de 2027. Un resumen de búsqueda del blog de Microsoft indica diciembre de 2026; no pude abrir el blog.</li>
+    <li><a href="https://learn.microsoft.com/en-us/power-bi/create-reports/copilot-create-narrative">Narrativa con Copilot</a>: escenarios de embed y limitaciones.</li>
+    <li><a href="https://learn.microsoft.com/en-us/fabric/enterprise/fabric-copilot-capacity">Fabric Copilot capacity</a>: F2 o P1 como mínimo; modo Embedded no soportado.</li>
+    <li><a href="https://learn.microsoft.com/en-us/power-bi/developer/embedded/embedded-capacity">Capacidad y SKU para embed</a>: licencias por escenario y limitación de F en GCC.</li>
+    <li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric">Fabric data agent en Foundry</a>: deprecación el 6 nov 2026 e identidad del usuario.</li>
+    <li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric-iq">Fabric IQ en Foundry</a>: preview, autenticación, licencia y región.</li>
+    <li><a href="https://learn.microsoft.com/en-us/rest/api/power-bi/datasets/execute-dax-queries-in-group">Execute DAX Queries</a> y <a href="https://learn.microsoft.com/en-us/rest/api/power-bi/datasets/execute-queries-in-group">Execute Queries</a>: límites, RLS e identidad efectiva.</li>
+    <li><a href="https://learn.microsoft.com/en-us/power-bi/developer/mcp/remote-mcp-server-get-started">Power BI MCP</a>: preview; RLS no se aplica con service principal.</li>
+    <li><a href="https://learn.microsoft.com/en-us/javascript/api/overview/powerbi/control-report-filters">Filtros en embed</a>: lectura de filtros del reporte, la página y el visual.</li>
+    <li><a href="https://azure.microsoft.com/en-us/pricing/details/foundry-agent-service/">Precios de Foundry Agent Service</a>: agentes nativos sin cargo adicional, tokens aparte.</li>
+    <li>Precios de F2, A1 y GPT-5 mini: blogs y rastreadores externos, sin confirmar.</li>
+    <li><code>estudia_avanza_dashboard_v6.html</code>: adjunto de REQ-3463, revisado y recalculado.</li>
+  </ul>
+</section>
+
+</div>
+<script>
+(function(){
+  var sec=document.getElementById('comparativo'),btns=sec.querySelectorAll('.seg button');
+  btns.forEach(function(b){b.addEventListener('click',function(){sec.dataset.scenario=b.dataset.v;btns.forEach(function(x){x.setAttribute('aria-pressed',String(x===b))})})});
+  var ids=['users','q','in','out','pin','pout','host','cap'],$=function(i){return document.getElementById(i)};
+  var usd=function(n){return 'USD '+n.toLocaleString('en-US',{minimumFractionDigits:n<100?2:0,maximumFractionDigits:n<100?2:0})};
+  function calc(){
+    var v={},bad=false;
+    ids.forEach(function(k){var x=parseFloat($('c-'+k).value);if(!isFinite(x)||x<0)bad=true;v[k]=x});
+    if(bad){$('c-err').textContent='Usa números iguales o mayores que cero en todos los campos.';return}
+    $('c-err').textContent='';
+    var q=v.users*v.q,model=q*v['in']/1e6*v.pin+q*v.out/1e6*v.pout,total=model+v.host+v.cap;
+    $('r-q').textContent=q.toLocaleString('en-US');$('r-model').textContent=usd(model);$('r-host').textContent=usd(v.host);$('r-cap').textContent=usd(v.cap);$('r-total').textContent=usd(total);
+  }
+  $('calc').addEventListener('input',calc);$('calc').addEventListener('submit',function(e){e.preventDefault()});calc();
+})();
+</script>
+</body>
+</html>

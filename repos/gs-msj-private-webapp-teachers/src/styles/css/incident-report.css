@@ -1,0 +1,73 @@
+
+.wrapper-modalReportFails {
+    width: 90%;
+    margin: auto;
+}
+
+.modalReportFails--image {
+    margin-bottom: 2em;
+    text-align: center;
+}
+
+.modalReportFails--Title {
+    color: #1A7BAA;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.modalReportFails--contactInfo {
+    margin: 30px 0;
+    padding: 15px 0;
+    border-top: 1px solid #E4E4E4;
+    border-bottom: 1px solid #E4E4E4;
+    font-size: 15px;
+    color: #31353D;
+}
+
+.contactInfo__mail {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    color: #4F57A7;
+}
+
+.contactInfo__mail a {
+    color: #4F57A7;
+    text-decoration: none;
+}
+
+.contactInfo__mail a:hover {
+    color: #868686;
+    text-decoration: underline;
+}
+
+.contactInfo__phone {
+    display: flex;
+    align-items: top;
+    gap: 10px;
+    margin-top: 15px;
+    color: #48AF97;
+    font-weight: 500;
+}
+
+.contactInfo__phone--desc span {
+    display: block;
+    font-size: 12px;
+}
+
+.modalReportFails--desc p {
+    margin-bottom: 15px;
+}
+
+.contactInfo__phone a {
+    color: #48AF97;
+    text-decoration: none;
+}
+
+.contactInfo__phone a:hover {
+    color: #868686;
+    text-decoration: underline;
+}
+
+

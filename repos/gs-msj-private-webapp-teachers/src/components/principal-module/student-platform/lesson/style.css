@@ -1,0 +1,205 @@
+.wrapper-content {
+    margin-left: 150px;
+    margin-top: 75px;
+}
+
+/****************************/
+
+.center-container {
+    padding: 1em;
+    padding-bottom: 75px;
+
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+}
+
+.container_two-col {
+    width: 48%;
+}
+
+
+
+/* MQ 920px */
+
+@media screen and (max-width: 920px) {
+    .container_two-col {
+        width: 100%;
+        margin-bottom: 1em;
+    }
+}
+
+
+/* MQ 750px */
+
+@media screen and (max-width: 750px) {
+    .wrapper-content {
+        margin-left: 0;
+    }
+
+    .container_two-col {
+        width: 100%;
+    }
+
+    .center-container {
+        padding-bottom: 125px;
+    }
+}
+
+/* MQ 500px */
+
+@media screen and (max-width: 500px) {
+    .center-container {
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+    }
+}
+
+
+/* Special styles for lesson tabs */
+.wrapper-lesson-tabs {
+    padding: 1em;
+    padding-bottom: 75px;
+
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+}
+
+.content-max-width {
+    max-width: 100% !important;
+}
+
+.wrapper-lesson-tabs .wrapper-lessons .title-lesson {
+    font-size: 17px;
+}
+
+.wrapper-lesson-tabs .wrapper-lessons .col-left img {
+    width: 55px;
+    margin-left: 0.5em;
+}
+
+.wrapper-lesson-tabs .wrapper-lessons .lesson-grade {
+    font-size: 25px;
+}
+
+.wrapper-lesson-tabs .wrapper-lessons .col-right svg {
+    left: -26px;
+}
+
+/* TABS MESSAGE (Assigned lessons tab removed)*/
+.wrapper-message-tabs {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0;
+    padding: 0 1.5em 0.5em 1.5em;
+}
+
+.message-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.message-tabs input[type=radio]:checked~label {
+    color: #DADADA;
+    font-weight: bold;
+    transition: color ease 0.2s;
+}
+
+.message-tabs label {
+    text-align: center;
+    font-size: 24px;
+    border-bottom: 4px solid;
+    border-image-slice: 1;
+    padding-bottom: 15px;
+    width: 100%;
+    font-weight: bold;
+}
+
+.message-tabs label .fas {
+    font-size: 20px;
+    padding: 0 0.5em;
+}
+
+.number-no-read {
+    font-weight: normal;
+    font-style: italic;
+}
+
+.message-tabs .message-tabs--content {
+    order: 99;
+    flex-grow: 1;
+    width: 100%;
+    display: block;
+    padding: 1rem 1em 3em 1em;
+    -webkit-animation: scale 0.7s ease-in-out;
+    -moz-animation: scale 0.7s ease-in-out;
+    animation: scale 0.7s ease-in-out;
+}
+
+@keyframes scale {
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.01);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.message-tabs input[type="radio"] {
+    display: none;
+}
+
+.message-tabs input[type="radio"]:checked+label {
+    color: #e88b18;
+    border-bottom: 3px solid #e88b18;
+    background-color: #ffeece;
+    /* color: #5A93B6;
+border-bottom: 3px solid #5A93B6; */
+}
+
+/* .message-tabs input[type="radio"]:checked+label+.message-tabs--content {
+    display: block;
+} */
+
+.message-tabs input[type="radio"]:checked+.tab-homework {
+    background-color: #FFF;
+    border-bottom: 3px solid #0F3152;
+    color: #0F3152;
+}
+
+@media screen and (max-width: 750px) {
+    .wrapper-message-tabs {
+        margin: auto 0;
+        padding: 0;
+    }
+}
+
+@media screen and (max-width: 450px) {
+    .message-tabs .message-tabs--content {
+        padding: 1rem 0.25em 3em 0.25em;
+    }
+}

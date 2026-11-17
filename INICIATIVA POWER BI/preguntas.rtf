@@ -1,0 +1,61 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2907
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 PREGUNTAS DE PRUEBA PARA F2 / TEST QUESTIONS FOR F2\
+Modelo / Model: MSJ_Utilization (Power BI Desktop)\
+Basadas en medidas y columnas reales del modelo / Based on real measures and columns in the model\
+==========================================================================\
+\
+1. ES: \'bfCu\'e1ntos usuarios hay en total y cu\'e1ntos tienen suscripci\'f3n activa?\
+   EN: How many users are there in total, and how many have an active subscription?\
+   (Total Usuarios, Usuarios Activos)\
+\
+2. ES: \'bfCu\'e1l es el porcentaje de usuarios conectados por escuela? Muestra las 10 escuelas con el porcentaje m\'e1s bajo.\
+   EN: What is the percentage of connected users per school? Show the 10 schools with the lowest percentage.\
+   (% usuarios conectados por escuela, school_name)\
+\
+3. ES: \'bfCu\'e1ntos usuarios activos NO se han conectado, desglosado por rol?\
+   EN: How many active users have NOT connected, broken down by role?\
+   (Usuarios NO Conectados (Activos por Rol), role)\
+\
+4. ES: \'bfC\'f3mo han evolucionado las conexiones por fecha en el \'faltimo a\'f1o acad\'e9mico?\
+   EN: How have connections evolved by date during the last academic year?\
+   (Conteo_Conectados_Si, connected_date, A\'f1o acad\'e9mico)\
+\
+5. ES: \'bfCu\'e1ntas escuelas han sido visitadas y cu\'e1ntas no? \'bfCu\'e1l fue la fecha de la \'faltima visita de cada una?\
+   EN: How many schools have been visited and how many have not? What was each school's last visit date?\
+   (Visitadas_Si, Visitadas_No, Fecha Ultima Visita)\
+\
+6. ES: \'bfCu\'e1ntos usuarios tienen la suscripci\'f3n inactiva o cancelada y cu\'e1ntos no tienen suscripci\'f3n?\
+   EN: How many users have an inactive or canceled subscription, and how many have no subscription?\
+   (Usuarios Inactivos_canceled, Usuarios Sin subscripci\'f3n_null)\
+\
+7. ES: \'bfCu\'e1l es el promedio de % Full Quiz por escuela y por materia (subject_name)?\
+   EN: What is the average % Full Quiz by school and by subject (subject_name)?\
+   (% Full Quiz (promedio))\
+\
+8. ES: \'bfCu\'e1ntos quizzes fueron tomados y cu\'e1ntos no fueron tomados por periodo?\
+   EN: How many quizzes were taken and how many were not taken, per period?\
+   (Quizz_taken, Quizz_not_taken, Period)\
+\
+9. ES: \'bfCu\'e1ntos usuarios se conectaron por ciudad y por ORE (regi\'f3n educativa)?\
+   EN: How many users connected, by city and by ORE (educational region)?\
+   (Conectado \'fanico, city, ore)\
+\
+10. ES: \'bfCu\'e1ntas suscripciones se activaron y cu\'e1ntas se cancelaron por a\'f1o acad\'e9mico?\
+    EN: How many subscriptions were activated and how many were canceled per academic year?\
+    (vw_subscription_profile_history_detail: activated_date, cancellation_date, Academic Year)\
+\
+==========================================================================\
+NOTAS / NOTES\
+- Probar cada pregunta en ES y en EN y comparar resultados.\
+  Test each question in both ES and EN and compare results.\
+- Si F2 no encuentra una medida, reformular usando el nombre exacto de la medida entre par\'e9ntesis.\
+  If F2 cannot find a measure, rephrase using the exact measure name shown in parentheses.\
+- Preguntas 7 y 10 usan tablas con relaciones inactivas o muchos-a-muchos: validar con cuidado.\
+  Questions 7 and 10 touch tables with inactive or many-to-many relationships: validate carefully.\
+}

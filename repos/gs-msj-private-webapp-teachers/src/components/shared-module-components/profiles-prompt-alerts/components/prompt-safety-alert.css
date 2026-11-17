@@ -1,0 +1,72 @@
+.prompt-safety-alert {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.875rem;
+  align-items: center;
+  /* No horizontal margin: the bootstrap column already provides the gutter. */
+  margin: 1.5rem 0 0;
+  padding: 0.9375rem 1.0625rem;
+  border: 1px solid #ffc7b7;
+  border-left: 0.3125rem solid #cf513b;
+  border-radius: 0.5625rem;
+  background: #fff7f4;
+  box-shadow: 0 0.4375rem 1.25rem rgba(165, 56, 37, 0.06);
+}
+
+.prompt-safety-alert__icon {
+  display: grid;
+  place-items: center;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 50%;
+  background: #ffe1da;
+  color: #b43f2c;
+}
+
+.prompt-safety-alert__body {
+  min-width: 0;
+}
+
+.prompt-safety-alert__eyebrow {
+  display: block;
+  color: #8c5a4d;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.prompt-safety-alert__title {
+  margin: 0.125rem 0 0.1875rem;
+  color: #8c2f22;
+  font-size: 1rem;
+}
+
+.prompt-safety-alert__text {
+  margin: 0;
+  color: #75483f;
+  font-size: 0.75rem;
+}
+
+.prompt-safety-alert__count {
+  align-self: start;
+  padding: 0.3125rem 0.5625rem;
+  border-radius: 999px;
+  background: #cf513b;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Not in the mock: keeps the count from squeezing the text on narrow screens. */
+@media (max-width: 900px) {
+  .prompt-safety-alert {
+    grid-template-columns: auto 1fr;
+  }
+
+  .prompt-safety-alert__count {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

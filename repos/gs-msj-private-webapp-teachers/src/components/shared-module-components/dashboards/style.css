@@ -1,0 +1,224 @@
+.period-input {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #1e293b;
+  background: #fff;
+  height: 31px;
+}
+
+.period-input-year {
+  width: 90px;
+}
+
+.dashboard-tabs-container  {
+  display: flex;
+}
+
+.language-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.usage-metric-text {
+  font-size: 1em;
+}
+
+.export-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.period-selector-tabs {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.period-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.period-tab {
+  padding: 4px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-weight: 400;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.period-tab.active {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+  color: #27466c;
+}
+
+.charts-container {
+  width: 40%;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+}
+
+.no-data-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 650px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.full-width-chart-container {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+}
+
+.primary-charts-container {
+  padding: 10px 20px;
+  display: flex;
+  gap: 50px;
+}
+
+.cards-metrics-container{
+  display: flex;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.legend-color-box {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legend-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metric-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.charts-title {
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  display: flex;
+}
+
+.charts-legends-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  justify-content: center;
+}
+
+.metric-card-container {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.charts-tabs-container {
+  display: flex;
+}
+
+@media screen and (max-width: 1200px) {
+  .primary-charts-container {
+    padding: 10px 5px;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .charts-container {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 992px) {
+  .dashboard-tabs {
+    flex-direction: column;
+    margin-bottom: 15px !important;
+  }
+
+  .dashboard-tabs-container  {
+    display: inline;
+  }
+}
+
+
+@media screen and (max-width: 750px) {
+  .dashboards-wrapper {
+    padding-bottom: 30px;
+    margin-right: 12px;
+  }
+
+  .language-switch-container {
+    flex-direction: column;
+  }
+
+  .export-container {
+    flex-direction: column;
+  }
+
+  .charts-tabs-container {
+    flex-direction: column;
+  }
+
+  .no-data-container {
+    min-height: 250px;
+  }
+
+  .usage-metric-icon {
+    font-size: 1.7em !important;
+    margin-top: 10px !important;
+  }
+
+   .usage-metric-text {
+    font-size: 0.9em !important;
+    margin-bottom: 0px !important;
+  }
+}
+
+@media screen and (max-width: 750px) {
+  .cards-metrics-container {
+    flex-direction: column;
+  }
+}
+
+@media screen and (max-width: 450px) {
+  .period-container {
+    flex-direction: column;
+  }
+}

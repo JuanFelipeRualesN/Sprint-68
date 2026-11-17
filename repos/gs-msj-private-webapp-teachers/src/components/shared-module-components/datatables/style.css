@@ -1,0 +1,240 @@
+.wrapper-table-data-task {
+    width: 100%;
+    /* max-width: 850px; */
+    padding: 0;
+}
+
+.wrapper-table-data-task h1 {
+    font-weight: 800;
+    font-size: 20px;
+    margin: 0 0 1em 0;
+    border-bottom: 1px solid #DDD;
+    padding-bottom: 0.5em;
+}
+
+/******/
+
+table.content-table-data {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.5em 0;
+}
+
+.content-table-data tr/*:nth-of-type(odd)*/ {
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+}
+
+.content-table-data tr {
+    border-bottom: 1px solid #EBEBEB;
+}
+
+.content-table-data thead tr {
+    border-bottom: 0;
+    background: #f7f7f7;
+}
+
+.content-table-data th {
+    padding-bottom: 1em;
+}
+
+.content-table-data td {
+    padding: 1em 0;
+    font-size: 16px;
+}
+
+.content-table-data .table-data--txt-matter {
+    font-size: 11px;
+    color: #9098AC;
+    margin: 0.25em 0;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.content-table-data .table-data--title {
+    font-weight: bold;
+    font-size: 16px;
+    color: #000;
+}
+
+.content-table-data .table-data--date {
+    color: #31353d;
+    font-size: 14px;
+    padding-left: 7px;
+}
+
+.content-table-data .table-data--name-matter {
+    font-size: 14px;
+    color: #000;
+}
+
+/* button */
+
+.button-table-data {
+    font-weight: bold;
+    display: block;
+    border-radius: 50px;
+    padding: 0.8em;
+    font-size: 12px;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 auto;
+    background-color: #F2AF2B;
+    border: 1px solid #F2AF2B;
+    color: #FFF;
+    width: 100%;
+    cursor: pointer;
+}
+
+.button-table-data:hover {
+    background-color: #b3bcbf;
+    border: 1px solid #b3bcbf;
+}
+
+
+
+/* MQ 750 */
+
+
+@media screen and (max-width: 750px) {
+    table.content-table-data, .content-table-data thead,
+    .content-table-data tbody,
+    .content-table-data th,
+    .content-table-data td,
+    .content-table-data tr {
+        display: block;
+    }
+
+    .content-table-data .table-data--date {
+        font-size: 12px !important;
+    }
+
+    .content-table-data thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .content-table-data tr { border-bottom: 8px solid #FFF; margin-bottom: 1em; }
+
+    .content-table-data td {
+        border: none;
+        border-bottom: 1px solid #EBEBEB;
+        position: relative;
+        /* padding-left: 50%; */
+        font-size: 13px;
+    }
+
+    /* .content-table-data td span {
+        padding-right: 5px
+    } */
+
+    .content-table-data td:before {
+        /* position: absolute; */
+        top: 15px;
+        left: 6px;
+        /* width: 45%; */
+        white-space: nowrap;
+        content: attr(data-column);
+        color: #2A426D;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .content-table-data tr {
+        background-color: #EFEFEF;
+    }
+
+    .button-table-data {
+        width: auto;
+        padding: 0.8em 2em;
+        margin: 0;
+    }
+
+    .modal-results.clear-paddingTable-responsive .table td,
+    .paddingTable-responsive .table td {
+        padding: 0.1em 1em !important;
+    }
+
+    .paddingTable-responsive .content-table-data tr {
+        padding-top: 10px;
+    }
+
+    .MuiTypography-body1 .card {
+        padding: 0;
+    }
+
+    .MuiTypography-body1 .card form {
+        padding-left: 0 !important;
+    }
+}
+
+
+/* MQ 500 */
+
+@media screen and (max-width: 500px) {
+    .content-table-data td {  font-size: 12px; }
+
+    /* table progress inside */
+    table.progress-table-inside, .progress-table-inside thead,
+    .progress-table-inside tbody,
+    .progress-table-inside th,
+    .progress-table-inside td,
+    .progress-table-inside tr {
+        display: block;
+    }
+
+    .progress-table-inside thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .progress-table-inside tr { border-bottom: 8px solid #FFF; margin-bottom: 1em; }
+
+    .progress-table-inside td {
+        border: none;
+        border-bottom: 1px solid #EBEBEB;
+        position: relative;
+        font-size: 13px;
+    }
+
+    .progress-table-inside td:before {
+        top: 15px;
+        left: 6px;
+        white-space: nowrap;
+        content: attr(data-column);
+        color: #2A426D;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .progress-table-inside td:nth-child(4):before {
+        display: none;
+    }
+
+    .progress-table-inside tr {
+        background-color: #EFEFEF;
+    }
+
+    .button-table-data {
+        width: auto;
+        padding: 0.8em 2em;
+        margin: 0;
+    }
+}
+
+@media screen and (max-width: 750px) {
+    .wrapper-table-data {
+        margin: auto;
+    }
+}
+
+/* MQ 450 */
+
+@media screen and (max-width: 450px) {
+    .content-table-data td {  font-size: 10px; }
+    .content-table-data .table-data--title { font-size: 14px; }
+    .button-table-data { font-size: 11px; }
+}

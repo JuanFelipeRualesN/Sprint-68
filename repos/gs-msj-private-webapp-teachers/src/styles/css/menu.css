@@ -1,0 +1,109 @@
+/* MENU */
+
+.sidebarMenu {
+    width: 100%;
+    display: block;
+    list-style: none;
+}
+
+.sidebarMenu--itemPpal {
+    font-size: var(--fontSize-regular);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+}
+
+.sidebarMenu--itemTitle {
+    padding: 30px 15px 10px 15px;
+    font-size: var(--fontSize-tiny);
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.sidebarMenu--item {
+    padding: 8px 15px;
+    font-size: var(--fontSize-xxsm);
+    font-weight: 500;
+}
+
+.sidebarMenu--item a {
+    display: flex;
+    color: var(--palette-gray-carbon);
+    cursor: pointer;
+}
+
+.sidebarMenu--item:hover a {
+    color: var(--palette-gray-smoke);
+}
+
+.sidebarMenu--item.active {
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.sidebarMenu--itemPpal .fas,
+.sidebarMenu--itemPpal svg {
+    opacity: 0.4;
+}
+
+/* Menu Movil*/
+
+.wrapper-movilMenu {
+    background: var(--palette-brand-blue-1);
+    color: var(--palette-gray-white);
+    position: relative;
+    width: 100%;
+    display: none;
+}
+
+/* Funcion para expandir y collapsar la region */
+.movilMenuToggle-box {
+    display: none;
+}
+
+.movilMenuToggle-box + label {
+    cursor: pointer;
+    display: block;
+    padding: 1em;
+}
+
+.movilMenuToggle-box + label + div {
+    display: none;
+}
+
+.movilMenuToggle-box:checked + label + div {
+    display: block;
+}
+
+.movilMenuToggle-box + label:before {
+    content: '';
+    background-image: url('../../assets/images/common-icons/Common-icon-ArrowDown.svg');
+    float: right;
+    height: 20px;
+    margin-right: 10px;
+    width: 20px;
+    filter: brightness(3.5);
+}
+
+.movilMenuToggle-box:checked + label:before {
+    content: '';
+    background-image: url('../../assets/images/common-icons/Common-icon-ArrowUp.svg');
+}
+
+.movilMenubox--title {
+    font-weight: 500;
+}
+
+.movilMenu_Content {
+    width: 100%;
+}
+
+@media screen and (max-width: 950px) {
+    .wrapper-movilMenu {
+        display: block;
+    }
+    .sidebarMenu {
+        display: none;
+    }
+}

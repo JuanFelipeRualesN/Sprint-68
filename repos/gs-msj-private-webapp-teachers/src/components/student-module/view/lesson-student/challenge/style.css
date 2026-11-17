@@ -1,0 +1,206 @@
+
+.student-wrapper-quiz-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: #2C3140;
+}
+
+.student-wrapper-quiz-list h4.title-lessons {
+  background-color: #e8eff3;
+  font-size: 16px;
+  padding: 0.7em;
+  color: #253084;
+}
+
+.student-wrapper-quiz-list h3 {
+font-weight: 800;
+font-size: 16px;
+margin: 0 0 2em 0;
+}
+
+
+/**********/
+
+.student-container-quiz-lesson a {
+padding: 1em ;
+text-decoration: none;
+font-size: 15px; 
+cursor: default;
+display: -webkit-box;
+display: -ms-flexbox;
+display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+      align-items: center;
+
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+}
+
+.student-container-quiz-lesson a .student-col-left--quiz-lesson span {
+  cursor: pointer;
+}
+
+/* Container Disabled */
+
+.student-container-quiz-lesson a.disabled {
+  background-color: #EDEDED;
+  color: rgba(94, 94, 94, .6);
+  cursor: not-allowed;
+} 
+
+.student-container-quiz-lesson a:hover.disabled {
+  background-color: #EDEDED;
+  box-shadow: none;
+}
+
+.student-container-quiz-lesson a.disabled .student-quiz-lesson__date,
+.student-container-quiz-lesson a.disabled p.student-quiz-lesson__download,
+.student-container-quiz-lesson a.disabled .student-quiz-lesson__icon-file-download__pdf,
+.student-container-quiz-lesson a.disabled .student-quiz-lesson__icon-file-download__word  {
+  color: rgba(94, 94, 94, .6);
+  cursor: not-allowed;
+} 
+
+.student-container-quiz-lesson a.disabled .student-quiz-lesson__download img {
+  filter: grayscale(100%);
+}
+
+
+/***/
+
+.student-container-quiz-lesson:first-child a {
+border-top-left-radius: 15px;
+border-top-right-radius: 15px;
+}
+
+.student-container-quiz-lesson:last-child a {
+border-bottom-left-radius: 15px;
+border-bottom-right-radius: 15px;
+border: 0;
+}
+
+
+.student-col-left--quiz-lesson {
+width: 60%;
+}
+
+.col-with-fix--quiz-lesson {
+  width: 155px;
+}
+
+.student-col-left--quiz-lesson p span:hover {
+  cursor: pointer;
+}
+
+.student-col-right--quiz-lesson {
+width: 160px;
+text-align: center;
+}
+
+
+.student-container-quiz-lesson .icon-finished-lesson {
+font-size: 25px;
+color: #B0D8B9;
+}
+
+.student-quiz-lesson__date {
+  color: #9098AC;
+  font-size: 12px;
+}
+
+p.student-quiz-lesson__download {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 5px;
+}
+
+.student-quiz-lesson__download--btn {
+  display: flex
+}
+
+.student-quiz-lesson__download--btn div:hover {
+  filter: grayscale(1);
+}
+
+.student-quiz-lesson__download img {
+  display: inline-block;
+  width: 20px;
+  margin: 0;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+.student-quiz-lesson__icon-finish {
+  color: #B0D8B9;
+  font-size: 22px;
+}
+
+.student-quiz-lesson__icon-waiting {
+  color: #AFAFAF;
+  font-size: 22px;
+}
+
+.student-quiz-lesson__icon-file-download {
+  font-size: 14px;
+  margin-right: 5px;
+}
+
+.student-quiz-lesson__icon-file-download__word {
+  color: #305190;
+}
+
+.student-quiz-lesson__icon-file-download__pdf {
+  color: #E45142;
+}
+
+.student-quiz-lesson__download-txt {
+  margin-right: 10px;
+}
+
+
+/* MQ 500px */
+
+@media screen and (max-width: 500px) {
+.student-container-quiz-lesson a {
+  -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+
+.student-col-left--quiz-lesson {
+  width: 100%;
+  margin-bottom: 1em;
+}
+}
+
+.student-col-right--quiz-lesson a {
+  justify-content: center;
+}
+
+.student-button-generic {
+  border-radius: 50px !important;
+  font-size: 14px !important;
+  text-align: center !important;
+  margin: .5em auto !important;
+  cursor: pointer !important;
+}
+
+.student-button-generic-disabled {
+  border-radius: 50px !important;
+  font-size: 14px !important;
+  text-align: center !important;
+  margin: .5em auto !important;
+  background-color: #AFAFAF !important;
+  border: 1px solid #AFAFAF !important;
+  color: #fff !important;
+  background-color: #AFAFAF !important;
+}
+
+.student-button-generic-disabled:hover.disabled {
+  background-color: #EDEDED;
+  box-shadow: none;
+}

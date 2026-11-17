@@ -1,0 +1,104 @@
+/* GLOBAL BUTTON */
+
+.pl.btn-base {
+  border-radius: 6px !important;
+  border: 1px solid;
+  font-size: var(--fontSize-xsm) !important;
+  font-weight: 500 !important;
+  padding: 8px 20px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pl.btn-icon .fas, .btn-icon svg {margin-right: 8px}
+
+.pl.btn-regular {
+  background: var(--palette-gray-white);
+  border-color: var(--palette-gray-silver);
+  color: var(--palette-brand-genial-blue);
+}
+
+.pl.btn-regular:hover {
+  background: var(--palette-gray-silver);
+}
+
+.pl.btn-simple {
+  background: transparent;
+  border-color: none;
+  border: 0;
+  color: var(--palette-gray-charcoal);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.pl.btn-simple.btn-w-iconAlert .fas,
+.pl.btn-simple.btn-w-iconAlert svg {
+  color: var(--palette-utility-red);
+  margin-right: 8px
+}
+
+.pl.btn-simple:hover,
+.pl.btn-simple:hover .fas,
+.pl.btn-simple:hover svg {
+  color: var(--palette-gray-smoke);
+}
+
+.pl.btn-onlyIcon {
+  border: 0;
+  background: none;
+  font-size: var(--fontSize-regular);
+  padding: 8px 12px;
+}
+
+.pl.btn-onlyPDF,
+.pl.btn-onlyPDF__justIcon {
+  background: transparent;
+  border-color: none;
+  border: 0;
+  color: var(--palette-gray-charcoal);
+  padding-left: 0;
+  padding-right: 0;
+  width: 100%;
+  text-align: right;
+  font-size: var(--fontSize-xtiny);
+  border-radius: 0;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.pl.btn-onlyPDF .fas,
+.pl.btn-onlyPDF svg {
+  margin: 0  8px;
+  color: var(--palette-brand-genial-blue);
+  font-size: var(--fontSize-tiny);
+}
+
+.pl.btn-onlyPDF:hover,
+.pl.btn-onlyPDF:hover .fas,
+.pl.btn-onlyPDF:hover svg {
+  color: var(--palette-gray-smoke);
+}
+
+/* disabled */
+.pl.btn-primary:disabled {
+  background: linear-gradient(90deg, var(--palette-gray-gray) 0%, var(--palette-gray-gray) 100%);
+  border-color: var(--palette-brand-gray);
+  color: var(--palette-gray-white);
+  cursor: not-allowed;
+}
+
+.pl.btn-secondary:disabled,
+.pl.btn-regular:disabled {
+  background: var(--palette-gray-gray) !important;
+  border-color: var(--palette-gray-gray) !important;
+  color: var(--palette-gray-white) !important;
+  cursor: not-allowed !important;
+}
+
+.pl.btn-simple:disabled,
+.pl.btn-onlyIcon:disabled,
+.pl.btn-onlyPDF:disabled {
+  color: var(--palette-gray-gray);
+  cursor: not-allowed;
+}
+

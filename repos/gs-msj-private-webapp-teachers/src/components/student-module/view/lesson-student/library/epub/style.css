@@ -1,0 +1,29 @@
+
+.book div {
+    background-color: #F7F7F7 !important;
+    font-size: 15px !important;
+    color: #222 !important;
+    font-weight: bold !important;
+    font-family: 'Roboto', sans-serif !important;
+}
+
+.student-btn-back {
+    background-color: transparent;
+	border: none;
+	color: #4F57A7;
+    font-weight: bold;
+    margin-bottom: 1em;
+}
+
+.student-btn-back:hover {
+    color: #5A93B6;
+}
+
+
+.pdf div {    
+    font-size: 15px !important;
+    color: #222 !important;
+    font-weight: bold !important;
+    font-family: 'Roboto', sans-serif !important;
+    text-align: center;
+}

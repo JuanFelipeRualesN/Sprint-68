@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 4,
+  "TitleEn": "The Price of the Shortcut",
+  "TitleEs": "El precio del atajo",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "A few days before a race, Samuel found an ad online promising to improve his performance with a miracle product. The message showed impressive testimonials, but did not explain where the data came from. Samuel was tempted to buy it because he wanted to win. Before doing so, he consulted his coach and his family. They talked about the risks of trusting promises without evidence and about the importance of rest, nutrition, and proper training.",
+      "TextEs": "A pocos días de una carrera, Samuel encontró en internet un anuncio que prometía mejorar su rendimiento con un producto milagroso. El mensaje mostraba testimonios impresionantes, pero no explicaba de dónde procedían los datos. Samuel estuvo tentado a comprarlo porque deseaba ganar. Antes de hacerlo, consultó a su entrenadora y a su familia. Conversaron sobre los riesgos de confiar en promesas sin evidencia y sobre la importancia del descanso, la alimentación y el entrenamiento apropiado.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Samuel decided to stick with his training plan. On race day he did not take first place, but he improved his personal best. He understood that health should not be put at risk for quick results and that a responsible decision requires evaluating the available information.",
+      "TextEs": "Samuel decidió continuar con su plan de preparación. El día de la carrera no alcanzó el primer lugar, pero mejoró su marca personal. Comprendió que la salud no debe ponerse en riesgo por resultados rápidos y que una decisión responsable exige evaluar la información disponible.",
+      "ImageUrl": null
+    }
+  ]
+}

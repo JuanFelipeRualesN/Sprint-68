@@ -1,0 +1,235 @@
+{
+  "header": {
+    "eyebrow": "AI-Powered Tools",
+    "title": "Your educational co-pilot",
+    "description": "Generate lesson plans, rubrics, adaptations, readings, and more in seconds. {{count}} tools.",
+    "searchPlaceholder": "Search tools…"
+  },
+  "panel": {
+    "title": "AI Tools",
+    "subtitle": "Powered by artificial intelligence to support your teaching"
+  },
+  "placeholders": {
+    "ai-assistant": {
+      "placeholder": "e.g., a reading comprehension rubric for 4th grade…"
+    },
+    "special-ed-coach": {
+      "question": "e.g., What accommodations do you recommend for a student with dyslexia for long readings?"
+    },
+    "adapt-lesson": {
+      "lesson": "Copy and paste the lesson plan here or describe the lesson."
+    },
+    "stem-unit-planner": {
+      "topic": "e.g., Páramo ecosystems in Colombia"
+    },
+    "plan-my-lesson": {
+      "topic": "e.g., Equivalent Fractions"
+    },
+    "language-objectives": {
+      "content": "e.g., Students will explain the characteristics of an ecosystem."
+    },
+    "group-strategy": {
+      "objective": "e.g., Practice problem-solving skills",
+      "levels": "e.g., 6 advanced students, 12 on level, 6 needing support."
+    },
+    "differentiate-content": {
+      "topic": "e.g., Solar System",
+      "studentNeeds": "Describe the student's needs, preferences or areas of support to adapt the educational content..."
+    },
+    "differentiate-process": {
+      "lesson": "e.g., Reading comprehension on photosynthesis",
+      "styles": "Visual, auditory, kinesthetic, reading, writing"
+    },
+    "differentiate-product": {
+      "objective": "e.g., Explain the causes and effects of deforestation"
+    },
+    "intervention-plan": {
+      "gaps": "e.g., Students have not mastered single-digit multiplication. They do not recognize fractions that are equivalent in visual models. They do not identify the main idea of short texts..."
+    },
+    "create-rubric": {
+      "task": "e.g., Argumentative essay about recycling in my community",
+      "criteria": "e.g., Content, organization, grammar"
+    },
+    "dok-questions": {
+      "topic": "Copy and paste the text or describe the topic."
+    },
+    "math-exam": {
+      "topic": "e.g., Multiplication of fractions"
+    },
+    "assessment-creator": {
+      "topic": "e.g., Ecosystems and food chains"
+    },
+    "diagnostic-tests": {
+      "unit": "e.g., Equivalent Fractions (What I'm about to start teaching)"
+    },
+    "personalized-feedback": {
+      "student": "María",
+      "work": "e.g., Essay about recycling, 2 pages, good structure but weak grammar."
+    },
+    "choice-board": {
+      "topic": "e.g., Colombian Independence",
+      "instructions": "Complete 3 activities in a row (horizontal, vertical, or diagonal)."
+    },
+    "leveled-reading": {
+      "topic": "e.g., The Andean cock-of-the-rock"
+    },
+    "academic-vocabulary": {
+      "topic": "e.g., The Coffee Cultural Landscape"
+    },
+    "comprehension-questions": {
+      "text": "Copy and paste the reading text here..."
+    },
+    "lexile-assessment": {
+      "topic": "e.g., El Yunque"
+    },
+    "math-assistant": {
+      "question": "How do I explain fraction multiplication using a visual model to 5th-grade students?"
+    },
+    "science-assistant": {
+      "question": "What simple experiment can I do with household materials to explain photosynthesis?"
+    },
+    "language-assistant": {
+      "question": "Translate this instruction into English for students with a 3rd-grade vocabulary level."
+    },
+    "ela-assistant": {
+      "question": "How can I scaffold a 5-paragraph essay for intermediate-level ELL students?"
+    },
+    "social-studies-assistant": {
+      "question": "e.g., I need a timeline of the Muisca settlement of the Altiplano Cundiboyacense for 4th-grade students."
+    },
+    "ell-coach": {
+      "question": "SIOP strategies for a 5th-grade science class with students at the emerging ELL level."
+    }
+  },
+  "categories": {
+    "all":            "All",
+    "planning": "Planning",
+    "differentiation": "Differentiation",
+    "assessment": "Assessment",
+    "reading": "Reading",
+    "assistants": "Assistants"
+  },
+  "card": {
+    "use": "Use",
+    "chat": "Chat now",
+    "notConfigured": "{{name}} is not yet configured."
+  },
+  "grid": {
+    "noResults": "No tools match your search."
+  },
+  "tools": {
+    "plan-my-lesson": {
+      "name": "Plan My Daily Lesson",
+      "subtitle": "Generate a complete lesson plan in minutes",
+      "standard": "5.N.2.2"
+    },
+    "ai-assistant": {
+      "name": "AI Assistant",
+      "subtitle": "Describe what you need and the AI will help you get started."
+    },
+    "stem-unit-planner": {
+      "name": "STEM Unit Planner",
+      "subtitle": "Design cross-disciplinary STEM units"
+    },
+    "adapt-lesson": {
+      "name": "Differentiate Lesson or Content",
+      "subtitle": "Modify existing lessons for your students"
+    },
+    "language-objectives": {
+      "name": "Language Objectives for English Learners",
+      "subtitle": "Create content and language objectives aligned to standards"
+    },
+    "group-strategy": {
+      "name": "Student Grouping",
+      "subtitle": "Design effective collaborative grouping plans"
+    },
+    "differentiate-content": {
+      "name": "Content Adaptation",
+      "subtitle": "Adapt materials for diverse learning needs"
+    },
+    "differentiate-process": {
+      "name": "Differentiated Instruction",
+      "subtitle": "Vary instructional strategies for all learners"
+    },
+    "differentiate-product": {
+      "name": "Differentiated Assessment",
+      "subtitle": "Create flexible options for student demonstration"
+    },
+    "intervention-plan": {
+      "name": "Academic Intervention Plan",
+      "subtitle": "Build targeted support plans for struggling students"
+    },
+    "create-rubric": {
+      "name": "Create a Rubric",
+      "subtitle": "Generate clear, standards-aligned rubrics"
+    },
+    "dok-questions": {
+      "name": "DOK-Level Questions",
+      "subtitle": "Write questions across all Depth of Knowledge levels"
+    },
+    "math-exam": {
+      "name": "Math Exam",
+      "subtitle": "Build customized math assessments"
+    },
+    "personalized-feedback": {
+      "name": "Individualized Feedback",
+      "subtitle": "Craft meaningful, individualized student feedback"
+    },
+    "choice-board": {
+      "name": "Differentiated Activity Board",
+      "subtitle": "Design engaging student choice menus"
+    },
+    "assessment-creator": {
+      "name": "Create Assessments",
+      "subtitle": "Generate quizzes, tests, and formative checks"
+    },
+    "diagnostic-tests": {
+      "name": "Diagnostic Tests",
+      "subtitle": "Identify student strengths and gaps quickly"
+    },
+    "leveled-reading": {
+      "name": "Leveled Reading",
+      "subtitle": "Adjust text complexity for every reader"
+    },
+    "academic-vocabulary": {
+      "name": "Academic Vocabulary",
+      "subtitle": "Teach and reinforce content-area vocabulary"
+    },
+    "comprehension-questions": {
+      "name": "Reading Comprehension Questions",
+      "subtitle": "Generate text-dependent reading questions"
+    },
+    "lexile-assessment": {
+      "name": "Lexile-Level Reading Practice",
+      "subtitle": "Evaluate and match text to student reading levels"
+    },
+    "math-assistant": {
+      "name": "Math Assistant",
+      "subtitle": "Your AI co-teacher for mathematics"
+    },
+    "science-assistant": {
+      "name": "Science Assistant",
+      "subtitle": "Your AI co-teacher for science"
+    },
+    "ela-assistant": {
+      "name": "English Assistant",
+      "subtitle": "Your AI co-teacher for English language arts"
+    },
+    "social-studies-assistant": {
+      "name": "Social Studies Assistant",
+      "subtitle": "Your AI co-teacher for social studies"
+    },
+    "language-assistant": {
+      "name": "Language & Translation Assistant",
+      "subtitle": "Your AI co-teacher for world languages"
+    },
+    "special-ed-coach": {
+      "name": "Special Education Assistant",
+      "subtitle": "Support and strategies for special education"
+    },
+    "ell-coach": {
+      "name": "English Language Learner Assistant",
+      "subtitle": "Resources and scaffolds for English language learners"
+    }
+  }
+}

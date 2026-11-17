@@ -1,0 +1,41 @@
+.student-pageControls{
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+    margin-bottom: 20px;
+    width: 50%;
+    margin-top: 20px;
+    margin-right: 30%;
+    margin-left: 30%;
+  }
+.student-book-title{
+    justify-content: center;
+    display: flex;
+    width: 100%;
+    text-align: center;
+}
+.student-pdfContainer{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+.student-downloadPdfLink{
+    color: white !important;
+}
+.student-downloadPdfLink:hover{
+    color:white !important;
+}
+.student-downloadPdfButton{
+    float: right;
+}
+.student-btn-primary{
+    background-color: #27466c!important;
+    border: 1px solid #27466c!important;
+    color:white;
+    border-radius: 30%;
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+  }

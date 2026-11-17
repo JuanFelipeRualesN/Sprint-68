@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "My Red Apple",
+  "TitleEs": "Mi manzana roja",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I see an apple.\nThe apple is red.\nI wash the apple.\nI take a bite.",
+      "TextEs": "Veo una manzana.\nLa manzana es roja.\nLavo la manzana.\nLe doy un mordisco.",
+      "ImageUrl": null
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "LevelId": 2,
+  "CategoryId": 3,
+  "TitleEn": "The Maga: National Tree",
+  "TitleEs": "La Maga: Árbol Nacional",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "The maga tree was proclaimed the national tree of Puerto Rico in 1956. This tree, whose scientific name is Thespesia grandiflora, is native to the island and has bright purple flowers that are greatly admired for their beauty. The maga symbolizes the island's native flora and natural wealth. Its symbolism is linked to the identity and love of nature of Puerto Ricans, and it is a common figure in the literature and cultural representations of the island.",
+      "TextEs": "El árbol de maga fue proclamado árbol nacional de Puerto Rico en 1956. Este árbol, cuyo nombre científico es Thespesia grandiflora, es nativo de la isla y tiene flores de un color morado brillante que son muy apreciadas por su belleza. La maga simboliza la flora autóctona y la riqueza natural de Puerto Rico. Su simbolismo está vinculado a la identidad y al amor por la naturaleza de los puertorriqueños, y es una figura común en la literatura y las representaciones culturales de la isla.",
+      "ImageUrl": null
+    }
+  ]
+}

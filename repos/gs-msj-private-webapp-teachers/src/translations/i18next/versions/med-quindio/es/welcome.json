@@ -1,0 +1,21 @@
+{
+  "greeting": {
+    "morning": "Buenos días",
+    "afternoon": "Buenas tardes",
+    "evening": "Buenas noches",
+    "line": "{{greeting}}, {{firstName}}"
+  },
+  "eyebrow": {
+    "dateWeek": "{{date}}"
+  },
+  "summary": {
+    "pendingAndMessages": "Tienes <b>{{pendingCount}} entrega(s) por calificar</b> y <b>{{messageCount}} mensaje(s) nuevo(s)</b>."
+  },
+  "kpis": {
+    "toReview": "Por calificar",
+    "activeStudents": "Estudiantes",
+    "groups": "Grupos",
+    "newMessages": "Mensajes nuevos"
+  },
+  "defaultTeacherName": "José"
+}

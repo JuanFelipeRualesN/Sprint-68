@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 2,
+  "TitleEn": "Tap and Stop",
+  "TitleEs": "Toca y para",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I tap the screen.\nI see a cat.\nI stop and rest.\nI go play.",
+      "TextEs": "Toco la pantalla.\nVeo un gato.\nParo y descanso.\nMe voy a jugar.",
+      "ImageUrl": null
+    }
+  ]
+}

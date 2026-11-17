@@ -1,0 +1,40 @@
+{
+  "academicPeriod": {
+    "empty": "No hay períodos académicos activos.",
+    "title": "Período académico",
+    "name": "Período: {{number}}",
+    "weekProgress": "Semana <b>{{current}}</b> de {{total}}",
+    "endsOn": "Finaliza el <b>{{date}}</b>",
+    "endDate": ""
+  },
+  "weekPlan": {
+    "unit": "Unidad",
+    "title": "Lecciones de estas semanas",
+    "noLessonsForThisWeek": "No hay lecciones pendientes.",
+    "fallback": {
+      "planning": "Planificación",
+      "lesson": "Lección",
+      "group": "Grupos no asignados a este plan.",
+      "subjects": {
+        "math": "Matemáticas",
+        "science": "Ciencias",
+        "socialStudies": "Estudios Sociales"
+      },
+      "units": {
+        "unit": "Unidad",
+        "math": "Unidad 6 · Fracciones equivalentes",
+        "science": "Unidad 4 · Ecosistemas de Puerto Rico",
+        "socialStudies": "Unidad 3 · Geografía del Caribe"
+      }
+    }
+  },
+  "aiAssistant": {
+    "title": "Asistente IA",
+    "subtitle": "Pídele a la IA cualquier cosa que necesites como maestro.",
+    "description": "Describa lo que necesita y la IA le ayudará a empezar.",
+    "requestLabel": "Su solicitud",
+    "requestPlaceholder": "Ej: una rúbrica de comprensión lectora para 4to grado…",
+    "generate": "Generar",
+    "systemPrompt": "Eres un asistente pedagógico experto para maestros de Puerto Rico. Respondes en español, en markdown, con estructura clara y contenido directamente utilizable. No incluyas disclaimers innecesarios."
+  }
+}

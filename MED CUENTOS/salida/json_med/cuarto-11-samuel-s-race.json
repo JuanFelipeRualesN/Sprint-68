@@ -1,0 +1,25 @@
+{
+  "LevelId": 4,
+  "CategoryId": 4,
+  "TitleEn": "Samuel's Race",
+  "TitleEs": "La carrera de Samuel",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Samuel wanted to win the school race. During practice he ran so fast at the start that he ended up exhausted. His coach explained the importance of warming up, staying hydrated, and keeping a steady pace. Samuel decided to practice with patience. He also began going to bed earlier the night before training. On race day he did not come in first, but he finished the course without stopping and improved his time.",
+      "TextEs": "Samuel quería ganar la carrera escolar. Durante los entrenamientos corría tan rápido al principio que terminaba agotado. Su entrenadora le explicó la importancia de calentar, hidratarse y mantener un ritmo adecuado. Samuel decidió practicar con paciencia. También comenzó a dormir más temprano la noche anterior a los entrenamientos. El día de la carrera no llegó primero, pero completó el recorrido sin detenerse y mejoró su tiempo.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "When he crossed the finish line, he congratulated his classmates. His coach reminded him that physical activity helps strengthen the body and that personal progress also deserves to be celebrated. Samuel understood that taking care of yourself is more important than chasing a victory at any cost.",
+      "TextEs": "Al cruzar la meta, felicitó a sus compañeros. Su entrenadora le recordó que la actividad física ayuda a fortalecer el cuerpo y que el progreso personal también merece celebrarse. Samuel comprendió que cuidarse es más importante que perseguir una victoria a cualquier costo.",
+      "ImageUrl": null
+    }
+  ]
+}

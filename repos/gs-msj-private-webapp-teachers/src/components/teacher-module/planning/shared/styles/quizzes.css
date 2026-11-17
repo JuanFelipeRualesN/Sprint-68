@@ -1,0 +1,30 @@
+.col.time,
+.col.duration {
+    max-width: 170px;
+}
+
+.col.date {
+    max-width: 180px;
+}
+
+.col.timezone {
+    max-width: 280px;
+}
+
+label:has(input[type='checkbox'][disabled].count-for-grade) {
+    cursor: default;
+}
+
+label:has(input[type='checkbox'][disabled].count-for-grade):hover .helper {
+    color: #999;
+}
+
+.form-group-fields__checkbox:has(input[type='checkbox']) {
+    width: fit-content;
+}
+
+iframe.quiz-preview {
+    width: 100%;
+    height: 500px;
+    border: none;
+}

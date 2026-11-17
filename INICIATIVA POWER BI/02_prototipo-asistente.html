@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo del asistente de reportes</title>
+<style>
+:root{
+  /* Paleta tomada del HTML de referencia de REQ-3463. Layout: app con menú lateral, reporte al centro y asistente flotante. */
+  --teal:#33646f; --teal-dark:#24505a; --teal-soft:#e7eff1; --ink:#1f2d33; --muted:#5d6f77; --line:#dbe3e6; --bg:#f3f6f7; --card:#fff; --warn-bg:#fff4d6; --warn-ink:#6b4e00; --deny-bg:#fbeaea; --deny-ink:#8a2424;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:14px/1.45 var(--font);color:var(--ink);background:var(--bg);font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.notice{background:var(--warn-bg);color:var(--warn-ink);padding:7px 16px;font-size:12.5px;text-align:center}
+.notice b{font-weight:600}
+.top{background:var(--teal-dark);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;flex-wrap:wrap}
+.brand{font-size:15px;font-weight:600}
+.as{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.as label{opacity:.85}
+.as select{background:#fff;color:var(--ink);border:0;border-radius:6px;padding:4px 8px;max-width:220px}
+.shell{display:flex;min-height:calc(100% - 84px)}
+.side{width:196px;background:var(--card);border-right:1px solid var(--line);padding:14px 0;flex-shrink:0}
+.side h2{font-size:11.5px;color:var(--muted);font-weight:600;margin:0 0 8px;padding:0 16px}
+.side a{display:block;padding:7px 16px;font-size:13px;color:var(--muted);text-decoration:none;cursor:default}
+.side a.on{color:var(--teal-dark);background:var(--teal-soft);font-weight:600;border-left:3px solid var(--teal);padding-left:13px}
+main{flex:1;min-width:0;padding:14px 16px 96px;display:flex;flex-direction:column;gap:12px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bar h1{font-size:17px;margin:0 auto 0 0;font-weight:600;text-wrap:balance}
+.bar label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.bar select{border:1px solid var(--line);border-radius:6px;background:var(--card);padding:4px 6px;font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.kpi b{display:block;font-size:22px;font-weight:600;line-height:1.2}
+.kpi span{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.card h2{font-size:13px;margin:0 0 8px;font-weight:600}
+.wide{grid-column:1/-1}
+svg{display:block;width:100%;height:auto}
+.bars{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.bars li{display:grid;grid-template-columns:118px 1fr 56px;gap:8px;align-items:center;font-size:12.5px}
+.bars .t{height:10px;border-radius:0 4px 4px 0;background:var(--teal);min-width:1px}
+.bars .n{text-align:right}
+.bars .lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zero{color:var(--muted)}
+.tip{position:fixed;background:var(--ink);color:#fff;padding:4px 8px;border-radius:5px;font-size:12px;pointer-events:none;display:none;z-index:50}
+.fab{position:fixed;right:22px;bottom:22px;height:52px;padding:0 18px;border-radius:26px;background:var(--teal);color:#fff;border:0;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;z-index:30;box-shadow:0 3px 12px rgba(20,45,52,.3)}
+.fab:hover{background:var(--teal-dark)}
+.panel{position:fixed;right:22px;bottom:84px;width:400px;max-width:calc(100vw - 32px);height:min(620px,calc(100vh - 120px));background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(20,45,52,.2);display:flex;flex-direction:column;z-index:30;overflow:hidden}
+.panel[hidden]{display:none}
+.phead{background:var(--teal);color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+.phead b{font-size:14px;font-weight:600}
+.phead button{background:none;border:0;color:#fff;font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
+.ctx{background:var(--teal-soft);color:var(--teal-dark);padding:6px 12px;font-size:11.5px}
+.msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:92%;padding:8px 10px;border-radius:10px;font-size:13px}
+.m.u{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:3px}
+.m.b{align-self:flex-start;background:#f0f4f5;border-bottom-left-radius:3px;width:92%}
+.m.deny{background:var(--deny-bg);color:var(--deny-ink)}
+.m p{margin:0 0 6px}.m p:last-child{margin-bottom:0}
+.m .scope{font-size:11.5px;color:var(--muted);margin-top:6px}
+.m.deny .scope{color:var(--deny-ink)}
+.m table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12.5px;background:#fff;border-radius:6px;overflow:hidden}
+.m th,.m td{text-align:left;padding:4px 7px;border-bottom:1px solid var(--line)}
+.m th{color:var(--muted);font-weight:600;font-size:11.5px}
+.m td.r,.m th.r{text-align:right}
+.m tr:last-child td{border-bottom:0}
+details{margin-top:6px;font-size:12px}
+summary{cursor:pointer;color:var(--teal-dark);font-weight:600}
+details dl{margin:6px 0 0;display:grid;grid-template-columns:82px 1fr;gap:3px 8px}
+details dt{color:var(--muted)}details dd{margin:0}
+details pre{margin:6px 0 0;background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px;font:11px/1.4 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.quick{padding:8px 12px;border-top:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;flex-shrink:0}
+.quick button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+.quick button:hover{border-color:var(--teal);color:var(--teal-dark)}
+form.ask{display:flex;gap:6px;padding:8px 12px 12px;flex-shrink:0}
+form.ask input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px}
+form.ask button{background:var(--teal);color:#fff;border:0;border-radius:8px;padding:0 14px;font-weight:600;cursor:pointer}
+@media(max-width:820px){
+  .side{display:none}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:minmax(0,1fr)}
+  .panel{right:16px;left:16px;width:auto;max-width:none;bottom:82px;height:min(560px,calc(100vh - 110px))}.fab{right:16px;bottom:16px}
+  .bars li{grid-template-columns:96px 1fr 50px}
+}
+@media(prefers-reduced-motion:no-preference){.m{animation:in .18s ease-out}@keyframes in{from{opacity:.4;transform:translateY(3px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<div class="notice"><b>Prototipo con datos ficticios.</b> Muestra la experiencia propuesta: no usa IA real ni se conecta con Power BI. Escuelas, personas y cifras son inventadas.</div>
+<header class="top">
+  <div class="brand">Estudia y Avanza · Reportes</div>
+  <div class="as"><label for="who">Ver como</label><select id="who"></select></div>
+</header>
+<div class="shell">
+  <nav class="side" aria-label="Reportes">
+    <h2>Vista administrativa</h2>
+    <a class="on">Reporte de conexión</a><a>Reporte acumulativo</a><a>Reporte por maestros</a>
+  </nav>
+  <main>
+    <div class="bar">
+      <h1>Reporte de conexión</h1>
+      <label for="fSchool">Escuela <select id="fSchool"></select></label>
+      <label for="fPeriod">Período <select id="fPeriod"></select></label>
+      <label for="fRole">Rol <select id="fRole"><option value="">Todos</option><option value="E">Estudiantes</option><option value="M">Maestros</option></select></label>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <section class="card wide"><h2 id="trendTitle">Conexiones por mes</h2><div id="trend"></div></section>
+      <section class="card"><h2>Conexiones por escuela</h2><ul class="bars" id="bySchool"></ul></section>
+      <section class="card"><h2>Uso por área</h2><ul class="bars" id="byArea"></ul></section>
+    </div>
+  </main>
+</div>
+<div class="tip" id="tip" role="status"></div>
+<button class="fab" id="fab" type="button" aria-expanded="true" aria-controls="panel"><span aria-hidden="true">✦</span><span id="fabText">Cerrar asistente</span></button>
+<aside class="panel" id="panel" aria-label="Asistente de datos">
+  <div class="phead"><b>Asistente de datos</b><button type="button" id="closeBtn" aria-label="Cerrar asistente">×</button></div>
+  <div class="ctx" id="ctx"></div>
+  <div class="msgs" id="msgs" aria-live="polite"></div>
+  <div class="quick" id="quick" aria-label="Preguntas sugeridas"></div>
+  <form class="ask" id="ask"><label for="q" style="position:absolute;left:-9999px">Escribe tu pregunta</label><input id="q" placeholder="Pregunta sobre los datos del reporte" autocomplete="off"><button type="submit">Enviar</button></form>
+</aside>
+
+<script>
+/* ---------- Datos ficticios: generador con semilla, siempre produce los mismos valores ---------- */
+const MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MON3=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const LAST_DATA=9; /* datos hasta octubre 2026 */
+const SCHOOLS=['Escuela Norte','Escuela Sur','Escuela del Río','Escuela Central','Escuela Mirador','Escuela Palmar','Escuela Laguna','Escuela Colina','Escuela Bosque','Escuela Puerto','Escuela Sol','Escuela Vega'];
+const AREAS=['Lecciones','Evaluaciones','Biblioteca','Tutorías','Foros'];
+const AREA_W=[.46,.24,.14,.11,.05];
+const SCHOOL_W=[1,.84,.71,.66,.58,.5,.44,.37,.29,.21,.12,0]; /* Escuela Vega nunca tiene actividad */
+const SEASON=[.8,.95,1.05,1,1.1,.6,.3,.75,1.1,1.05];
+let seed=20261104;
+const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+const TEACHERS=[];
+SCHOOLS.forEach((_,s)=>{for(let i=0;i<3;i++)TEACHERS.push({id:TEACHERS.length,s,name:'Maestro/a '+String(TEACHERS.length+1).padStart(2,'0'),w:.4+rnd()})});
+const FACTS=[];
+for(let m=0;m<=LAST_DATA;m++)SCHOOLS.forEach((_,s)=>{
+  if(s===10&&m===4)return; /* Escuela Sol no registra actividad en mayo */
+  AREAS.forEach((_,a)=>{
+    const base=SCHOOL_W[s]*SEASON[m]*AREA_W[a];
+    const ns=Math.round(1500*base*(.85+.3*rnd()));
+    if(ns>0)FACTS.push({m,s,a,r:'E',t:null,n:ns});
+    TEACHERS.filter(t=>t.s===s).forEach(t=>{
+      const nt=Math.round(90*base*t.w*(.8+.4*rnd()));
+      if(nt>0)FACTS.push({m,s,a,r:'M',t:t.id,n:nt});
+    });
+  });
+});
+
+/* ---------- Identidad simulada: en producción el backend la toma de la sesión ---------- */
+const USERS={
+  admin:{label:'Administrador',scope:'todas las escuelas',school:null,teacher:null},
+  director:{label:'Director/a de Escuela Norte',scope:'solo Escuela Norte',school:0,teacher:null},
+  maestro:{label:'Maestro/a 01 de Escuela Norte',scope:'Escuela Norte; en maestros, solo su actividad',school:0,teacher:0}
+};
+const PERIODS={all:{from:0,to:9,label:'ene–oct 2026'},q1:{from:0,to:2,label:'ene–mar 2026'},q2:{from:3,to:5,label:'abr–jun 2026'},q3:{from:6,to:8,label:'jul–sep 2026'},oct:{from:9,to:9,label:'octubre 2026'}};
+const state={user:'admin',school:'',period:'all',role:'',last:null};
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const pct=x=>(x*100).toFixed(1)+'%';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Capa de consultas: el alcance sale de la identidad, nunca del texto de la pregunta ---------- */
+function rows(f){
+  const u=USERS[state.user];
+  return FACTS.filter(x=>(u.school===null||x.s===u.school)&&x.m>=f.from&&x.m<=f.to&&(!f.role||x.r===f.role)&&(f.school==null||x.s===f.school));
+}
+const total=f=>rows(f).reduce((a,x)=>a+x.n,0);
+function schoolsInScope(f){const u=USERS[state.user];return SCHOOLS.map((_,i)=>i).filter(i=>(u.school===null||i===u.school)&&(f.school==null||i===f.school))}
+function byDim(dim,f){
+  const out=new Map();
+  if(dim==='school')schoolsInScope(f).forEach(i=>out.set(i,0));
+  if(dim==='area')AREAS.forEach((_,i)=>out.set(i,0));
+  if(dim==='teacher'){const u=USERS[state.user];TEACHERS.filter(t=>schoolsInScope(f).includes(t.s)&&(u.teacher===null||t.id===u.teacher)).forEach(t=>out.set(t.id,0))}
+  const key={school:'s',area:'a',teacher:'t'}[dim];
+  rows(dim==='teacher'?{...f,role:'M'}:f).forEach(x=>{if(out.has(x[key]))out.set(x[key],out.get(x[key])+x.n)});
+  const nameOf={school:i=>SCHOOLS[i],area:i=>AREAS[i],teacher:i=>TEACHERS[i].name}[dim];
+  return[...out].map(([id,n])=>({id,name:nameOf(id),n}));
+}
+function rank(dim,f,asc,n){return byDim(dim,f).sort((a,b)=>asc?a.n-b.n||a.name.localeCompare(b.name):b.n-a.n||a.name.localeCompare(b.name)).slice(0,n)}
+function series(f){const out=[];for(let m=f.from;m<=f.to;m++)out.push({m,n:rows({...f,from:m,to:m}).reduce((a,x)=>a+x.n,0)});return out}
+
+/* ---------- Reporte simulado ---------- */
+function reportFilter(){const p=PERIODS[state.period];return{from:p.from,to:p.to,label:p.label,role:state.role||null,school:state.school===''?null:+state.school}}
+function renderReport(){
+  const f=reportFilter(),t=total(f),e=f.role==='M'?0:total({...f,role:'E'}),m=f.role==='E'?0:total({...f,role:'M'});
+  const act=byDim('school',f).filter(x=>x.n>0).length,sc=schoolsInScope(f).length;
+  $('kpis').innerHTML=[['Conexiones',fmt(t)],['De estudiantes',fmt(e)],['De maestros',fmt(m)],['Escuelas con actividad',act+' de '+sc]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+  bars('bySchool',rank('school',f,false,6));bars('byArea',rank('area',f,false,5));
+  $('trendTitle').textContent='Conexiones por mes, '+f.label;
+  drawTrend(series(f));
+  const scope=USERS[state.user];
+  $('ctx').textContent=`Contexto: ${f.label} · ${f.school==null?'todas las escuelas visibles':SCHOOLS[f.school]} · ${f.role==='E'?'estudiantes':f.role==='M'?'maestros':'todos los roles'} · Permisos: ${scope.scope}`;
+}
+function bars(id,list){
+  const max=Math.max(1,...list.map(x=>x.n));
+  $(id).innerHTML=list.map(x=>`<li><span class="lab" title="${esc(x.name)}">${esc(x.name)}</span><div class="t" style="width:${Math.max(.5,x.n/max*100)}%" data-tip="${esc(x.name)}: ${fmt(x.n)} conexiones"></div><span class="n ${x.n?'':'zero'}">${fmt(x.n)}</span></li>`).join('');
+}
+function drawTrend(s){
+  const W=720,H=180,L=46,R=16,T=14,B=26,max=Math.max(1,...s.map(x=>x.n));
+  const step=Math.pow(10,Math.floor(Math.log10(max)))/5;const top=Math.ceil(max/step)*step;
+  const x=i=>s.length===1?(L+W-R)/2:L+i*(W-L-R)/(s.length-1),y=v=>T+(H-T-B)*(1-v/top);
+  const ticks=[0,top/2,top];
+  let g=ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#e6ecee"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#5d6f77">${fmt(v)}</text>`).join('');
+  g+=s.map((p,i)=>`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#5d6f77">${MON3[p.m]}</text>`).join('');
+  if(s.length>1)g+=`<polyline fill="none" stroke="#33646f" stroke-width="2" stroke-linejoin="round" points="${s.map((p,i)=>x(i)+','+y(p.n)).join(' ')}"/>`;
+  g+=s.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.n)}" r="${i===s.length-1?5:3.5}" fill="#33646f" stroke="#fff" stroke-width="1.5"/><rect x="${x(i)-22}" y="${T}" width="44" height="${H-T-B}" fill="transparent" data-tip="${MONTHS[p.m]} 2026: ${fmt(p.n)} conexiones"/>`).join('');
+  const lastP=s[s.length-1];
+  g+=`<text x="${Math.min(x(s.length-1),W-R-2)}" y="${Math.max(y(lastP.n)-10,11)}" text-anchor="end" font-size="11.5" font-weight="600" fill="#1f2d33">${fmt(lastP.n)}</text>`;
+  $('trend').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Conexiones por mes. Último valor: ${fmt(lastP.n)}.">${g}</svg>`;
+}
+
+/* ---------- Simulación de la interpretación: reglas simples en lugar del modelo de lenguaje ---------- */
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+function monthsIn(t){
+  const hits=[];
+  MONTHS.forEach((m,i)=>{let r=new RegExp('\\b'+m+'\\b','g'),h;while((h=r.exec(t)))hits.push({i,at:h.index})});
+  return hits.sort((a,b)=>a.at-b.at).map(h=>h.i);
+}
+const mkLabel=(a,b)=>a===b?MONTHS[a]+' 2026':MON3[a]+'–'+MON3[b]+' 2026';
+function parsePeriods(t,compare){
+  const year=(t.match(/\b(20\d{2})\b/)||[])[1];
+  if(year&&year!=='2026')return{noData:year};
+  const qs=[];[['primer',0],['segundo',3],['tercer',6],['cuarto',9]].forEach(([w,s])=>{if(new RegExp(w+' trimestre').test(t))qs.push([s,s+2])});
+  const ms=monthsIn(t);let list=[];
+  if(qs.length)list=qs;
+  else if(ms.length===1)list=[[ms[0],ms[0]]];
+  else if(ms.length>=4&&compare)list=[[ms[0],ms[1]],[ms[2],ms[3]]];
+  else if(ms.length===2&&compare)list=[[ms[0],ms[0]],[ms[1],ms[1]]];
+  else if(ms.length>=2)list=[[ms[0],ms[ms.length-1]]];
+  else if(year||/\beste ano\b/.test(t))list=[[0,LAST_DATA]];
+  if(!list.length)return{explicit:false};
+  const out=[];let clipped=false;
+  for(const[a,b]of list){
+    if(a>LAST_DATA)return{noDataMonth:a};
+    if(b>LAST_DATA)clipped=true;
+    const to=Math.min(b,LAST_DATA);out.push({from:a,to,label:mkLabel(a,to)});
+  }
+  if(year&&!qs.length&&!ms.length)clipped=true;
+  return{explicit:true,periods:out,clipped};
+}
+function interpret(raw){
+  const t=norm(raw),u=USERS[state.user],rf=reportFilter();
+  const compare=/compar|versus|\bvs\b|frente a/.test(t);
+  if(/[a-z]/.test(t)&&/\b(which|what|how many|schools|teachers|connections)\b/.test(t))return{type:'lang'};
+  if(/ignora|olvida tus|instrucciones|sin restriccion|muestra todo|system prompt|ejecuta|\bdax\b|\bsql\b/.test(t))return{type:'inject'};
+  if(/estudiante/.test(t)&&/nombre|lista de|quien|quienes|inactivo/.test(t))return{type:'pii'};
+  const mentioned=SCHOOLS.findIndex(s=>t.includes(norm(s)));
+  if(mentioned>=0&&u.school!==null&&mentioned!==u.school)return{type:'forbidden',school:SCHOOLS[mentioned]};
+  const isFollow=/^y\b|^(solo|ahora) (para )?(los )?(maestros|estudiantes)/.test(t)&&state.last;
+  let role=/maestr|docente/.test(t)?'M':/estudiant/.test(t)?'E':rf.role;
+  const has={teacher:/maestr|docente/.test(t),school:/escuela/.test(t),area:/\barea|seccion/.test(t)};
+  const onTopic=/conexion|conectad|uso|utiliz|usad|actividad|tendencia|total|evolucion|\bmes\b/.test(t)||has.teacher||has.school||has.area||isFollow;
+  if(!onTopic)return{type:'off'};
+  const pp=parsePeriods(t,compare);
+  if(pp.noData)return{type:'nodata',what:pp.noData};
+  if(pp.noDataMonth!=null)return{type:'nodata',what:MONTHS[pp.noDataMonth]+' 2026'};
+  if(isFollow&&!pp.explicit)return{...state.last,role:/maestr/.test(t)?'M':'E',followed:true};
+  const period=pp.explicit?pp.periods[0]:{from:rf.from,to:rf.to,label:rf.label};
+  const base={period,explicit:!!pp.explicit,clipped:!!pp.clipped,role,school:mentioned>=0?mentioned:rf.school,asc:/menos|menor|baja|peor/.test(t)};
+  if(/porcentaje de usuarios|usuarios conectados|% de usuarios/.test(t))return{type:'def'};
+  if(compare)return{...base,type:'compare',dim:has.school?'school':'area',periods:pp.explicit&&pp.periods.length===2?pp.periods:[PERIODS.q1,PERIODS.q2],assumedPair:!(pp.explicit&&pp.periods.length===2)};
+  if(/tendencia|evolucion|por mes|mes a mes/.test(t))return{...base,type:'trend'};
+  const th=t.match(/(?:mas de|mayor a|superan?)\s*([\d.,]+)/);
+  if(/cuant/.test(t)&&has.school&&th)return{...base,type:'threshold',min:+th[1].replace(/[.,]/g,'')};
+  if(/porcentaje|%/.test(t)){const n=+(t.match(/\b(\d+) escuelas/)||[,3])[1];return{...base,type:'share',n}}
+  if(mentioned>=0&&!has.teacher&&!has.area)return{...base,type:'total'};
+  if(has.teacher)return{...base,type:'rank',dim:'teacher',role:'M'};
+  if(has.school)return{...base,type:'rank',dim:'school'};
+  if(has.area)return{...base,type:'rank',dim:'area'};
+  if(/activida/.test(t))return{...base,type:'rank',dim:'school'};
+  return{...base,type:'total'};
+}
+
+/* ---------- Respuesta ---------- */
+const DIMN={school:'Escuela',area:'Área',teacher:'Maestro/a'};
+const DAXT={school:"'Escuela'[Nombre]",area:"'Área'[Nombre]",teacher:"'Usuario'[Nombre]"};
+function table(hd,rs,right){return `<table><thead><tr>${hd.map((h,i)=>`<th class="${right.includes(i)?'r':''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rs.map(r=>`<tr>${r.map((c,i)=>`<td class="${right.includes(i)?'r':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function how(tool,q,dax){
+  const u=USERS[state.user],rl=q.role==='E'?'estudiantes':q.role==='M'?'maestros':'todos';
+  const per=q.periods?q.periods.map(p=>p.label).join(' y '):q.period?q.period.label:'';
+  const src=q.explicit?'indicado en la pregunta':'tomado del filtro del reporte';
+  return `<details><summary>Cómo se calculó</summary><dl><dt>Herramienta</dt><dd>${esc(tool)}</dd><dt>Período</dt><dd>${esc(per)} (${q.assumedPair?'supuesto por el asistente':src})</dd><dt>Rol</dt><dd>${esc(rl)}</dd><dt>Escuela</dt><dd>${q.school==null?'todas las visibles':esc(SCHOOLS[q.school])}</dd><dt>Permisos</dt><dd>${esc(u.scope)}; los aplica el backend</dd><dt>Datos</dt><dd>ficticios, actualizados a oct 2026</dd></dl><pre>${esc(dax)}</pre><p class="scope">DAX ilustrativo: las tablas reales se confirman con Andrés Guevara.</p></details>`;
+}
+const scopeNote=q=>{
+  const parts=[q.period?.label||'',q.role==='E'?'estudiantes':q.role==='M'?'maestros':'todos los roles',q.school==null?(USERS[state.user].school===null?'todas las escuelas':'solo tus escuelas permitidas'):SCHOOLS[q.school]].filter(Boolean);
+  let s='Aplicado: '+parts.join(' · ')+'.';
+  if(q.clipped)s+=' Hay datos solo hasta octubre de 2026.';
+  return `<div class="scope">${esc(s)}</div>`;
+};
+function respond(q){
+  const f=q.period?{from:q.period.from,to:q.period.to,role:q.role,school:q.school}:null;
+  switch(q.type){
+    case'lang':return{html:'<p>This prototype only simulates answers in Spanish. Bilingual support is one of the checks in the validation matrix.</p>'};
+    case'inject':return{deny:1,html:`<p>No puedo cambiar mis reglas ni ejecutar consultas escritas en el chat. Tu acceso sigue igual: ${esc(USERS[state.user].scope)}.</p>`};
+    case'pii':return{deny:1,html:'<p>No muestro datos individuales de estudiantes. Puedo darte totales por escuela, área o período.</p>'};
+    case'forbidden':return{deny:1,html:`<p>No tienes acceso a los datos de ${esc(q.school)}. Tu acceso cubre ${esc(USERS[state.user].scope)}.</p>`};
+    case'off':return{html:'<p>Solo respondo sobre los datos de este reporte: conexiones y uso por área, escuela, maestro y período.</p>'};
+    case'nodata':return{html:`<p>No hay datos para ${esc(q.what)}. El prototipo cubre de enero a octubre de 2026.</p>`};
+    case'def':return{html:'<p>Prefiero no calcularlo todavía: falta la definición oficial de usuario conectado y su base, matriculados o usuarios registrados. Según cuál se use, el porcentaje cambia.</p>'};
+    case'total':{const n=total(f);return{html:`<p>${q.school==null?'':esc(SCHOOLS[q.school])+' tuvo '}<b>${fmt(n)}</b> conexiones.</p>${scopeNote(q)}${how('total_conexiones',q,`EVALUATE ROW("Conexiones", CALCULATE([Total conexiones], <período>, <rol>))`)}`}}
+    case'rank':{
+      const list=rank(q.dim,f,q.asc,5),top=list[0];
+      if(!top)return{html:'<p>No hay resultados con esos filtros.</p>'+scopeNote(q)};
+      const single=USERS[state.user].teacher!==null&&q.dim==='teacher';
+      const lead=single?`Tu actividad es de <b>${fmt(top.n)}</b> conexiones. No puedo mostrar a otros maestros con tu acceso.`:`${q.asc?'Menor':'Mayor'} uso: <b>${esc(top.name)}</b> con <b>${fmt(top.n)}</b> conexiones.`;
+      const zeros=q.asc&&q.dim!=='area'?list.filter(x=>x.n===0).length:0;
+      const zn=zeros?`<p>${zeros===1?'Una no tiene':zeros+' no tienen'} actividad en el período.</p>`:'';
+      return{html:`<p>${lead}</p>${zn}${single?'':table([DIMN[q.dim],'Conexiones'],list.map(x=>[x.name,fmt(x.n)]),[1])}${scopeNote(q)}${how('ranking',q,`EVALUATE TOPN(5,\n  SUMMARIZECOLUMNS(${DAXT[q.dim]}, <período>, <rol>,\n    "Conexiones", [Total conexiones]),\n  [Conexiones], ${q.asc?'ASC':'DESC'})`)}`};
+    }
+    case'compare':{
+      const[a,b]=q.periods,fa={from:a.from,to:a.to,role:q.role,school:q.school},fb={from:b.from,to:b.to,role:q.role,school:q.school};
+      const A=byDim(q.dim,fa),Bm=new Map(byDim(q.dim,fb).map(x=>[x.id,x.n]));
+      const rs=A.map(x=>{const v=Bm.get(x.id)||0;return{name:x.name,a:x.n,b:v,d:v-x.n,p:x.n?(v-x.n)/x.n:null}}).sort((x,y)=>y.a-x.a).slice(0,6);
+      const ta=total(fa),tb=total(fb),d=tb-ta;
+      const note=q.assumedPair?`<p>No indicaste períodos, así que comparé ${esc(a.label)} con ${esc(b.label)}.</p>`:'';
+      return{html:`${note}<p>En total, el uso ${d>=0?'subió':'bajó'} <b>${ta?pct(Math.abs(d)/ta):'0%'}</b>: de ${fmt(ta)} a ${fmt(tb)} conexiones.</p>${table([DIMN[q.dim],a.label,b.label,'Cambio'],rs.map(r=>[r.name,fmt(r.a),fmt(r.b),r.p==null?'sin base':(r.p>=0?'+':'')+(r.p*100).toFixed(1)+'%']),[1,2,3])}${scopeNote({...q,period:null})}${how('comparar_periodos',q,`EVALUATE SUMMARIZECOLUMNS(${DAXT[q.dim]}, <rol>,\n  "Período 1", CALCULATE([Total conexiones], <período 1>),\n  "Período 2", CALCULATE([Total conexiones], <período 2>))`)}`};
+    }
+    case'trend':{
+      const s=series(f);const peak=s.reduce((a,x)=>x.n>a.n?x:a,s[0]),low=s.reduce((a,x)=>x.n<a.n?x:a,s[0]);
+      return{html:`<p>El mes con más conexiones fue <b>${MONTHS[peak.m]}</b> (${fmt(peak.n)}) y el de menos, <b>${MONTHS[low.m]}</b> (${fmt(low.n)}).</p>${table(['Mes','Conexiones'],s.map(x=>[MONTHS[x.m],fmt(x.n)]),[1])}${scopeNote(q)}${how('tendencia',q,`EVALUATE SUMMARIZECOLUMNS('Fecha'[Mes], <período>, <rol>,\n  "Conexiones", [Total conexiones])`)}`};
+    }
+    case'threshold':{
+      const l=byDim('school',f).filter(x=>x.n>q.min).sort((a,b)=>b.n-a.n);
+      return{html:`<p><b>${l.length}</b> ${l.length===1?'escuela tiene':'escuelas tienen'} más de ${fmt(q.min)} conexiones.</p>${l.length?table(['Escuela','Conexiones'],l.map(x=>[x.name,fmt(x.n)]),[1]):''}${scopeNote(q)}${how('conteo_por_umbral',q,`EVALUATE FILTER(SUMMARIZECOLUMNS(${DAXT.school}, <período>,\n  "Conexiones", [Total conexiones]), [Conexiones] > ${q.min})`)}`};
+    }
+    case'share':{
+      const l=rank('school',f,false,q.n),s=l.reduce((a,x)=>a+x.n,0),t=total(f);
+      return{html:`<p>Las ${l.length} escuelas principales suman <b>${fmt(s)}</b> de ${fmt(t)} conexiones: <b>${t?pct(s/t):'0%'}</b> del total.</p>${scopeNote(q)}${how('participacion',q,`-- Suma del top ${q.n} / [Total conexiones]`)}`};
+    }
+  }
+}
+
+/* ---------- Conversación ---------- */
+function addUser(t){const d=document.createElement('div');d.className='m u';d.textContent=t;$('msgs').appendChild(d);scroll()}
+function addBot(r){const d=document.createElement('div');d.className='m b'+(r.deny?' deny':'');d.innerHTML=r.html;$('msgs').appendChild(d);scroll()}
+const scroll=()=>{const b=$('msgs');b.scrollTop=b.scrollHeight};
+function ask(text){
+  const t=text.trim();if(!t)return;
+  addUser(t);
+  const q=interpret(t);
+  addBot(respond(q));
+  if(['rank','compare','trend','threshold','share','total'].includes(q.type))state.last=q;
+}
+const QUICK=['¿Cuál fue el área más utilizada entre enero y marzo?','¿Cuáles fueron las áreas menos utilizadas entre enero y marzo?','¿Qué escuelas tienen más conexiones?','¿Qué maestros tienen más conexiones en 2026?','Compara el uso de las áreas entre enero-marzo y abril-junio','¿Cuál fue la tendencia de uso por mes en 2026?','¿Qué escuelas tuvieron menor actividad en mayo?','Dame la lista de estudiantes inactivos con nombre','¿Cuántas conexiones hubo en 2019?'];
+function greet(){
+  $('msgs').innerHTML='';
+  addBot({html:`<p>Hola. Respondo sobre los datos de este reporte y uso tus filtros cuando no indicas otros. Tu acceso: ${esc(USERS[state.user].scope)}.</p>`});
+}
+
+/* ---------- Controles ---------- */
+$('who').innerHTML=Object.entries(USERS).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
+$('fPeriod').innerHTML=Object.entries(PERIODS).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
+$('quick').innerHTML=QUICK.map((q,i)=>`<button type="button" data-q="${i}">${esc(q)}</button>`).join('');
+function fillSchools(){const u=USERS[state.user];$('fSchool').innerHTML=(u.school===null?'<option value="">Todas</option>':'')+SCHOOLS.map((s,i)=>[s,i]).filter(([,i])=>u.school===null||i===u.school).map(([s,i])=>`<option value="${i}">${esc(s)}</option>`).join('');state.school=$('fSchool').value}
+$('who').addEventListener('change',e=>{state.user=e.target.value;state.last=null;fillSchools();renderReport();greet()});
+$('fSchool').addEventListener('change',e=>{state.school=e.target.value;renderReport()});
+$('fPeriod').addEventListener('change',e=>{state.period=e.target.value;renderReport()});
+$('fRole').addEventListener('change',e=>{state.role=e.target.value;renderReport()});
+$('quick').addEventListener('click',e=>{const b=e.target.closest('button');if(b)ask(QUICK[+b.dataset.q])});
+$('ask').addEventListener('submit',e=>{e.preventDefault();ask($('q').value);$('q').value='';$('q').focus()});
+function toggle(open){$('panel').hidden=!open;$('fab').setAttribute('aria-expanded',String(open));$('fabText').textContent=open?'Cerrar asistente':'Abrir asistente';if(open)$('q').focus({preventScroll:true})}
+$('fab').addEventListener('click',()=>toggle($('panel').hidden));
+$('closeBtn').addEventListener('click',()=>toggle(false));
+document.addEventListener('pointermove',e=>{const el=e.target.closest&&e.target.closest('[data-tip]'),tip=$('tip');if(!el){tip.style.display='none';return}tip.textContent=el.dataset.tip;tip.style.display='block';tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=(e.clientY-32)+'px'});
+
+fillSchools();renderReport();greet();
+ask('¿Cuál fue el área más utilizada entre enero y marzo?');
+</script>
+</body>
+</html>

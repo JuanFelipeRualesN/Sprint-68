@@ -1,0 +1,116 @@
+# -----------------------------
+# .NET / Visual Studio / Rider / VS Code
+# For libraries, web, APIs, tests
+# -----------------------------
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Tt]emp/
+[Tt]mp/
+[Bb]uild/
+artifacts/
+publish/
+dist/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.ide
+*.vcxproj.user
+
+# VS Code
+.vscode/
+
+# Rider / ReSharper / JetBrains
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# .NET intermediate & caches
+*.obj
+*.pdb
+*.mdb
+*.opendb
+*.cache
+*.ilk
+*.iobj
+*.ipdb
+*.tlog
+
+# NuGet
+*.nupkg
+*.snupkg
+# Old packages folder (with restore)
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+.nuget/NuGet.exe
+.nuget/NuGet.Config
+.nuget/packages.config
+
+# Azure / publish
+*.pubxml
+*.publishproj
+Properties/PublishProfiles/
+# Azure Functions local settings (contains secrets)
+local.settings.json
+
+# Config overrides (keep your main appsettings in source control)
+appsettings.*.local.json
+appsettings.Local.json
+
+# IIS Express
+# (applicationhost.config is under .vs, which is already ignored)
+
+# Test results / coverage
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.coveragexml
+.coverage/
+coverage*/
+.opencover/
+nunit-*.xml
+TestResult.xml
+
+# Entity Framework / tooling (common temp artifacts)
+Migrations/obj/
+
+# StyleCop / analyzers
+StyleCop.Cache
+
+# Reports / tools
+*.report.xml
+*.wrn
+*.err
+
+# Logs
+*.log
+
+# Database files
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Misc
+*.orig
+*.bak
+*.tmp
+~$*

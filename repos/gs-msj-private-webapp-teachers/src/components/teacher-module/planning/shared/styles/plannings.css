@@ -1,0 +1,45 @@
+.planning-title {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--palette-utility-blue);
+    border-radius: 6px;
+    padding: 0 10px;
+    background-color: var(--palette-gray-grayLigther);
+    width: 100%;
+}
+
+.planning-title > button > svg {
+    margin-right: 8px;
+    margin-left: 8px;
+}
+
+.planning-title > button.revert > svg {
+    color: #868e96;
+}
+
+.planning-title > button.revert:hover > svg {
+    color: #686c71;
+}
+
+.planning-title > input {
+    border: none;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: var(--fontSize-xsm);
+    line-height: 1.9;
+    width: 100%;
+    color: var(--palette-gray-charcoal);
+    font-family: inherit;
+    background-color: transparent;
+}
+
+iframe.lesson-preview {
+    width: 100%;
+    height: 800px;
+    border: none;
+}
+
+.planning-title > input:focus-visible {
+    border: none !important;
+    outline: 0;
+}

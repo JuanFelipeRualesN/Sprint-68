@@ -1,0 +1,37 @@
+{
+  "LevelId": 3,
+  "CategoryId": 3,
+  "TitleEn": "Madagascar",
+  "TitleEs": "Madagascar",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Madagascar is the fourth largest island in the world, located in the Indian Ocean, off the east coast of Africa. It is separated from the African continent by the Mozambique Channel. The capital of Madagascar is Antananarivo, which is also the largest city in the country. Madagascar is famous for its incredible biodiversity.\nApproximately 90% of the island's plants and animals are endemic, which means they are not found anywhere else in the world. Among its best-known species are lemurs, chameleons, and a wide variety of plants such as the baobab.",
+      "TextEs": "Madagascar es la cuarta isla más grande del mundo, ubicada en el océano Índico, frente a la costa este de África. Está separada del continente africano por el Canal de Mozambique. La capital de Madagascar es Antananarivo, que también es la ciudad más grande del país. Madagascar es famoso por su increíble biodiversidad.\nAproximadamente el 90% de la flora y fauna de la isla es endémica, lo que significa que no se encuentra en ninguna otra parte del mundo. Entre sus especies más conocidas están los lémures, camaleones y una gran variedad de plantas como el baobab.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Malagasy culture is rich and diverse, influenced by African, Asian, and European traditions. Most of the population belongs to Malagasy ethnic groups, and the official language is Malagasy, although French is also widely spoken. Madagascar's economy is based on agriculture, fishing, and mining. It is one of the main producers of vanilla, and it also grows coffee, cocoa, and spices. Tourism is a growing sector, driven by biodiversity and natural beauty.",
+      "TextEs": "La cultura malgache es rica y diversa, influenciada por las tradiciones africanas, asiáticas y europeas. La mayoría de la población pertenece a grupos étnicos malgaches, y el idioma oficial es el malgache, aunque el francés también se habla ampliamente. La economía de Madagascar se basa en la agricultura, la pesca y la minería. Es uno de los principales productores de vainilla, y también cultiva café, cacao y especias. El turismo es un sector en crecimiento, impulsado por la biodiversidad y las bellezas naturales.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "Madagascar has a rich history that includes influences from Arab explorers, European traders, and French colonization. It gained its independence from France in 1960. Madagascar faces serious environmental challenges, such as deforestation, loss of biodiversity, and climate change. Cutting down trees for farming and livestock has drastically reduced forest areas. Malagasy food is characterized by a mix of flavors and is influenced by local agriculture. Rice is a staple food, and dishes such as “romazava” (a meat and vegetable stew) are popular.",
+      "TextEs": "Madagascar tiene una historia rica que incluye influencias de exploradores árabes, comerciantes europeos y colonización francesa. Logró su independencia de Francia en 1960. Madagascar enfrenta serios desafíos ambientales, como la deforestación, la pérdida de biodiversidad y el cambio climático. La tala de árboles para la agricultura y la ganadería ha reducido drásticamente las áreas de bosque. La comida malgache se caracteriza por la mezcla de sabores y es influenciada por la agricultura local. El arroz es un alimento básico, y platos como el \"romazava\" (un guiso de carne y verduras) son populares.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "Many festivals are celebrated in Madagascar, many of them related to agriculture and tradition. The “Famadihana” is an ancestral ceremony in which families would exhume their ancestors and celebrate their memory. Madagascar has a tropical climate, with two main seasons: the rainy season (November to April) and the dry season (May to October). The island experiences a variety of climates because of its topography. Madagascar is a fascinating place with a rich cultural and natural heritage, which makes it a unique destination in the world.",
+      "TextEs": "En Madagascar se celebran diversas festividades, muchas de las cuales están relacionadas con la agricultura y la tradición. El \"Famadihana\" es una ceremonia ancestral donde las familias exhumaban a sus antepasados y celebraban su memoria. Madagascar tiene un clima tropical, con dos estaciones principales: la temporada de lluvias (noviembre a abril) y la temporada seca (mayo a octubre). La isla experimenta una variedad de climas debido a su topografía. Madagascar es un lugar fascinante con una rica herencia cultural y natural, lo que la convierte en un destino único en el mundo.",
+      "ImageUrl": null
+    }
+  ]
+}

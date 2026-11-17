@@ -1,0 +1,40 @@
+{
+  "academicPeriod": {
+    "empty": "There are no active academic periods.",
+    "title": "Academic period",
+    "name": "Period: {{number}}",
+    "weekProgress": "Week <b>{{current}}</b> of {{total}}",
+    "endsOn": "Ends on <b>{{date}}</b>",
+    "endDate": ""
+  },
+  "weekPlan": {
+    "unit": "Unit",
+    "title": "These weeks' lessons",
+    "noLessonsForThisWeek": "No pending lessons",
+    "fallback": {
+      "planning": "Planning",
+      "lesson": "Lesson",
+      "group": "Groups not assigned to this plan.",
+      "subjects": {
+        "math": "Mathematics",
+        "science": "Science",
+        "socialStudies": "Social Studies"
+      },
+      "units": {
+        "unit": "Unit",
+        "math": "Unit 6 · Equivalent fractions",
+        "science": "Unit 4 · Ecosystems of Puerto Rico",
+        "socialStudies": "Unit 3 · Geography of the Caribbean"
+      }
+    }
+  },
+  "aiAssistant": {
+    "title": "AI Assistant",
+    "subtitle": "Ask the AI for anything you need as a teacher.",
+    "description": "Describe what you need and the AI will help you get started.",
+    "requestLabel": "Your request",
+    "requestPlaceholder": "E.g.: a reading comprehension rubric for 4th grade…",
+    "generate": "Generate",
+    "systemPrompt": "You are an expert pedagogical assistant for teachers in Puerto Rico. You respond in English, in markdown, with clear structure and directly usable content. Do not include unnecessary disclaimers."
+  }
+}

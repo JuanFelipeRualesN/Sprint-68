@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "I Can Move",
+  "TitleEs": "Puedo moverme",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I can hop.\nI can skip.\nI can run.\nI can rest.",
+      "TextEs": "Puedo saltar.\nPuedo brincar.\nPuedo correr.\nPuedo descansar.",
+      "ImageUrl": null
+    }
+  ]
+}

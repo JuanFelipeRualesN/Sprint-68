@@ -1,0 +1,25 @@
+{
+  "LevelId": 1,
+  "CategoryId": 1,
+  "TitleEn": "Mumo the Monkey",
+  "TitleEs": "El mono Mumo",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/animals.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Mumo the monkey is going for a walk. He looks at the map to see how to get to the museum. He gets on his motorbike and looks at the street. Oh no, his map falls and Mumo doesn't know! He looks at butterflies, he is distracted. When he realized it, he was already lost. He looks in his backpack, oh no, the map is not there! Mumo doesn't know how he will get there.",
+      "TextEs": "El mono Mumo, va de paseo. Mira en el mapa cómo ir al museo. Sube en su moto y mira la calle, ¡Oh no, su mapa se cae y Mumo no sabe! Mira mariposas, está distraído. Cuando se dio cuenta, ya estaba perdido. Mira su mochila, ¡oh no, no está el mapa! Mumo no sabe, cómo va a llegar.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "So he asks what the way is. Climb the mountain, you will see a windmill. Right there on the right is the museum. Thank you, thank you very much! he says to Romeo. He goes along the road and reaches the museum. With a coin, he pays for his ticket. He looks at the details with his two little eyes, and after a while, you can hear his scream:\nAhhhhh! Mumo runs and runs, he leaves the museum. The mummy museum scares him a lot.",
+      "TextEs": "Entonces pregunta, cómo es el camino. Sube la montaña, verás un molino. Justo a la derecha, se encuentra ese museo. ¡Gracias, muchas gracias!, le dice a Romeo. Se va por la ruta y llega al museo. Con una moneda, paga para entrada. Mira los detalles con sus dos ojitos, y al cabo de un rato, se oye su grito:\n¡Ahhhhh! Memo corre y corre, sale del museo. El museo de momias, le da mucho miedo.",
+      "ImageUrl": null
+    }
+  ]
+}

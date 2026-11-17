@@ -1,0 +1,109 @@
+﻿id,grado,orden,titulo_es,titulo_en,origen_es,origen_en,diapositivas,notas
+cuarto-es-01,Cuarto,1,El árbol de la memoria,The Memory Tree,original,traducción automática,11,
+cuarto-es-02,Cuarto,2,La silla junto a la ventana,The Chair by the Window,original,traducción automática,10,
+cuarto-es-03,Cuarto,3,El mapa del manglar,The Mangrove Map,original,traducción automática,9,
+cuarto-es-04,Cuarto,4,La máquina de las tapas,The Bottle Cap Machine,original,traducción automática,1,
+cuarto-es-05,Cuarto,5,El menú del viernes,The Friday Menu,original,traducción automática,1,
+cuarto-es-06,Cuarto,6,Una noticia sin firma,An Unsigned Piece of News,original,traducción automática,1,
+cuarto-es-07,Cuarto,7,La plaza de los sonidos,The Plaza of Sounds,original,traducción automática,1,
+cuarto-es-08,Cuarto,8,La rampa de colores,The Rainbow Ramp,original,traducción automática,1,
+cuarto-es-09,Cuarto,9,El agua del barrio,The Neighborhood Water,original,traducción automática,1,
+cuarto-es-10,Cuarto,10,El banco de las ideas,The Idea Bank,original,traducción automática,1,
+cuarto-es-11,Cuarto,11,La carrera de Samuel,Samuel's Race,original,traducción automática,1,
+cuarto-es-12,Cuarto,12,La foto del festival,The Festival Photo,original,traducción automática,1,
+cuarto-es-13,Cuarto,13,El regalo de la abuela,Grandma's Gift,original,traducción automática,1,
+cuarto-es-14,Cuarto,14,La última botella,The Last Bottle,original,traducción automática,1,
+cuarto-es-15,Cuarto,15,Toñito el invisible,Toñito the Invisible,original,traducción automática,39,"Se omitió la 'Nota aclaratoria' final del PDF (uso restringido a maestros del Departamento de Educación de PR, concurso de deletreo). El original repite la frase 'Roberto, en invitarlos a jugar en el parque' (párrafo 13); se tradujo tal cual, conviene corregir la fuente. 'zafacón' se tradujo como 'trash can'."
+kinder-es-01,Kinder,1,La luna,The Moon,original,traducción automática,4,
+kinder-es-02,Kinder,2,Mi lorita,My Little Parrot,original,traducción automática,4,"Poema: traducción literal, no conserva la rima. 'habla por los codos' es un modismo (habla sin parar)."
+kinder-es-03,Kinder,3,El pato Honorato,Honorato the Duck,original,traducción automática,3,"Poema: traducción literal, no conserva la rima."
+kinder-es-04,Kinder,4,El flamenco,The Flamingo,original,traducción automática,3,"Poema: traducción literal, no conserva la rima."
+kinder-es-05,Kinder,5,La hormiguita,The Little Ant,original,traducción automática,3,"Poema: traducción literal, no conserva la rima."
+kinder-es-06,Kinder,6,El león,The Lion,original,traducción automática,4,"Poema: traducción literal, no conserva la rima."
+kinder-es-07,Kinder,7,Mimi y Mila,Mimi and Mila,original,traducción automática,5,
+kinder-es-08,Kinder,8,Susise lava,Susi Washes Up,original,traducción automática,4,El título original dice 'Susise lava' (falta un espacio: 'Susi se lava').
+kinder-es-09,Kinder,9,La luna y la laguna,The Moon and the Lagoon,original,traducción automática,4,
+kinder-es-10,Kinder,10,Tito y Tita,Tito and Tita,original,traducción automática,4,
+kinder-es-11,Kinder,11,Pepa y el papel,Pepa and the Paper,original,traducción automática,4,'pote' = recipiente/bote de basura; revisar si se prefiere 'bin'.
+kinder-es-12,Kinder,12,Nina y la piña,Nina and the Pineapple,original,traducción automática,4,
+kinder-es-13,Kinder,13,Fina y la fruta,Fina and the Fruit,original,traducción automática,4,
+kinder-es-14,Kinder,14,Coco crea,Coco Creates,original,traducción automática,4,
+kinder-es-15,Kinder,15,Sol y la tableta,Sol and the Tablet,original,traducción automática,4,
+primero-es-01,Primero,1,Mi abuelita Inés,My Grandma Inés,original,traducción automática,2,
+primero-es-02,Primero,2,Las hormigas,Ants,original,traducción automática,1,
+primero-es-03,Primero,3,El conejo de Sofía,Sofía's Rabbit,original,traducción automática,2,
+primero-es-04,Primero,4,El mono Mumo,Mumo the Monkey,original,traducción automática,2,El original dice 'Memo' en el último párrafo (probable error de tipeo por 'Mumo'); se tradujo como Mumo. Es un poema con rima: la traducción es literal y no conserva la rima.
+primero-es-05,Primero,5,Mi amigo Popi,My Friend Popi,original,traducción automática,7,
+primero-es-06,Primero,6,Cangurito,Little Kangaroo,original,traducción automática,12,"Poema: traducción literal, no conserva la rima."
+primero-es-07,Primero,7,Bandera puertorriqueña,The Puerto Rican Flag,original,traducción automática,13,"Poema con versos cortados a mano en el original (algunos cortes están a mitad de frase); se respetó el corte de líneas. Revisar 'como quera eres' (posible error de tipeo en el original). Traducción literal, no conserva la rima."
+primero-es-08,Primero,8,La merienda de Lía,Lía's Snack,original,traducción automática,8,
+primero-es-09,Primero,9,Un lugar para Tomás,A Place for Tomás,original,traducción automática,9,
+primero-es-10,Primero,10,El sapo y la lata,The Toad and the Can,original,traducción automática,8,
+primero-es-11,Primero,11,El tambor de Bruno,Bruno's Drum,original,traducción automática,8,
+primero-es-12,Primero,12,La caja de Clara,Clara's Box,original,traducción automática,9,
+primero-es-13,Primero,13,Diego busca una fuente,Diego Looks for a Source,original,traducción automática,7,
+primero-es-14,Primero,14,La lluvia y el jardín,The Rain and the Garden,original,traducción automática,7,
+primero-es-15,Primero,15,Una tarde sin pantallas,An Afternoon Without Screens,original,traducción automática,6,
+quinto-es-01,Quinto,1,El faro y las dos propuestas,The Lighthouse and the Two Proposals,original,traducción automática,1,
+quinto-es-02,Quinto,2,La promesa difícil,The Hard Promise,original,traducción automática,1,
+quinto-es-03,Quinto,3,Las voces del manglar,The Voices of the Mangrove,original,traducción automática,1,
+quinto-es-04,Quinto,4,El cuaderno de los ensayos,The Notebook of Trials,original,traducción automática,1,
+quinto-es-05,Quinto,5,La pantalla y el rumor,The Screen and the Rumor,original,traducción automática,1,
+quinto-es-06,Quinto,6,La receta de tres hogares,The Recipe of Three Homes,original,traducción automática,1,
+quinto-es-07,Quinto,7,El precio del atajo,The Price of the Shortcut,original,traducción automática,1,
+quinto-es-08,Quinto,8,El mural de las diferencias,The Mural of Differences,original,traducción automática,1,
+quinto-es-09,Quinto,9,La luz que sobra,The Extra Light,original,traducción automática,1,
+quinto-es-10,Quinto,10,El negocio de las semillas,The Seed Business,original,traducción automática,1,
+quinto-es-11,Quinto,11,La fotografía incompleta,The Incomplete Photograph,original,traducción automática,1,
+quinto-es-12,Quinto,12,El jardín que escucha,The Garden That Listens,original,traducción automática,1,
+quinto-es-13,Quinto,13,La historia detrás del tambor,The Story Behind the Drum,original,traducción automática,1,
+quinto-es-14,Quinto,14,El final que no estaba escrito,The Ending That Wasn't Written,original,traducción automática,1,
+segundo-es-01,Segundo,1,Un día de playa,A Day at the Beach,original,traducción automática,4,
+segundo-es-02,Segundo,2,El cuidado de nuestras mascotas,Taking Care of Our Pets,original,traducción automática,4,
+segundo-es-03,Segundo,3,El renacuajo y el pececito,The Tadpole and the Little Fish,original,traducción automática,5,El original dice 'EL sapo' (mayúscula de más) en el último párrafo.
+segundo-es-04,Segundo,4,La leyenda de El Dorado,The Legend of El Dorado,original,traducción automática,5,
+segundo-es-05,Segundo,5,El secreto del mar de Jamaica,The Secret of the Jamaican Sea,original,traducción automática,15,'Tio Bennie' (sin tilde en el original) se tradujo como 'Uncle Bennie'.
+segundo-es-06,Segundo,6,El Coquí,The Coquí,original,traducción automática,1,
+segundo-es-07,Segundo,7,La Maga: Árbol Nacional,The Maga: National Tree,original,traducción automática,1,
+segundo-es-08,Segundo,8,Cuba,Cuba,original,traducción automática,4,"Texto informativo con algunas imprecisiones en el original (p. ej. 'archipiélago conocido como República de Cuba', 'Isla Juventud'); se tradujo fielmente. 'Cubao' y los nombres de lugares se dejaron como en el original."
+segundo-es-09,Segundo,9,Fábula: La Tortuga y el Conejo del Canal de Panamá,Fable: The Tortoise and the Rabbit of the Panama Canal,original,traducción automática,14,
+segundo-es-10,Segundo,10,El sueño de Pedro,Pedro's Dream,original,traducción automática,10,
+segundo-es-11,Segundo,11,La dama de la libertad,The Lady of Liberty,original,traducción automática,8,"Poema: traducción literal, no conserva la rima."
+segundo-es-12,Segundo,12,"Estados Unidos, tierra de sueños","United States, Land of Dreams",original,traducción automática,16,"Poema: traducción literal, no conserva la rima."
+segundo-es-13,Segundo,13,El paraguas compartido,The Shared Umbrella,original,traducción automática,10,
+segundo-es-14,Segundo,14,La semilla de la quebrada,The Seed from the Stream,original,traducción automática,10,
+tercero-es-01,Tercero,1,Alberto y el secreto del agua,Alberto and the Secret of the Water,original,traducción automática,22,"Libro ilustrado: cada párrafo = una página del PDF. 'Colorín colorado, este cuento se ha acabado' es la fórmula tradicional de cierre; se tradujo con un equivalente en inglés ('And they lived happily ever after. The end.'). El original en la pág. 16 trae un guion mal colocado en el diálogo."
+tercero-es-02,Tercero,2,La lista del supermercado,The Grocery List,original,traducción automática,4,
+tercero-es-03,Tercero,3,Animales nocturnos,Nocturnal Animals,original,traducción automática,5,
+tercero-es-04,Tercero,4,La casa de los instrumentos,The House of Instruments,original,traducción automática,4,
+tercero-es-05,Tercero,5,Egipto,Egypt,original,traducción automática,2,El corte entre los dos párrafos está a mitad de frase en el original (termina en ':'); se respetó.
+tercero-es-06,Tercero,6,Fauna,Wildlife,original,traducción automática,4,
+tercero-es-07,Tercero,7,Madagascar,Madagascar,original,traducción automática,5,
+tercero-es-08,Tercero,8,El lémur aventurero de Madagascar,The Adventurous Lemur of Madagascar,original,traducción automática,33,El original usa 'chameleones' (error ortográfico por 'camaleones').
+tercero-es-09,Tercero,9,La zorra y el cuervo,The Fox and the Crow,original,traducción automática,10,"En el original el párrafo 2 es el primer diálogo, partido en dos párrafos (2 y 3)."
+tercero-es-10,Tercero,10,La Navidad y los Reyes Magos,Christmas and the Three Kings,original,traducción automática,3,"El texto mezcla tradiciones de España y de Puerto Rico, como en el original."
+tercero-es-11,Tercero,11,La Maga: Árbol Nacional,The Maga: National Tree,original,traducción automática,1,
+tercero-es-12,Tercero,12,El Festival del Queso Rodante,The Rolling Cheese Festival,original,traducción automática,12,"Poema: traducción literal, no conserva la rima."
+tercero-es-13,Tercero,13,"Bao, el oso panda",Bao the Panda Bear,original,traducción automática,7,El párrafo 3 del original repite dos veces las mismas dos oraciones; se tradujo fielmente y conviene corregirlo en el texto fuente.
+tercero-es-14,Tercero,14,El Pequeño Ravi y la Luz de Diwali,Little Ravi and the Light of Diwali,original,traducción automática,15,
+tercero-es-15,Tercero,15,El Sueño de Alexei,Alexei's Dream,original,traducción automática,7,El original dice 'cerca e él' (error de tipeo por 'cerca de él').
+kinder-en-01,Kinder,1,Todos jugamos,We All Play,traducción automática,original,4,
+kinder-en-02,Kinder,2,Mi nuevo amigo,My New Pal,traducción automática,original,4,
+kinder-en-03,Kinder,3,El turno de Sam,A Turn for Sam,traducción automática,original,4,
+kinder-en-04,Kinder,4,El tambor rojo,The Red Drum,traducción automática,original,4,
+kinder-en-05,Kinder,5,La canción de mi casa,My Home Song,traducción automática,original,4,
+kinder-en-06,Kinder,6,El arte de la bandera,The Flag Art,traducción automática,original,4,
+kinder-en-07,Kinder,7,La arena limpia,The Clean Sand,traducción automática,original,4,
+kinder-en-08,Kinder,8,La semillita,The Little Seed,traducción automática,original,4,
+kinder-en-09,Kinder,9,El mar azul,The Blue Sea,traducción automática,original,4,
+kinder-en-10,Kinder,10,Un barco de caja,A Box Boat,traducción automática,original,4,
+kinder-en-11,Kinder,11,Mi gran arreglo,My Big Fix,traducción automática,original,4,
+kinder-en-12,Kinder,12,La torre de vasos,The Cup Tower,traducción automática,original,4,
+kinder-en-13,Kinder,13,"¡Lava, lava!","Wash, Wash!",traducción automática,original,4,
+kinder-en-14,Kinder,14,Puedo moverme,I Can Move,traducción automática,original,4,
+kinder-en-15,Kinder,15,Mi manzana roja,My Red Apple,traducción automática,original,4,
+kinder-en-16,Kinder,16,Hora de descansar,Time to Rest,traducción automática,original,4,
+kinder-en-17,Kinder,17,La tableta de la clase,The Class Tablet,traducción automática,original,4,
+kinder-en-18,Kinder,18,Preguntar primero,Ask First,traducción automática,original,4,
+kinder-en-19,Kinder,19,La estrella en la pantalla,The Star Screen,traducción automática,original,4,
+kinder-en-20,Kinder,20,Toca y para,Tap and Stop,traducción automática,original,4,

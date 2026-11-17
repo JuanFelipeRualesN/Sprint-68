@@ -1,0 +1,235 @@
+{
+  "header": {
+    "eyebrow": "Herramientas con IA",
+    "title": "Su copiloto educativo",
+    "description": "Genera planes de clase, rúbricas, adaptaciones, lecturas y más en segundos. {{count}} herramientas.",
+    "searchPlaceholder": "Buscar herramientas…"
+  },
+  "panel": {
+    "title": "Herramientas con IA",
+    "subtitle": "Impulsadas por inteligencia artificial para apoyar su enseñanza"
+  },
+  "categories": {
+    "all": "Todo",
+    "planning": "Planeación",
+    "differentiation": "Diferenciación",
+    "assessment": "Evaluación",
+    "reading": "Lectura",
+    "assistants": "Asistentes"
+  },
+  "card": {
+    "use": "Usar",
+    "chat": "Chatear ahora",
+    "notConfigured": "{{name}} aún no está configurado."
+  },
+  "grid": {
+    "noResults": "Ninguna herramienta coincide con su búsqueda."
+  },
+  "placeholders": {
+    "ai-assistant": {
+      "placeholder": "Ej.: una rúbrica de comprensión lectora para grado 4…"
+    },
+    "special-ed-coach": {
+      "question": "Ej.: ¿Qué adaptaciones recomienda para un estudiante con dislexia en lecturas extensas?"
+    },
+    "adapt-lesson": {
+      "lesson": "Copie y pegue aquí el plan de la lección o describa la lección."
+    },
+    "stem-unit-planner": {
+      "topic": "Ej.: Ecosistemas de páramo en Colombia"
+    },
+    "plan-my-lesson": {
+      "topic": "Ej.: Fracciones equivalentes"
+    },
+    "language-objectives": {
+      "content": "Ej.: Los estudiantes explicarán las características de un ecosistema."
+    },
+    "group-strategy": {
+      "objective": "Ej.: Practicar habilidades de resolución de problemas",
+      "levels": "Ej.: 6 estudiantes avanzados, 12 al nivel esperado y 6 que necesitan apoyo."
+    },
+    "differentiate-content": {
+      "topic": "Ej.: Sistema solar",
+      "studentNeeds": "Describa las necesidades, preferencias o áreas de apoyo del estudiante para adaptar el contenido educativo..."
+    },
+    "differentiate-process": {
+      "lesson": "Ej.: Comprensión lectora sobre la fotosíntesis",
+      "styles": "Visual, auditivo, kinestésico, lectura y escritura"
+    },
+    "differentiate-product": {
+      "objective": "Ej.: Explicar las causas y los efectos de la deforestación"
+    },
+    "intervention-plan": {
+      "gaps": "Ej.: Los estudiantes no dominan la multiplicación de un solo dígito. No reconocen fracciones equivalentes en modelos visuales. No identifican la idea principal en textos breves..."
+    },
+    "create-rubric": {
+      "task": "Ej.: Ensayo argumentativo sobre el reciclaje en mi comunidad",
+      "criteria": "Ej.: Contenido, organización, gramática"
+    },
+    "dok-questions": {
+      "topic": "Copie y pegue el texto o describa el tema."
+    },
+    "math-exam": {
+      "topic": "Ej.: Multiplicación de fracciones"
+    },
+    "assessment-creator": {
+      "topic": "Ej.: Ecosistemas y cadenas alimentarias"
+    },
+    "diagnostic-tests": {
+      "unit": "Ej.: Fracciones equivalentes (lo que estoy a punto de comenzar a enseñar)"
+    },
+    "personalized-feedback": {
+      "student": "María",
+      "work": "Ej.: Ensayo sobre reciclaje, 2 páginas, buena estructura pero gramática débil."
+    },
+    "choice-board": {
+      "topic": "Ej.: La Independencia de Colombia",
+      "instructions": "Complete 3 actividades en línea (horizontal, vertical o diagonal)."
+    },
+    "leveled-reading": {
+      "topic": "Ej.: El gallito de roca andino"
+    },
+    "academic-vocabulary": {
+      "topic": "Ej.: El Paisaje Cultural Cafetero"
+    },
+    "comprehension-questions": {
+      "text": "Copie y pegue aquí el texto de lectura..."
+    },
+    "lexile-assessment": {
+      "topic": "Ej.: El Parque Tayrona"
+    },
+    "math-assistant": {
+      "question": "¿Cómo explico la multiplicación de fracciones utilizando un modelo visual a estudiantes de grado 5?"
+    },
+    "science-assistant": {
+      "question": "¿Qué experimento sencillo puedo realizar con materiales del hogar para explicar la fotosíntesis?"
+    },
+    "language-assistant": {
+      "question": "Traduzca esta instrucción al inglés para estudiantes con un nivel de vocabulario de grado 3."
+    },
+    "ela-assistant": {
+      "question": "¿Cómo puedo estructurar progresivamente un ensayo de 5 párrafos para estudiantes de inglés como lengua extranjera de nivel intermedio?"
+    },
+    "social-studies-assistant": {
+      "question": "Ej.: Necesito una línea de tiempo del poblamiento muisca del Altiplano Cundiboyacense para estudiantes de grado 4."
+    },
+    "ell-coach": {
+      "question": "Estrategias SIOP para una clase de ciencias de grado 5 con estudiantes de inglés como lengua extranjera en nivel emergente."
+    }
+  },
+  "tools": {
+    "plan-my-lesson": {
+      "name": "Planear mi clase diaria",
+      "subtitle": "Genera un plan de clase completo en minutos",
+      "standard": "5.N.2.2"
+    },
+    "ai-assistant": {
+      "name": "Asistente IA",
+      "subtitle": "Describa lo que necesita y la IA le ayudará a empezar."
+    },
+    "stem-unit-planner": {
+      "name": "Planeador de unidades STEM",
+      "subtitle": "Diseña unidades STEM interdisciplinarias"
+    },
+    "adapt-lesson": {
+      "name": "Diferenciar lección o contenido",
+      "subtitle": "Modifica clases existentes para sus estudiantes"
+    },
+    "language-objectives": {
+      "name": "Objetivos lingüísticos para Aprendices del Inglés",
+      "subtitle": "Crea objetivos de contenido y lenguaje alineados con los estándares"
+    },
+    "group-strategy": {
+      "name": "Agrupación de estudiantes",
+      "subtitle": "Diseña planes de agrupación colaborativa eficaces"
+    },
+    "differentiate-content": {
+      "name": "Adaptación de contenido",
+      "subtitle": "Adapta materiales para diversas necesidades de aprendizaje"
+    },
+    "differentiate-process": {
+      "name": "Instrucción diferenciada",
+      "subtitle": "Varía las estrategias de instrucción para todos los estudiantes"
+    },
+    "differentiate-product": {
+      "name": "Evaluación diferenciada",
+      "subtitle": "Crea opciones flexibles para la demostración del estudiante"
+    },
+    "intervention-plan": {
+      "name": "Plan de intervención académica",
+      "subtitle": "Desarrolla planes de apoyo focalizados para estudiantes con dificultades"
+    },
+    "create-rubric": {
+      "name": "Crear una rúbrica",
+      "subtitle": "Genera rúbricas claras y alineadas con los estándares"
+    },
+    "dok-questions": {
+      "name": "Preguntas por niveles DOK",
+      "subtitle": "Escribe preguntas para todos los niveles de Profundidad del Conocimiento"
+    },
+    "math-exam": {
+      "name": "Examen de Matemáticas",
+      "subtitle": "Crea evaluaciones de matemáticas personalizadas"
+    },
+    "personalized-feedback": {
+      "name": "Retroalimentación individualizada",
+      "subtitle": "Redacta comentarios significativos e individualizados para el estudiante"
+    },
+    "choice-board": {
+      "name": "Tablero de actividades diferenciadas",
+      "subtitle": "Diseña menús de opciones atractivos para los estudiantes"
+    },
+    "assessment-creator": {
+      "name": "Crear evaluaciones",
+      "subtitle": "Genera cuestionarios, exámenes y controles formativos"
+    },
+    "diagnostic-tests": {
+      "name": "Pruebas diagnósticas",
+      "subtitle": "Identifica rápidamente las fortalezas y brechas de los estudiantes"
+    },
+    "leveled-reading": {
+      "name": "Lectura nivelada",
+      "subtitle": "Ajusta la complejidad del texto para cada lector"
+    },
+    "academic-vocabulary": {
+      "name": "Vocabulario académico",
+      "subtitle": "Enseña y refuerza el vocabulario específico de la asignatura"
+    },
+    "comprehension-questions": {
+      "name": "Preguntas de comprensión lectora",
+      "subtitle": "Genera preguntas de lectura basadas en el texto"
+    },
+    "lexile-assessment": {
+      "name": "Práctica de lectura por nivel Lexile",
+      "subtitle": "Evalúa y adapta los textos al nivel de lectura del estudiante"
+    },
+    "math-assistant": {
+      "name": "Asistente de Matemáticas",
+      "subtitle": "Su co-docente de IA para matemáticas"
+    },
+    "science-assistant": {
+      "name": "Asistente de Ciencias",
+      "subtitle": "Su co-docente de IA para ciencias"
+    },
+    "ela-assistant": {
+      "name": "Asistente de Inglés",
+      "subtitle": "Su co-docente de IA para artes del lenguaje en inglés"
+    },
+    "social-studies-assistant": {
+      "name": "Asistente en Ciencias Sociales",
+      "subtitle": "Su co-docente de IA para ciencias sociales"
+    },
+    "language-assistant": {
+      "name": "Asistente de idiomas y traducción",
+      "subtitle": "Su co-docente de IA para lenguas del mundo"
+    },
+    "special-ed-coach": {
+      "name": "Asistente de Educación Especial",
+      "subtitle": "Apoyo y estrategias para la educación inclusiva"
+    },
+    "ell-coach": {
+      "name": "Asistente para Aprendices del Inglés (ELL)",
+      "subtitle": "Recursos y andamiajes para estudiantes de inglés como lengua extranjera"
+    }
+  }
+}

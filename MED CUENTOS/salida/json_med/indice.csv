@@ -1,0 +1,74 @@
+﻿archivo,grado,LevelId,categoria,CategoryId,TitleEs,TitleEn,palabras_es,slides,max_palabras_slide,origen_TextEn
+cuarto-01-the-memory-tree.json,Cuarto,4,history,3,El árbol de la memoria,The Memory Tree,120,2,66,traducción automática
+cuarto-02-the-chair-by-the-window.json,Cuarto,4,adventure,4,La silla junto a la ventana,The Chair by the Window,112,2,71,traducción automática
+cuarto-03-the-mangrove-map.json,Cuarto,4,adventure,4,El mapa del manglar,The Mangrove Map,114,2,58,traducción automática
+cuarto-04-the-bottle-cap-machine.json,Cuarto,4,scifi,2,La máquina de las tapas,The Bottle Cap Machine,112,2,64,traducción automática
+cuarto-05-the-friday-menu.json,Cuarto,4,adventure,4,El menú del viernes,The Friday Menu,103,1,103,traducción automática
+cuarto-06-an-unsigned-piece-of-news.json,Cuarto,4,scifi,2,Una noticia sin firma,An Unsigned Piece of News,106,2,70,traducción automática
+cuarto-07-the-plaza-of-sounds.json,Cuarto,4,history,3,La plaza de los sonidos,The Plaza of Sounds,112,2,71,traducción automática
+cuarto-08-the-rainbow-ramp.json,Cuarto,4,adventure,4,La rampa de colores,The Rainbow Ramp,116,2,65,traducción automática
+cuarto-09-the-neighborhood-water.json,Cuarto,4,adventure,4,El agua del barrio,The Neighborhood Water,111,2,67,traducción automática
+cuarto-10-the-idea-bank.json,Cuarto,4,adventure,4,El banco de las ideas,The Idea Bank,103,2,67,traducción automática
+cuarto-11-samuel-s-race.json,Cuarto,4,adventure,4,La carrera de Samuel,Samuel's Race,109,2,73,traducción automática
+cuarto-12-the-festival-photo.json,Cuarto,4,scifi,2,La foto del festival,The Festival Photo,101,1,104,traducción automática
+cuarto-13-grandma-s-gift.json,Cuarto,4,history,3,El regalo de la abuela,Grandma's Gift,107,2,65,traducción automática
+cuarto-14-the-last-bottle.json,Cuarto,4,adventure,4,La última botella,The Last Bottle,106,1,106,traducción automática
+cuarto-15-tonito-the-invisible.json,Cuarto,4,scifi,2,Toñito el invisible,Toñito the Invisible,806,11,109,traducción automática
+primero-01-my-grandma-ines.json,Primero,1,adventure,4,Mi abuelita Inés,My Grandma Inés,147,2,77,traducción automática
+primero-02-ants.json,Primero,1,animals,1,Las hormigas,Ants,145,2,81,traducción automática
+primero-03-sofia-s-rabbit.json,Primero,1,animals,1,El conejo de Sofía,Sofía's Rabbit,140,2,81,traducción automática
+primero-04-mumo-the-monkey.json,Primero,1,animals,1,El mono Mumo,Mumo the Monkey,134,2,85,traducción automática
+primero-05-my-friend-popi.json,Primero,1,history,3,Mi amigo Popi,My Friend Popi,73,1,74,traducción automática
+primero-06-little-kangaroo.json,Primero,1,animals,1,Cangurito,Little Kangaroo,40,1,45,traducción automática
+primero-07-the-puerto-rican-flag.json,Primero,1,history,3,Bandera puertorriqueña,The Puerto Rican Flag,56,1,62,traducción automática
+primero-08-lia-s-snack.json,Primero,1,adventure,4,La merienda de Lía,Lía's Snack,59,1,64,traducción automática
+primero-09-a-place-for-tomas.json,Primero,1,adventure,4,Un lugar para Tomás,A Place for Tomás,57,1,63,traducción automática
+primero-10-the-toad-and-the-can.json,Primero,1,animals,1,El sapo y la lata,The Toad and the Can,64,1,64,traducción automática
+primero-11-bruno-s-drum.json,Primero,1,history,3,El tambor de Bruno,Bruno's Drum,61,1,62,traducción automática
+primero-12-clara-s-box.json,Primero,1,scifi,2,La caja de Clara,Clara's Box,61,1,65,traducción automática
+primero-13-diego-looks-for-a-source.json,Primero,1,scifi,2,Diego busca una fuente,Diego Looks for a Source,66,1,70,traducción automática
+primero-14-the-rain-and-the-garden.json,Primero,1,adventure,4,La lluvia y el jardín,The Rain and the Garden,62,1,67,traducción automática
+primero-15-an-afternoon-without-screens.json,Primero,1,scifi,2,Una tarde sin pantallas,An Afternoon Without Screens,59,1,66,traducción automática
+quinto-01-the-lighthouse-and-the-two-proposals.json,Quinto,5,history,3,El faro y las dos propuestas,The Lighthouse and the Two Proposals,123,2,70,traducción automática
+quinto-02-the-hard-promise.json,Quinto,5,adventure,4,La promesa difícil,The Hard Promise,122,2,68,traducción automática
+quinto-03-the-voices-of-the-mangrove.json,Quinto,5,adventure,4,Las voces del manglar,The Voices of the Mangrove,117,2,76,traducción automática
+quinto-04-the-notebook-of-trials.json,Quinto,5,scifi,2,El cuaderno de los ensayos,The Notebook of Trials,121,2,71,traducción automática
+quinto-05-the-screen-and-the-rumor.json,Quinto,5,scifi,2,La pantalla y el rumor,The Screen and the Rumor,121,2,77,traducción automática
+quinto-06-the-recipe-of-three-homes.json,Quinto,5,history,3,La receta de tres hogares,The Recipe of Three Homes,120,2,72,traducción automática
+quinto-07-the-price-of-the-shortcut.json,Quinto,5,adventure,4,El precio del atajo,The Price of the Shortcut,120,2,75,traducción automática
+quinto-08-the-mural-of-differences.json,Quinto,5,adventure,4,El mural de las diferencias,The Mural of Differences,117,2,76,traducción automática
+quinto-09-the-extra-light.json,Quinto,5,scifi,2,La luz que sobra,The Extra Light,113,2,75,traducción automática
+quinto-10-the-seed-business.json,Quinto,5,adventure,4,El negocio de las semillas,The Seed Business,111,2,75,traducción automática
+quinto-11-the-incomplete-photograph.json,Quinto,5,scifi,2,La fotografía incompleta,The Incomplete Photograph,118,2,67,traducción automática
+quinto-12-the-garden-that-listens.json,Quinto,5,adventure,4,El jardín que escucha,The Garden That Listens,105,2,70,traducción automática
+quinto-13-the-story-behind-the-drum.json,Quinto,5,history,3,La historia detrás del tambor,The Story Behind the Drum,115,2,60,traducción automática
+quinto-14-the-ending-that-wasn-t-written.json,Quinto,5,adventure,4,El final que no estaba escrito,The Ending That Wasn't Written,123,2,83,traducción automática
+segundo-01-a-day-at-the-beach.json,Segundo,2,adventure,4,Un día de playa,A Day at the Beach,134,2,102,traducción automática
+segundo-02-taking-care-of-our-pets.json,Segundo,2,animals,1,El cuidado de nuestras mascotas,Taking Care of Our Pets,137,2,87,traducción automática
+segundo-03-the-tadpole-and-the-little-fish.json,Segundo,2,animals,1,El renacuajo y el pececito,The Tadpole and the Little Fish,146,2,101,traducción automática
+segundo-04-the-legend-of-el-dorado.json,Segundo,2,history,3,La leyenda de El Dorado,The Legend of El Dorado,375,5,108,traducción automática
+segundo-05-the-secret-of-the-jamaican-sea.json,Segundo,2,adventure,4,El secreto del mar de Jamaica,The Secret of the Jamaican Sea,600,8,98,traducción automática
+segundo-06-the-coqui.json,Segundo,2,animals,1,El Coquí,The Coquí,93,1,93,traducción automática
+segundo-07-the-maga-national-tree.json,Segundo,2,history,3,La Maga: Árbol Nacional,The Maga: National Tree,85,1,85,traducción automática
+segundo-08-cuba.json,Segundo,2,history,3,Cuba,Cuba,394,5,100,traducción automática
+segundo-09-fable-the-tortoise-and-the-rabbit-of-the-panama-canal.json,Segundo,2,animals,1,Fábula: La Tortuga y el Conejo del Canal de Panamá,Fable: The Tortoise and the Rabbit of the Panama Canal,339,4,95,traducción automática
+segundo-10-pedro-s-dream.json,Segundo,2,adventure,4,El sueño de Pedro,Pedro's Dream,438,7,99,traducción automática
+segundo-11-the-lady-of-liberty.json,Segundo,2,history,3,La dama de la libertad,The Lady of Liberty,53,1,54,traducción automática
+segundo-12-united-states-land-of-dreams.json,Segundo,2,history,3,"Estados Unidos, tierra de sueños","United States, Land of Dreams",112,2,68,traducción automática
+segundo-13-the-shared-umbrella.json,Segundo,2,adventure,4,El paraguas compartido,The Shared Umbrella,99,2,65,traducción automática
+segundo-14-the-seed-from-the-stream.json,Segundo,2,adventure,4,La semilla de la quebrada,The Seed from the Stream,90,1,103,traducción automática
+tercero-01-alberto-and-the-secret-of-the-water.json,Tercero,3,adventure,4,Alberto y el secreto del agua,Alberto and the Secret of the Water,440,6,102,traducción automática
+tercero-02-the-grocery-list.json,Tercero,3,adventure,4,La lista del supermercado,The Grocery List,154,2,101,traducción automática
+tercero-03-nocturnal-animals.json,Tercero,3,animals,1,Animales nocturnos,Nocturnal Animals,167,2,92,traducción automática
+tercero-04-the-house-of-instruments.json,Tercero,3,adventure,4,La casa de los instrumentos,The House of Instruments,174,2,96,traducción automática
+tercero-05-egypt.json,Tercero,3,history,3,Egipto,Egypt,140,2,91,traducción automática
+tercero-06-wildlife.json,Tercero,3,animals,1,Fauna,Wildlife,249,4,82,traducción automática
+tercero-07-madagascar.json,Tercero,3,history,3,Madagascar,Madagascar,364,4,97,traducción automática
+tercero-08-the-adventurous-lemur-of-madagascar.json,Tercero,3,adventure,4,El lémur aventurero de Madagascar,The Adventurous Lemur of Madagascar,688,8,110,traducción automática
+tercero-09-the-fox-and-the-crow.json,Tercero,3,animals,1,La zorra y el cuervo,The Fox and the Crow,255,3,105,traducción automática
+tercero-10-christmas-and-the-three-kings.json,Tercero,3,history,3,La Navidad y los Reyes Magos,Christmas and the Three Kings,238,3,98,traducción automática
+tercero-11-the-maga-national-tree.json,Tercero,3,history,3,La Maga: Árbol Nacional,The Maga: National Tree,85,1,85,traducción automática
+tercero-12-the-rolling-cheese-festival.json,Tercero,3,adventure,4,El Festival del Queso Rodante,The Rolling Cheese Festival,82,1,82,traducción automática
+tercero-13-bao-the-panda-bear.json,Tercero,3,animals,1,"Bao, el oso panda",Bao the Panda Bear,321,4,107,traducción automática
+tercero-14-little-ravi-and-the-light-of-diwali.json,Tercero,3,history,3,El Pequeño Ravi y la Luz de Diwali,Little Ravi and the Light of Diwali,391,4,109,traducción automática
+tercero-15-alexei-s-dream.json,Tercero,3,adventure,4,El Sueño de Alexei,Alexei's Dream,398,5,109,traducción automática

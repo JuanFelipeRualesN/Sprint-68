@@ -1,0 +1,25 @@
+{
+  "LevelId": 1,
+  "CategoryId": 4,
+  "TitleEn": "My Grandma Inés",
+  "TitleEs": "Mi abuelita Inés",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "My grandma Inés is special. Nobody knows how to do as many things as she does. Abu makes the best rice with sausages in the world! She puts in lots of sausages. So many that my dad says it's sausages with rice instead of rice with sausages. Abu also knows the funniest songs. Besides singing and cooking, Abu knows a lot of things. She knows the best games in the world. Our favorite game is hide-and-seek.",
+      "TextEs": "Mi abuelita Inés es especial. Nadie sabe hacer tantas cosas como ella. ¡Abu hace el mejor arroz con salchichas del mundo! Le echa muchas salchichas. Tantas que mi papá dice que es salchichas con arroz en vez de arroz con salchichas. Abu también conoce las canciones más divertidas. Además de cantar y cocinar, Abu sabe muchas cosas. Conoce los mejores juegos del mundo. Nuestro juego favorito es el del escondite.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "She almost always hides in the closet. Sometimes she stands behind the bathroom door. I prefer to hide under her bed. It is tall and has a cushion underneath. Abu says it is my special cushion. She puts it there so I am comfortable while she finds me. But the best thing about Abu is her hugs. She gives the best hugs in the world. When Abu hugs me, I feel happy and safe.",
+      "TextEs": "Ella casi siempre se esconde en el clóset. A veces, se pone detrás de la puerta del baño. Yo prefiero esconderme debajo de su cama. Es alta y tiene un cojín debajo. Abu dice que es mi cojín especial. Lo pone ahí para que yo esté cómodo en lo que ella me encuentra. Pero lo mejor de Abu son sus abrazos. Ella da los mejores abrazos del mundo. Cuando Abu me abraza, me siento feliz y protegido.",
+      "ImageUrl": null
+    }
+  ]
+}

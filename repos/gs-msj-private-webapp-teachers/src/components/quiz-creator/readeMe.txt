@@ -1,0 +1,4 @@
+This module was created by another programmer.
+Since it uses redux, utils and more, we decided to
+put the whole module in this, except for redux and utils folder,
+which has to be in src.

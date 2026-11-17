@@ -1,0 +1,16 @@
+name: Teachers WebApp Private Pipeline
+
+trigger:
+  branches:
+    include:
+      - dev
+      - uat
+
+pool:
+  vmImage: ubuntu-latest
+
+extends:
+  template: azure-pipelines-template.yml
+  parameters:
+    appVariant: 'private'
+    staticWebAppToken: $(AZURE_STATIC_WEB_APP_TOKEN_TEACHERS_PRIVATE)

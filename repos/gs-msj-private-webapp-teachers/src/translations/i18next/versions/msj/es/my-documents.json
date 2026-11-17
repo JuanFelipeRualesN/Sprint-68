@@ -1,0 +1,61 @@
+{
+  "header": {
+    "eyebrow": "Mis documentos",
+    "title": "Biblioteca de contenido IA",
+    "subtitle": "Todo lo que genere queda guardado aquí para revisarlo, reutilizarlo y exportarlo cuando esté listo."
+  },
+  "sidebar": {
+    "ariaLabel": "Documentos generados",
+    "documentSingular": "documento",
+    "documentPlural": "documentos",
+    "searchPlaceholder": "Buscar en esta categoría...",
+    "emptyCategory": "No hay documentos en esta categoría."
+  },
+  "categories": {
+    "all": "Todos",
+    "lesson": "Lecciones",
+    "assessment": "Evaluaciones",
+    "other": "Otros"
+  },
+  "badges": {
+    "lesson": "Lección",
+    "assessment": "Evaluación",
+    "other": "Otros"
+  },
+  "reader": {
+    "titlePlaceholder": "Título del documento",
+    "titleTooltip": "Haga clic para renombrar",
+    "toolLabel": "Herramienta",
+    "createdLabel": "Creado",
+    "modelLabel": "Modelo",
+    "editorPlaceholder": "Escriba el contenido en formato Markdown aquí..."
+  },
+  "tabs": {
+    "preview": "Vista Previa",
+    "edit": "Editar Texto",
+    "presentation": "Editar Presentación"
+  },
+  "actions": {
+    "downloadPdf": "Descargar PDF",
+    "downloadPdfTooltip": "Descargar como PDF listo para imprimir",
+    "downloadWord": "Descargar Word",
+    "downloadWordTooltip": "Descargar como documento editable de Word",
+    "downloadPptx": "Descargar PPTX",
+    "downloadPptxTooltip": "Exportar como presentación editable de PowerPoint",
+    "downloadWorksheet": "Descargar hoja de trabajo",
+    "downloadWorksheetTooltip": "Descargar como hoja de trabajo con espacio para respuestas",
+    "exporting": "Exportando...",
+    "copy": "Copiar Texto",
+    "copyTooltip": "Copiar texto Markdown al portapapeles",
+    "copied": "Copiado",
+    "delete": "Borrar",
+    "deleteTooltip": "Eliminar este documento definitivamente"
+  },
+  "confirmDelete": "¿Está seguro de que desea eliminar este documento? Esta acción no se puede deshacer.",
+  "defaultDocTitle": "documento",
+  "emptyState": {
+    "title": "Biblioteca de Documentos vacía",
+    "subtitle": "Genere contenido educativo utilizando las herramientas IA para guardarlo, organizarlo y descargarlo aquí.",
+    "cta": "Ir a Asistente IA ➔"
+  }
+}

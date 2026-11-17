@@ -1,0 +1,25 @@
+{
+  "LevelId": 4,
+  "CategoryId": 2,
+  "TitleEn": "An Unsigned Piece of News",
+  "TitleEs": "Una noticia sin firma",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "A message appeared in the class chat announcing the cancellation of the field trip. It had no date and did not say who had written it. Pablo shared it right away and several classmates began to complain. Julia decided to check the information. She looked at the school's official notice and asked the teacher. She found out that the field trip was still scheduled; only the departure time had changed.",
+      "TextEs": "En el chat de la clase apareció un mensaje que anunciaba la cancelación de la excursión. No tenía fecha ni indicaba quién lo había escrito. Pablo lo compartió de inmediato y varios compañeros comenzaron a quejarse. Julia decidió comprobar la información. Revisó el aviso oficial de la escuela y preguntó a la maestra. Descubrió que la excursión seguía programada; solo habían cambiado la hora de salida.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Pablo felt embarrassed, but he corrected his message. Julia proposed a rule for the group: before sharing news, verify its source, date, and content. Her classmates agreed. They understood that the speed of a message does not prove that it is true.",
+      "TextEs": "Pablo se sintió avergonzado, pero corrigió su mensaje. Julia propuso una regla para el grupo: antes de compartir noticias, verificar su origen, fecha y contenido. Sus compañeros aceptaron. Comprendieron que la rapidez de un mensaje no demuestra que sea verdadero.",
+      "ImageUrl": null
+    }
+  ]
+}

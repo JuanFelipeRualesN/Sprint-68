@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 1,
+  "TitleEn": "The Blue Sea",
+  "TitleEs": "El mar azul",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/animals.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I see the sea.\nI see a fish.\nI keep the sea clean.\nSwim, fish, swim!",
+      "TextEs": "Veo el mar.\nVeo un pez.\nMantengo el mar limpio.\n¡Nada, pez, nada!",
+      "ImageUrl": null
+    }
+  ]
+}

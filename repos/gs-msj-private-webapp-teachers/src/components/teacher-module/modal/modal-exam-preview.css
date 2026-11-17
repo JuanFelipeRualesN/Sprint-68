@@ -1,0 +1,35 @@
+.ql-cell-focused::after {
+    border: none !important;
+    background-color: transparent !important;
+}
+
+img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.ql-editor .ql-table-better img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.ql-editor .card-little-bit-gray video, img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.ql-editor .card-little-bit-gray audio {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.ql-editor .card-little-bit-gray .ql-table-better {
+    max-width: 100%;
+    max-height: 100%;
+    table-layout: auto;
+}
+
+.ql-editor .card-body p video {
+    max-width: 100%;
+    max-height: 100%;
+}

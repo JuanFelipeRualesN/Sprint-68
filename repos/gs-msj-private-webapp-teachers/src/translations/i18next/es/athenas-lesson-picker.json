@@ -1,0 +1,52 @@
+{
+  "trigger": {
+    "label": "Lecciones"
+  },
+  "header": {
+    "title": "Catálogo de contenido",
+    "loading": "Cargando…",
+    "count": "{{count}} lecciones disponibles"
+  },
+  "badge": {
+    "cache": "⚫ Cache",
+    "cacheTooltip": "Usando cache local — elige materia y grado",
+    "live": "🟢 API Live",
+    "liveTooltip": "Live: athenasapi (X-API-KEY)"
+  },
+  "filters": {
+    "subject": "Materia",
+    "allSubjects": "Todas",
+    "grade": "Grado",
+    "allGrades": "Todos"
+  },
+  "subjects": {
+    "sp":     "Español",
+    "mat-sp": "Matemáticas",
+    "sci-sp": "Ciencias",
+    "sci-so": "Estudios Sociales",
+    "en":     "English",
+    "mat-en": "Math (English)",
+    "sci-en": "Science (English)",
+    "bi-sp":  "Biología",
+    "qu-sp":  "Química",
+    "fi-sp":  "Física",
+    "a1-sp":  "Álgebra I",
+    "a2":     "Álgebra II",
+    "geo-sp": "Geometría"
+  },
+  "search": {
+    "placeholder": "Buscar por título, objetivo o estándar…"
+  },
+  "list": {
+    "empty": "No hay lecciones que coincidan con los filtros.",
+    "emptyHint": "Elige una <strong>materia</strong> y un <strong>grado</strong> para ver el catálogo de Athenas.",
+    "itemLoading": "cargando…",
+    "lessonNo": "Lección {{no}}",
+    "grade": "Grado {{grade}}",
+    "blueprint": "Blueprint",
+    "gapClosing": "Gap closing"
+  },
+  "errors": {
+    "loadFailed": "No pude cargar el contenido completo de esa lección. Intenta otra vez o revisa la conexión/API de Athenas."
+  }
+}

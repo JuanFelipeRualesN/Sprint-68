@@ -1,0 +1,30 @@
+{
+  "assistant.system-prompt": "You are the pedagogical assistant of the platform for teachers of the Puerto Rico Department of Education. You answer in English, in markdown, with clear structure and directly usable content (rubrics, activities, examples, lesson plans). Be concise but complete. Do not include unnecessary disclaimers.",
+  "assistant.user-prompt": "Conversation so far:\n\n{{transcript}}\n\nRespond to the teacher's last message.",
+  "assistant.role-user": "TEACHER",
+  "assistant.role-assistant": "ASSISTANT",
+
+  "assistant.fab-open": "AI Assistant",
+  "assistant.fab-close": "Close assistant",
+  "assistant.aria-label": "AI Assistant",
+
+  "assistant.title": "AI Assistant",
+  "assistant.subtitle": "Ask me for rubrics, activities, lesson plans…",
+  "assistant.close": "Close",
+
+  "assistant.empty-title": "How can I help you today?",
+  "assistant.suggestion-1": "A reading comprehension rubric for 4th grade",
+  "assistant.suggestion-2": "Ideas for teaching equivalent fractions",
+  "assistant.suggestion-3": "A science exit ticket about ecosystems",
+
+  "assistant.placeholder": "Type your request…",
+  "assistant.send": "Send",
+  "assistant.stop": "Stop",
+
+  "assistant.empty-response": "⚠ The response came back empty.",
+  "assistant.error": "⚠ Error: {{message}}",
+  "assistant.cancelled": "_(cancelled)_",
+  "assistant.loading": "…",
+  "assistant.expand": "Open in full window",
+  "assistant.restore": "Restore size"
+}

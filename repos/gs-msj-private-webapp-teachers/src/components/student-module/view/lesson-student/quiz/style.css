@@ -1,0 +1,276 @@
+.student-wrapper-iframe-form {
+  width: 100%;
+  max-width: 720px;
+  margin: -35px 0 0 10%;
+  padding: 0 1.5em 0.5em 1.5em;
+  color: #2C3140;
+}
+
+.student-wrapper-iframe-form span {
+  line-height: 1.5em;
+  font-size: 18px;
+  margin-bottom: 0;
+  margin: 0.5em 0;
+}
+
+.student-wrapper-iframe-form h1, .student-wrapper-iframe-form h2, .student-wrapper-iframe-form h3 {
+  border-bottom: 1px solid #E7E7E7;
+  padding-bottom: 0.25em;
+}
+
+.student-wrapper-iframe-form h1,
+.student-wrapper-iframe-form h2,
+.student-wrapper-iframe-form h3,
+.student-wrapper-iframe-form h4 {
+  color: #197BAA;
+  margin: 1em 0 1.5em 0;
+}
+
+.student-instruction {
+  font-style: italic;
+  font-size: 15px;
+  color: #666;
+  padding-bottom: 1em;
+}
+
+.student-instruction img, .student-content-form img{
+  max-width: 100%;
+}
+
+.student-question, .quiz-title {
+  /* font-weight: bold; */
+  color: #000;
+  padding-bottom: 1em;
+  font-size: 20px;
+}
+
+.student-quiz-title-pareo {
+  color: #000;
+  font-size: 20px;
+}
+
+.student-quiz-title-pareo p {
+  margin-bottom: 0;
+}
+
+h4.student-title-page {
+  background-color: #e8eff3;
+  font-size: 16px;
+  padding: 0.7em;
+  color: #253084;
+}
+
+.student-wrapper-iframe-form ul {
+  margin: 2em 0;
+}
+
+.student-wrapper-iframe-form li {
+  margin-bottom: 0.5em;
+}
+
+.student-wrapper-iframe-form a {
+  color: #DC8520;
+  text-decoration: underline;
+}
+
+.student-wrapper-iframe-form a:hover {
+  text-decoration: none;
+}
+
+
+.student-wrapper-iframe-form img {
+  display: block;
+  margin: 1em 0;
+}
+
+.student-content-form {
+  background-color: #F7F7F7;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.student-wrapper-iframe-form textarea {
+  display: block;
+  width: 98%;
+  border: 0;
+  padding: 10px 5px;
+  background: #F7F7F7 no-repeat;
+  font-family: 'Roboto' , Arial , Helvetica , sans-serif;
+  font-size: 18px;
+
+  background-image: linear-gradient(to bottom, #7C89BF, #40539D), linear-gradient(to bottom, #DDD, #DDD);
+  /* sizes for the 2 images (default state) */
+  background-size: 0 2px, 100% 1px;
+  /* positions for the 2 images. Change both "50%" to "0%" or "100%" and tri again */
+  background-position: 50% 100%, 50% 100%;
+  /* animation solely on background-size */
+  transition: background-size 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+}
+
+.student-wrapper-iframe-form input:focus,
+.student-wrapper-iframe-form textarea:focus{
+/* sizes for the 2 images (focus state) */
+  background-size: 100% 2px, 100% 1px;
+  outline: none;
+}
+
+.student-quiz_radio-button {
+  display: block;
+  padding-bottom: 0.2em;
+}
+.student-quiz_radio-button label, .student-quiz_radio-button input {
+  display: inline-block;
+  vertical-align: top;
+}
+.student-quiz_radio-button label {width: 90%;}
+.student-quiz_radio-button input {margin-right: 15px; }
+.student-quiz_radio-button p, .student-quiz_radio-button img { margin: 0; padding: 0;}
+
+
+.student-quiz_radio-button input[type=radio]:checked ~ label{
+  color: #4F57A7;
+  font-weight: bold;
+}
+
+.student-quiz_radio-button input[type="radio"] {
+  /* remove standard background appearance */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* create custom radiobutton appearance */
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+  padding: 6px;
+  /* background-color only for student-content */
+  background-clip: content-box;
+  border: 2px solid #CCC;
+  background-color: #CCC;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* appearance for checked radiobutton */
+.student-quiz_radio-button input[type="radio"]:checked {
+  background-color: #40539D;
+  border: 2px solid #40539D;
+}
+
+/* Style for Correct Answer */
+.student-quiz_radio-button input[type="radio"].approved {
+  background-color: #11af5e;
+  border: 2px solid #11af5e;
+}
+
+.student-quiz_radio-button input[type=radio].approved ~ label{
+  color: #11af5e;
+  font-style: italic;
+}
+
+/* Style for Incorrect Answer */
+.student-quiz_radio-button input[type="radio"].incorrect {
+  background-color: #791E1E;
+  border: 2px solid #791E1E;
+}
+
+.student-quiz_radio-button input[type=radio].incorrect ~ label{
+  color: #791E1E;
+  font-style: italic;
+}
+
+/* student-button-quiz */
+/* student-button-quiz */
+.student-button-quiz {
+  border-radius: 50px;
+  padding: 1em 3em;
+  font-size: 14px;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 2em auto;
+  background-image: linear-gradient(to right, #6DBD4B , #48AF97, #197BAA);
+  border: 1px solid #6DBD4B;
+  color: #FFF;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.student-button-quiz:hover {
+  background-image: linear-gradient(to right, #197BAA , #48AF97, #6DBD4B);
+  border: 1px solid #6DBD4B;
+}
+
+.student-button-quiz:disabled, .student-button-quiz:disabled:hover {
+  background-image: linear-gradient(to right, #DDD , #DDD, #DDD);
+  border: 1px solid #DDD;
+  cursor: not-allowed;
+}
+
+
+.student-button-quiz-back {
+  border-radius: 50px;
+  padding: 1em 3em;
+  font-size: 14px;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0.5em;
+  background-color: #FFF;
+  border: 1px solid #DDD;
+  color: #4F57A7;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.student-button-quiz-back:hover {
+  color: #b3bcbf;
+  border: 1px solid #b3bcbf;
+}
+
+
+
+
+
+/* MQ 750px */
+
+@media screen and (max-width: 750px) {
+  .student-wrapper-iframe-form {
+      margin: auto;
+  }
+}
+
+/* MQ 500px */
+@media screen and (max-width: 500px) {
+  .student-quiz_radio-button label {width: 85%;}
+}
+
+/* MQ 450px */
+@media screen and (max-width: 450px) {
+  .student-quiz_radio-button label {width: 75%;}
+}
+
+/*******************************/
+
+.status-time-test {
+  margin-top: -25px;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: right;
+  padding: 0.5em 1em;
+}
+
+.status-time-test--process {
+  background: #D2E7DD;
+  border: 1px solid #BBDCCC;
+  color: #155232;
+}
+
+.status-time-test--pending {
+  background: #FEF4CE;
+  border: 1px solid #FDEDB6;
+  color: #927312;
+}
+
+.status-time-test--alert {
+  background: #F7D7DA;
+  border: 1px solid #F4C4C9;
+  color: #811E2A;
+}

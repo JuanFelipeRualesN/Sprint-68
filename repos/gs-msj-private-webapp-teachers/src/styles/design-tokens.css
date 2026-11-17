@@ -1,0 +1,44 @@
+:root {
+    /* Brand */
+    --navy:        #27466C;
+    --navy-700:    #1F3A5A;
+    --navy-800:    #18304C;
+    --teal:        #3DA8A8;
+    --teal-600:    #2F8E8E;
+    --teal-700:    #246F6F;
+    --accent:      #F5A623;
+    --accent-600:  #E29411;
+    --ai:          #7C5CFF;          /* AI accent — used sparingly */
+    --ai-soft:     #EEE9FF;
+    --ai-600:      #6745EA;
+
+    /* Surfaces */
+    --bg:          #F4F6F9;
+    --bg-2:        #EDF1F6;
+    --card:        #FFFFFF;
+    --line:        #E4E9F0;
+    --line-soft:   #EEF1F6;
+
+    /* Type */
+    --ink:         #1A2740;
+    --ink-2:       #364965;
+    --muted:       #6B7A93;
+    --muted-2:     #8B97AC;
+
+    /* Effects */
+    --shadow-card:  0 1px 2px rgba(39,70,108,.04), 0 6px 18px rgba(39,70,108,.06);
+    --shadow-hover: 0 2px 4px rgba(39,70,108,.05), 0 14px 30px rgba(39,70,108,.10);
+    --shadow-pop:   0 24px 60px rgba(39,70,108,.18);
+
+    /* Radii */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 22px;
+    --r-pill: 999px;
+
+    --ink-3:       #52658A;
+    --line-dark:   #D3DBE6;
+    --shadow-sm:   0 1px 2px rgba(39,70,108,.06);
+    --shadow-lg:   0 12px 32px rgba(39,70,108,.14);
+}

@@ -1,0 +1,52 @@
+{
+  "trigger": {
+    "label": "Lessons"
+  },
+  "header": {
+    "title": "Content Catalog",
+    "loading": "Loading…",
+    "count": "{{count}} lessons available"
+  },
+  "badge": {
+    "cache": "⚫ Cache",
+    "cacheTooltip": "Using local cache — choose subject and grade",
+    "live": "🟢 Live API",
+    "liveTooltip": "Live: athenasapi (X-API-KEY)"
+  },
+  "filters": {
+    "subject": "Subject",
+    "allSubjects": "All",
+    "grade": "Grade",
+    "allGrades": "All"
+  },
+  "subjects": {
+    "sp":     "Spanish",
+    "mat-sp": "Mathematics",
+    "sci-sp": "Science",
+    "sci-so": "Social Studies",
+    "en":     "English",
+    "mat-en": "Math (English)",
+    "sci-en": "Science (English)",
+    "bi-sp":  "Biology",
+    "qu-sp":  "Chemistry",
+    "fi-sp":  "Physics",
+    "a1-sp":  "Algebra I",
+    "a2":     "Algebra II",
+    "geo-sp": "Geometry"
+  },
+  "search": {
+    "placeholder": "Search by title, objective, or standard…"
+  },
+  "list": {
+    "empty": "No lessons match the filters.",
+    "emptyHint": "Choose a <strong>subject</strong> and a <strong>grade</strong> to view the Athenas catalog.",
+    "itemLoading": "loading…",
+    "lessonNo": "Lesson {{no}}",
+    "grade": "Grade {{grade}}",
+    "blueprint": "Blueprint",
+    "gapClosing": "Gap closing"
+  },
+  "errors": {
+    "loadFailed": "Could not load the full content for that lesson. Please try again or check the connection/Athenas API."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 3,
+  "TitleEn": "The Story Behind the Drum",
+  "TitleEs": "La historia detrás del tambor",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "During a school activity, Héctor heard a bomba rhythm and wanted to learn its history. He found different explanations on various websites. Some were brief and did not cite sources; others included interviews with musicians and researchers. His teacher suggested that he compare the information and attend a cultural event where he could listen to people knowledgeable about the tradition.",
+      "TextEs": "Durante una actividad escolar, Héctor escuchó un ritmo de bomba y quiso conocer su historia. Encontró explicaciones distintas en varias páginas de internet. Algunas eran breves y no indicaban fuentes; otras incluían entrevistas con músicos e investigadores. Su maestra le sugirió comparar la información y visitar una actividad cultural donde pudiera escuchar a personas conocedoras de la tradición.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Héctor discovered that bomba is part of a complex history linked to Afro-Puerto Rican heritage and community expressions. In his report he avoided reducing it to simple entertainment. He included references to his sources and explained why it was important to respect those who preserve that tradition. He understood that studying culture requires curiosity, context, and recognition.",
+      "TextEs": "Héctor descubrió que la bomba forma parte de una historia compleja vinculada a la herencia afro puertorriqueña y a expresiones comunitarias. En su informe evitó reducirla a un simple entretenimiento. Incluyó referencias a sus fuentes y explicó por qué era importante respetar a quienes preservan esa tradición. Comprendió que estudiar la cultura exige curiosidad, contexto y reconocimiento.",
+      "ImageUrl": null
+    }
+  ]
+}

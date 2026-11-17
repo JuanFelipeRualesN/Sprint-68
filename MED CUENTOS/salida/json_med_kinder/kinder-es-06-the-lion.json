@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 1,
+  "TitleEn": "The Lion",
+  "TitleEs": "El león",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/animals.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "My friend the lion\nis usually a big eater,\nand he wears a mane\nof long hair.",
+      "TextEs": "Mi amigo el león\nsuele ser muy comelón,\ny lleva una melena\nde cabellera.",
+      "ImageUrl": null
+    }
+  ]
+}

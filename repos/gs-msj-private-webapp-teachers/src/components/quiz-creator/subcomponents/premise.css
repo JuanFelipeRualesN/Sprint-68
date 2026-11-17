@@ -1,0 +1,11 @@
+.selected-premise {
+    border-left: 8px solid dodgerblue !important;
+}
+
+.premise-container:focus {
+    outline: 0 solid transparent !important;
+}
+
+.premise-container:focus .card {
+    border-left: 8px solid dodgerblue !important;
+}

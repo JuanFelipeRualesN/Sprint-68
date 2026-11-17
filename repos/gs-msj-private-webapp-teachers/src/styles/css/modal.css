@@ -1,0 +1,78 @@
+.contentModal--confirmation {
+    padding: 20px 35px 0;
+}
+
+.contentModal--close {
+    display: flex;
+    justify-content: end;
+    cursor: pointer;
+}
+
+.contentModal--close svg {
+    color: var(--palette-gray-carbon);
+}
+
+.Modal--confirmation-body {
+    text-align: center;
+    color: var(--palette-gray-charcoal);
+    font-size: var(--fontSize-sm);
+    padding: 0px 35px 20px;
+    overflow-y: auto;
+}
+
+.Modal--confirmation__title {
+    font-weight: 800;
+}
+
+.Modal--confirmation-footer {
+    padding: 0px 35px 20px;
+    margin: 30px 0 10px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.Modal--confirmation-footer__col {
+    flex: auto;
+}
+
+.Modal--confirmation-footer__colRight {
+    justify-content: center;
+    display: flex;
+}
+
+/* MODALES ICONO */
+
+.region-modalIcon {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 70px;
+}
+
+.modalIcon__success {
+    color: var(--palette-brand-green);
+}
+
+.modalIcon__warning {
+    color: var(--palette-utility-orange);
+}
+
+.modalIcon__alert {
+    color: var(--palette-utility-red);
+}
+
+.scroll-hidden {
+    overflow: visible !important;
+}
+
+.form-check-label{
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    column-gap: 1rem;
+    margin-left: .7rem;
+}
+
+.form-check-input{
+    position: relative;
+}

@@ -1,0 +1,93 @@
+{
+  "common": {
+    "no-options": "No options",
+    "va-max": "The file exceeds the maximum size allowed. Please validate that the file size is allowed."
+  },
+  "actions": {
+    "close": "Close"
+  },
+  "general": {
+    "na": "N/A",
+    "clear": "Clear",
+    "details": "Details",
+    "edit": "Edit",
+    "quick-access": "Quick access",
+    "add-new": "+ Add New",
+    "attention": "Attention",
+    "back": "Back",
+    "filter": "Filter",
+    "clear-filters": "Clear filters",
+    "back-action": "Back",
+    "close": "Close",
+    "enter": "Enter",
+    "go": "Enter",
+    "next": "Next",
+    "no": "No",
+    "ok": "Okay",
+    "search": "Search",
+    "select": "Select",
+    "successful-transaction": "The transaction was successfully completed.",
+    "unsuccessful-transaction": "An unexpected error occurred. Please, check your data or your connection.",
+    "submit": "Submit",
+    "yes": "Yes",
+    "view": "View",
+    "error": "Cannot retrieve results. Try again.",
+    "comingSoon": "Coming soon",
+    "loading": "Loading…"
+  },
+  "form-updates": {
+    "attention": "Attention",
+    "edit-info-subtitle": "Edit your address, then press \"Submit\".",
+    "edit-your-info": "Edit your information.",
+    "old-password-instructions": "Enter your current password.",
+    "reset-your-password-subtitle": "Enter the old password to update your password.",
+    "reset-your-password-title": "Reset your password.",
+    "update-information": "Update your information.",
+    "update-payment-info": "Update your payment information.",
+    "update-payment-info-subtitle": "Enter your credit card details to update the payment information for your enrollment."
+  },
+  "drop-zone": {
+    "drop-file-here": "Drop the file here.",
+    "file-uploaded": "File uploaded!",
+    "file-uploaded-some-error": "The file was uploaded, but there are some errors. Please, review them and upload it again. ",
+    "instructions": "Drop the users .csv here. Please, remember that the .csv must have the following columns in this specific order: <0/><1> Username, Password, First Name, Last Name, DoB (optional. If not exists, leave a blank column), Gender (optional, if not exists, leave a blank column), User SIE (student record number or teacher record number) </1>, and user email (optional). If the institution wants to use Microsoft Teams for video calls, the email provided should match the one used on Teams, and it is mandatory to include the email. These fields should be included in the first row. <0/> The Date of Birth, and Gender are optional. <0/> This is a .CSV file, so be sure that the data of the columns does not have any comma.  Note: This process does not update any password, user school identifier or username. If the user already exists (validated by the user school identifier), the system updates the full name, email, gender, and date of birth if they differ from the information the user has in the database.  ",
+    "one-file-at-time": "Upload only one file at the time",
+    "only-csv-allowed": "Only .CSV file format is allowed. ",
+    "uploading-file": "Uploading file. This process could take minutes. The duration depends on the number of students in the file. You will receive a response with the details.",
+    "attachFile": "Attach file"
+  },
+  "downloads": {
+    "apple-computers": "(Apple computers)",
+    "are-ready-downloaded-the-app": "Have you finished downloading the app? Install it and you are all set to enjoy our product. ",
+    "download-app-for-your-child": "Download the Game app for your student!",
+    "downloads": "Downloads",
+    "downloads-subtitle": "Thanks for downloading our product. Please, remember you must have an enrollment to use our app. If you are not subscribed, press ",
+    "here": "here.",
+    "important-1": "The app you need to download now is a student app. You cannot access the student app with your credentials. You must have a student profile configured to use the student app. ",
+    "important-2": "To see the student's results, use this portal. Go to Dashboard",
+    "important-3": "The student can use the app anywhere. The results are saved in the cloud. Internet connection is always required.",
+    "important-read-the-following": "Important! Read the following",
+    "select-operative-system": "Select your OS System.",
+    "tablets-and-phones": "Chromebooks, Tablets and Phones",
+    "to-see-progress": "To see your child progress, manage the enrollment, and other options, go to the Dashboard at the Menu or just click ",
+    "to-download-the-user-manual-press-here": "To download the user manual, press here."
+  },
+  "status-accounts": {
+    "select-status-account": "Select account status"
+  },
+  "terms": {
+    "select-terms": "Select term",
+    "close": "Close",
+    "title": "Terms & Security"
+  },
+  "permission": {
+    "permission": "Permission",
+    "select": "Select",
+    "name": "Name",
+    "description": "Description",
+    "select-to-edit": "Select to edit"
+  },
+  "selector-classes": {
+    "title": "Select the classes you want to add to your enrollment"
+  }
+}

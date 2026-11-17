@@ -1,0 +1,115 @@
+.wrapper-modalPareo {
+    width: 100%;
+}
+
+.modalPareo--Title {
+    color: #1a7baa;
+    font-size: 30px;
+    font-weight: 400;
+}
+
+.modalPareo--Desc {
+    margin: 10px 0 30px 0;
+    font-size: 16px;
+    color: #31353d;
+}
+
+.modalPareo--Body_premisa {
+    padding: 1.5em;
+    margin-bottom: 20px;
+}
+
+.modalPareo--Body_premisa--question {
+    font-weight: 700;
+    color: #31353d;
+    line-height: 1.4em;
+}
+
+.modalPareo--Body_premisa--instructionGeneral {
+    font-weight: 400;
+    color: #31353d;
+    font-size: 14px;
+}
+
+.modalPareo--Body_premisa--answer {
+    margin-top: 25px;
+    font-size: 16px;
+}
+
+.modalPareo--Body_premisa--answer__row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.modalPareo--Body_premisa--answer__col {
+    /*list-style: lower-alpha;
+    margin-left: 16px;*/
+    flex: 1;
+}
+
+.modalPareo--Body_premisa--answer__col span {
+    margin-right: 5px;
+}
+
+.modalPareo--Body_premisa--answer__col span p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+input.OptionPareo {
+    width: 50px;
+    margin: 0 6px;
+    border: 0;
+    background-color: transparent;
+    text-align: center;
+}
+
+input.OptionPareo::placeholder {
+    font-style: italic;
+}
+
+.modalCorrections--Body_premisa--addValue {
+    border-top: 1px dashed #dcdcdc;
+    padding-top: 14px;
+    margin-top: 25px;
+}
+
+.modalCorrections--Body_premisa--addValue label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.premisa--addValue-hint {
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.modalCorrections--Body-feedback--title {
+    color: #31353d;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.modalCorrections--Body-feedback--desc {
+    color: #31353d;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.modalCorrections--Body-feedback--form textarea {
+    width: 100%;
+}
+
+@media screen and (max-width: 700px) {
+    .colPareo-score {
+        flex: 100%;
+        background: #ddedf7;
+        padding: 8px;
+        font-size: 14px;
+    }
+    .modalPareo--Body_premisa--answer__row {
+        flex-wrap: wrap;
+    }
+}

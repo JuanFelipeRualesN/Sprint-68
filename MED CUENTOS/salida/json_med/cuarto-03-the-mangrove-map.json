@@ -1,0 +1,25 @@
+{
+  "LevelId": 4,
+  "CategoryId": 4,
+  "TitleEn": "The Mangrove Map",
+  "TitleEs": "El mapa del manglar",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Ariana visited a mangrove with her class.\nThe guide explained that its roots help protect the coast and serve as shelter for many animals.\nDuring the tour, Ariana noticed wrappers caught among the roots.\nShe wondered how they had gotten there.\nThe guide explained that some trash is carried by wind or water from other places.",
+      "TextEs": "Ariana visitó un manglar con su clase.\nLa guía explicó que sus raíces ayudan a proteger la costa y sirven de refugio a muchos animales.\nDurante el recorrido, Ariana observó envolturas atrapadas entre las raíces.\nSe preguntó cómo habían llegado allí.\nLa guía explicó que algunos desperdicios son arrastrados por el viento o el agua desde otros lugares.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Back at school, Ariana drew a map showing the possible path of trash to the mangrove.\nHer classmates organized a campaign to reduce single-use plastics.\nThey also requested proper bins for sorting waste.\nAriana discovered that caring for an ecosystem requires understanding what happens beyond its boundaries.",
+      "TextEs": "De regreso a la escuela, Ariana dibujó un mapa que mostraba el camino posible de la basura hasta el manglar.\nSus compañeros organizaron una campaña para reducir los plásticos de un solo uso.\nTambién solicitaron recipientes adecuados para separar desperdicios.\nAriana descubrió que cuidar un ecosistema exige comprender lo que ocurre más allá de sus límites.",
+      "ImageUrl": null
+    }
+  ]
+}

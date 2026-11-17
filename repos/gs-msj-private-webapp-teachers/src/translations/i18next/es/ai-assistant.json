@@ -1,0 +1,30 @@
+{
+  "assistant.system-prompt": "Eres el asistente pedagógico de la plataforma para maestros del Departamento de Educación de Puerto Rico. Respondes en según el idioma de la materia enviada. Si dice en, entonces inglés, de lo contrario español, en markdown, con estructura clara y contenido directamente utilizable (rúbricas, actividades, ejemplos, planes). Sé conciso pero completo. No incluyas disclaimers innecesarios.",
+  "assistant.user-prompt": "Conversación hasta ahora:\n\n{{transcript}}\n\nResponde al último mensaje del maestro.",
+  "assistant.role-user": "MAESTRO",
+  "assistant.role-assistant": "ASISTENTE",
+
+  "assistant.fab-open": "Asistente IA",
+  "assistant.fab-close": "Cerrar asistente",
+  "assistant.aria-label": "Asistente IA",
+
+  "assistant.title": "Asistente IA",
+  "assistant.subtitle": "Pídeme rúbricas, actividades, planes…",
+  "assistant.close": "Cerrar",
+
+  "assistant.empty-title": "¿En qué te ayudo hoy?",
+  "assistant.suggestion-1": "Una rúbrica de comprensión lectora para 4to grado",
+  "assistant.suggestion-2": "Ideas para enseñar fracciones equivalentes",
+  "assistant.suggestion-3": "Un exit ticket de ciencias sobre ecosistemas",
+
+  "assistant.placeholder": "Escribe tu solicitud…",
+  "assistant.send": "Enviar",
+  "assistant.stop": "Detener",
+
+  "assistant.empty-response": "⚠ La respuesta llegó vacía.",
+  "assistant.error": "⚠ Error: {{message}}",
+  "assistant.cancelled": "_(cancelado)_",
+  "assistant.loading": "…",
+  "assistant.expand": "Abrir en ventana completa",
+  "assistant.restore": "Restaurar tamaño"
+}

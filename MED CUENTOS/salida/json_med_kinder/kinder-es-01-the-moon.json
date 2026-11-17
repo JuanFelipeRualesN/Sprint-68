@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 2,
+  "TitleEn": "The Moon",
+  "TitleEs": "La luna",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Who could climb as high as the moon\nto see the stars, one by one,\nand pick the prettiest of them all\nto light up Grandma's room",
+      "TextEs": "Quien subiera tan alto como la luna\npara ver las estrellas una por una,\ny elegir entre todas la más bonita\npara alumbrar el cuarto de la abuelita",
+      "ImageUrl": null
+    }
+  ]
+}

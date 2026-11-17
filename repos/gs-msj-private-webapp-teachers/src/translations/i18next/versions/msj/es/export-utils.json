@@ -1,0 +1,49 @@
+{
+  "slideTypes": {
+    "hook":       "Activar",
+    "objective":  "Objetivo",
+    "concept":    "Concepto",
+    "example":    "Ejemplo",
+    "comparison": "Comparar",
+    "process":    "Proceso",
+    "activity":   "Actividad",
+    "recap":      "Repaso",
+    "exit":       "Cierre"
+  },
+  "cover": {
+    "eyebrow":    "PRESENTACIÓN DE CLASE",
+    "byline":     "IA Educativa",
+    "readyBadge": "Lista para enseñar"
+  },
+  "defaults": {
+    "slideTitle":        "Contenido",
+    "visualPlaceholder": "Visual de apoyo",
+    "objectiveClaim":    "Al terminar, los estudiantes podrán demostrar lo esencial.",
+    "exampleClaim":      "Use este ejemplo para modelar el razonamiento antes de la práctica.",
+    "activityClaim":     "Actividad rápida para convertir la explicación en evidencia del aprendizaje.",
+    "activeWork":        "Trabajo activo",
+    "exitClaim":         "Cierre con una respuesta breve que muestre comprensión.",
+    "ideaA":             "Idea A",
+    "ideaB":             "Idea B"
+  },
+  "bulletDefaults": {
+    "hook":       ["Conectar", "Explorar", "Responder"],
+    "objective":  ["Activar conocimiento previo", "Explicar la idea clave", "Practicar con evidencia"],
+    "concept":    ["Idea clave", "Evidencia o ejemplo", "Acción del estudiante"],
+    "example":    ["Observa", "Piensa", "Explica"],
+    "comparison": ["Punto 1", "Punto 2", "Punto 3"],
+    "process":    ["Paso 1", "Paso 2", "Paso 3"],
+    "activity":   ["Instrucción 1", "Instrucción 2", "Instrucción 3"],
+    "recap":      ["Conectar", "Explorar", "Responder"],
+    "exit":       ["Activar conocimiento previo", "Explicar la idea clave", "Practicar con evidencia"]
+  },
+  "pdf": {
+    "pageOf": "Página {{page}} de {{total}}"
+  },
+  "worksheet": {
+    "headerByline":        "Hoja de trabajo",
+    "nameLabel":           "Nombre: ____________________________________",
+    "dateLabel":           "Fecha: ___________",
+    "equationPlaceholder": "ecuación"
+  }
+}

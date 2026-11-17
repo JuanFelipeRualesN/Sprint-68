@@ -1,0 +1,176 @@
+.student-wrapper-student-content {
+  margin-left: 150px;
+  margin-top: 75px;
+}
+
+
+/****************************/
+
+.student-center-container {
+  padding: 1em;
+  padding-bottom: 75px;
+
+  display: -webkit-box; 
+      display: -webkit-flex;  
+      display: -ms-flexbox; 
+      display: flex;
+          -webkit-flex-wrap: wrap;
+          -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+      justify-content: space-between;
+          -webkit-box-pack: justify;
+          -ms-flex-pack: justify;
+}
+
+
+.student-container_two-col {
+width: 48%;
+}
+
+
+
+/* MQ 920px */
+
+@media screen and (max-width: 920px) {
+  .student-container_two-col {
+    width: 100%;
+    margin-bottom: 1em;
+}
+}
+
+
+/* MQ 750px */
+
+@media screen and (max-width: 750px) {
+  .student-wrapper-student-content {
+      margin-left: 0;
+  }
+
+  .student-container_two-col {
+    width: 100%;
+  }
+
+  .student-center-container {
+    padding-bottom: 125px;
+  }
+}
+
+/* MQ 500px */
+
+@media screen and (max-width: 500px) {
+  .student-center-container {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+}
+
+
+/* FONT SIZE CHANGER */
+
+/* .student-student-content-student-font-size-changer {
+  position: fixed;
+  z-index: 3;
+  right: 0.5em;
+  background-color: #DDD;
+  padding: 0.5em;
+} */
+
+.student-student-content-student-font-size-changer {
+  padding: 0.5em;
+  margin-top: -18px;
+  text-align: right;
+  height: 25px;
+  display: none;
+}
+
+.student-font-size-changer {
+  margin-top: -15px;
+  /* position: absolute; */  
+  position: relative;  
+  height: 35px !important;
+  width: 100% !important;
+}
+
+.student-wrapper-iframe .student-font-size-changer {
+  width: 100%;
+}
+
+.student-font-size-changer-buttons {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+}
+
+.student-center-container .student-font-size-changer .student-font-size-changer-buttons > div {
+  border: 1px solid #DDD;
+  line-height: 30px;
+  font-weight: bold;
+  color: #27466C;
+  background-color: #EFEFEF;
+}
+
+.font-size-changer{
+    border: 1px solid #DDD;
+    line-height: 30px;
+    font-weight: bold;
+    color: #27466C;
+    background-color: #EFEFEF;
+}
+
+.font-size-changer-location{
+    width:100%;
+    text-align: right;
+}
+
+
+
+.student-center-container .student-font-size-changer .student-font-size-changer-buttons > div:hover {
+  color: #A2A2A2;
+}
+
+.student-center-container .student-font-size-changer .student-font-size-changer-buttons .font-size-up span {
+  font-size: 30px !important;
+}
+
+.student-center-container .student-font-size-changer .student-font-size-changer-buttons .font-size-up,
+.student-center-container .student-font-size-changer .student-font-size-changer-buttons .font-size-down {
+  height: 33px !important;
+}
+
+.student-content .vviYD {
+  margin-top: 0 !important;
+}
+
+
+/* CHAT STYLE */
+#student-chat-widget-container{
+  bottom: 50px !important;
+}
+
+@media screen and (max-width: 750px) {
+  .lc-dw9r6j {
+      height: 80% !important;
+      margin-top: 20%;
+  }
+
+  #student-chat-widget-container {
+      margin-bottom: 55px !important
+  }
+}
+
+/* FIX CHAT HEIGHT */
+@media screen and (max-width: 450px) {
+    #student-chat-widget-container {
+        height: 530px !important;
+    }
+}
+
+@media screen and (max-width: 450px) {
+#student-target-one img {
+  max-width: 300px;
+}
+
+.student-content-form img {
+  max-width: 200px;
+}
+}

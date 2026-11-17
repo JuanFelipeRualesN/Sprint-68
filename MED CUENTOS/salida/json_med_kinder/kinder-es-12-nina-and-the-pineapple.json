@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "Nina and the Pineapple",
+  "TitleEs": "Nina y la piña",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Nina looks at a pineapple.\nThe pineapple is from the island.\nNina eats pineapple.\nWhat a yummy pineapple, girl!",
+      "TextEs": "Nina mira una piña.\nLa piña es de la isla.\nNina come piña.\n¡Qué rica piña, niña!",
+      "ImageUrl": null
+    }
+  ]
+}

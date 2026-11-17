@@ -1,0 +1,19 @@
+{
+  "LevelId": 2,
+  "CategoryId": 3,
+  "TitleEn": "The Lady of Liberty",
+  "TitleEs": "La dama de la libertad",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "In the bay, proud and serene,\na flame rises that never grieves.\nWith open arms and a gaze toward the sea,\nshe seems to keep eternal hope.\nHer torch lights the path to follow,\na promise of a world yet to build.\nForged from copper and from dreams,\nthe Statue of Liberty, forever admired.",
+      "TextEs": "En la bahía, altiva y serena,\nse alza una llama que nunca se apena.\nCon brazos abiertos y mirada al mar,\nla esperanza eterna parece guardar.\nSu antorcha ilumina el camino a seguir,\npromesa de un mundo por construir.\nDe cobre y de sueños está forjada,\nla Estatua de la Libertad, siempre admirada.",
+      "ImageUrl": null
+    }
+  ]
+}

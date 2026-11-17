@@ -1,0 +1,80 @@
+/* ============================================================================
+   Bootstrap 5 backfill since this project uses Bootstrap 4
+   ============================================================================ */
+.form-switch {
+  padding-left: 0;
+}
+
+.form-switch .form-check-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  position: static;
+  margin-left: 0;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  border: 1px solid rgba(0, 0, 0, .25);
+  border-radius: 2em;
+  transition: background-position .15s ease-in-out, background-color .15s ease-in-out;
+}
+
+.form-switch .form-check-input:checked {
+  background-position: right center;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:disabled {
+  opacity: .55;
+}
+
+.form-switch .form-check-input:focus {
+  outline: 0;
+  box-shadow: 0 0 0 .2rem rgba(104, 187, 87, .25);
+}
+
+.configuration-card-header-title {
+  font-weight: 600;
+  color: #197ca9;
+}
+
+.ai-tutor-grade .form-check-input {
+  margin-top: 0.15rem;
+}
+
+.ai-tutor-grade .form-check-label {
+  line-height: 1.3;
+}
+
+.quota-skeleton-bar {
+  display: inline-block;
+  height: 0.7rem;
+  max-width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e9edf0 25%, #f4f7f9 50%, #e9edf0 75%);
+  background-size: 200% 100%;
+  animation: quotaSkeletonSheen 1.4s ease-in-out infinite;
+}
+
+@keyframes quotaSkeletonSheen {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quota-skeleton-bar {
+    animation: none;
+  }
+}
+
+@media screen and (max-width: 750px) {
+  .form-check-label {
+    font-size: 13px;
+  }
+
+  .configuration-tabs li {
+    width: 100%;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "Mimi and Mila",
+  "TitleEs": "Mimi y Mila",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Mimi and Mila\nMimi looks at Mila.\nMila looks at Mimi.\nMimi holds Mila's hand.\nMila holds Mimi's hand.",
+      "TextEs": "Mimi y Mila\nMimi mira a Mila.\nMila mira a Mimi.\nMimi da la mano a Mila.\nMila da la mano a Mimi.",
+      "ImageUrl": null
+    }
+  ]
+}

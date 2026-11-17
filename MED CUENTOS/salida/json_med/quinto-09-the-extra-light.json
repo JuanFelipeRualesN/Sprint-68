@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 2,
+  "TitleEn": "The Extra Light",
+  "TitleEs": "La luz que sobra",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "During a visit to a rural area, Nicolás saw more stars than he could see from his city. He wondered whether the difference was due only to distance. He researched light pollution and found information about how certain lights make it hard to observe the night sky. He also read that lighting must be planned with people's safety in mind. At his school he proposed reviewing which lights stayed on when they were not needed.",
+      "TextEs": "Durante una visita a una zona rural, Nicolás observó más estrellas de las que podía ver desde su ciudad. Se preguntó si la diferencia se debía solamente a la distancia. Investigó la contaminación lumínica y encontró información sobre cómo ciertas luces dificultan la observación del cielo nocturno. También leyó que la iluminación debe planificarse considerando la seguridad de las personas. En su escuela propuso revisar cuáles luces permanecían encendidas cuando no eran necesarias.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Instead of asking for all of them to be turned off, he presented alternatives: pointing lamps toward the ground and using appropriate schedules. His classmates analyzed the advantages and difficulties. Nicolás learned that a solid environmental proposal must consider evidence, consequences, and the needs of the community.",
+      "TextEs": "En vez de pedir que apagaran todas, presentó alternativas: orientar lámparas hacia el suelo y utilizar horarios apropiados. Sus compañeros analizaron ventajas y dificultades. Nicolás aprendió que una propuesta ambiental sólida debe considerar evidencia, consecuencias y necesidades de la comunidad.",
+      "ImageUrl": null
+    }
+  ]
+}

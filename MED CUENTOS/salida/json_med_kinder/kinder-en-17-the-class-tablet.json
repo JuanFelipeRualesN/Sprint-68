@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 2,
+  "TitleEn": "The Class Tablet",
+  "TitleEs": "La tableta de la clase",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "I see a tablet.\nI tap a letter.\nI say its sound.\nI put it away.",
+      "TextEs": "Veo una tableta.\nToco una letra.\nDigo su sonido.\nLa guardo.",
+      "ImageUrl": null
+    }
+  ]
+}

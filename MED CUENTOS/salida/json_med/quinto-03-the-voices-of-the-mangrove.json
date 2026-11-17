@@ -1,0 +1,25 @@
+{
+  "LevelId": 5,
+  "CategoryId": 4,
+  "TitleEn": "The Voices of the Mangrove",
+  "TitleEs": "Las voces del manglar",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Javier visited a mangrove and discovered that its roots offered shelter to fish and birds, as well as helping to protect the coast. Days later he heard that building a parking lot near the site was being considered. Some residents thought it would make visits easier; others feared environmental damage. Javier gathered information about the ecosystem and asked neighbors about their needs. He understood that both groups were expressing real concerns, although they proposed different solutions.",
+      "TextEs": "Javier visitó un manglar y descubrió que sus raíces ofrecían refugio a peces y aves, además de ayudar a proteger la costa. Días después escuchó que se estudiaba construir un estacionamiento cerca del lugar. Algunos residentes pensaban que facilitaría las visitas; otros temían daños ambientales. Javier reunió información sobre el ecosistema y preguntó a vecinos por sus necesidades. Comprendió que ambos grupos expresaban preocupaciones reales, aunque proponían soluciones distintas.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "In his report he suggested evaluating existing access routes and consulting environmental studies before deciding. During the community meeting, he did not pretend to have all the answers. He explained what data he had found and what questions remained open. He learned that protecting the environment requires critical thinking, dialogue, and well-founded decisions.",
+      "TextEs": "En su informe sugirió evaluar rutas de acceso existentes y consultar estudios ambientales antes de decidir. Durante la reunión comunitaria, no pretendió tener todas las respuestas. Explicó qué datos había encontrado y qué preguntas seguían abiertas. Aprendió que proteger el ambiente requiere pensamiento crítico, diálogo y decisiones fundamentadas.",
+      "ImageUrl": null
+    }
+  ]
+}

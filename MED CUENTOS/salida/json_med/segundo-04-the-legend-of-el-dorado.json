@@ -1,0 +1,43 @@
+{
+  "LevelId": 2,
+  "CategoryId": 3,
+  "TitleEn": "The Legend of El Dorado",
+  "TitleEs": "La leyenda de El Dorado",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Many centuries ago, in the highlands of the Sierra Nevada de Santa Marta, there lived an indigenous tribe known as the Muisca. This tribe was famous for its riches, its knowledge of gold, and its skill at working metal. Among them, a young warrior named Zaque stood out not only for his bravery but also for his wisdom. The story tells that, in a moment of great prosperity, the leader of the Muisca decided to pay tribute to the gods of the sun and the moon, who were revered by the whole community.",
+      "TextEs": "Hace muchos siglos, en las tierras altas de la Sierra Nevada de Santa Marta, vivía una tribu indígena conocida como los Muiscas. Esta tribu era famosa por sus riquezas, sus conocimientos en oro y su habilidad para trabajar el metal. De entre ellos, un joven guerrero llamado Zaque destacaba no solo por su valentía, sino también por su sabiduría. La historia cuenta que, en un momento de gran prosperidad, el líder de los Muiscas decidió rendir homenaje a los dioses del sol y la luna, quienes eran venerados por toda la comunidad.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "For this, the Zaque organized a special ceremony in which the tribe's greatest treasure, a large amount of gold, would be given to the gods to ensure the people's prosperity.\nOn the appointed day, the Zaque entered Lake Guatavita, a sacred lake where, according to tradition, sacrifices to the gods were made. The warrior, dressed in a golden cloak, climbed onto a raft together with his subjects, who carried large amounts of gold. During the ceremony, the Zaque threw the offerings into the water and, as he did so, asked fervently that the tribe continue to prosper in harmony with nature.",
+      "TextEs": "Para ello, el Zaque organizó una ceremonia especial en la que el más grande tesoro de la tribu, una gran cantidad de oro, sería entregado a los dioses para asegurar la prosperidad del pueblo.\nEn el día señalado, el Zaque se adentró en el lago Guatavita, un lago sagrado donde, según la tradición, los sacrificios a los dioses se realizaban. El guerrero, vestido con una capa dorada, se subió a una balsa junto con sus súbditos, que portaban grandes cantidades de oro. Durante la ceremonia, el Zaque arrojó las ofrendas al agua y, al hacerlo, pidió con fervor que la tribu siguiera prosperando en armonía con la naturaleza.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 3,
+      "TextEn": "The Europeans, who had heard rumors about the fabulous wealth of the Muisca, arrived in the lands of Colombia. With the promise of finding the “golden man,” believing that the Zaque, completely covered in gold, would be the king of a golden kingdom, they began to explore the most remote corners of the mountains, searching tirelessly for the legendary city of El Dorado.",
+      "TextEs": "Los europeos, que habían oído rumores sobre la fabulosa riqueza de los Muiscas, llegaron a las tierras de Colombia. Con la promesa de encontrar el \"hombre de oro\", quienes creían que el Zaque, cubierto completamente de oro, sería el rey de un reino dorado, comenzaron a explorar los rincones más remotos de las montañas, buscando sin descanso la legendaria ciudad de El Dorado.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 4,
+      "TextEn": "However, the Spaniards never managed to find the lost city. Despite the expeditions and explorations in search of gold, the treasure remained in the waters of the lake, hidden in its depths. The legend of El Dorado went down in history as one of the greatest fables of colonization.",
+      "TextEs": "Sin embargo, los españoles nunca lograron encontrar la ciudad perdida. A pesar de las expediciones y las exploraciones en busca del oro, el tesoro permaneció en las aguas del lago, escondido entre las profundidades. La leyenda de El Dorado pasó a la historia como una de las más grandes fábulas de la colonización.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 5,
+      "TextEn": "Today, Lake Guatavita is still a place of mystery and fascination. Tourists, eager to find the golden city, come from all over the world, but what they discover is much more than gold: they discover the magic and the history of a people who, although they no longer exist, left a deep mark on the collective imagination.",
+      "TextEs": "Hoy, el lago Guatavita sigue siendo un lugar de misterio y fascinación. Los turistas, en su afán por encontrar la ciudad dorada, llegan de todas partes del mundo, pero lo que descubren es mucho más que oro: descubren la magia y la historia de un pueblo que, aunque ya no existe, dejó una huella profunda en el imaginario colectivo.",
+      "ImageUrl": null
+    }
+  ]
+}

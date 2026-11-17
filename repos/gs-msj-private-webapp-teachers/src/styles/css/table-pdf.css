@@ -1,0 +1,141 @@
+/* TABLE PDF */
+
+.wrapper-tablePDF {
+    /*  outline: 1px solid #F00;*/
+    display: grid;
+}
+
+.tablePDF__scroll {
+    position: relative;
+    width: 100%;
+    z-index: 1;
+    margin: auto;
+    overflow: auto;
+    height: 600px;
+}
+
+.tablePDF__scroll .tablePDF__content {
+    width: 100%;
+    min-width: 1280px;
+    margin: auto;
+    border-collapse: separate;
+    border-spacing: 2px;
+    font-size: var(--fontSize-xxsm);
+}
+
+.tablePDF__scroll .tablePDF__content th,
+.tablePDF__scroll .tablePDF__content td {
+    padding: 0;
+    border: 1px solid var(--palette-gray-grayLigther);
+    vertical-align: top;
+    text-align: left;
+}
+
+.tablePDF__scroll .tablePDF__content td {
+    background: var(--palette-gray-white);
+}
+
+.tablePDF__scroll .tablePDF__content td:hover {
+    border-color: var(--palette-brand-genial-blue);
+}
+
+.tablePDF__scroll .tablePDF__content thead th {
+    background: var(--palette-utility-greenLighter);
+    color: var(--palette-utility-greenDark);
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    width: 160px;
+    padding: 5px 10px;
+}
+
+.tablePDF__content th:first-child {
+    position: -webkit-sticky;
+    position: sticky;
+    padding: 5px 10px;
+    left: 0;
+    z-index: 2;
+    background: var(--palette-utility-greenLighter);
+    color: var(--palette-utility-greenDark);
+}
+
+.tablePDF__content thead th:first-child {
+    z-index: 5;
+}
+
+/* INISDE ATRIBUTES */
+.tablePDF__infoDate {
+    display: flex;
+    min-width: 170px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.tablePDF__infoDate--day {
+    text-transform: uppercase;
+}
+
+.tablePDF__infoDate--date {
+    font-weight: 500;
+}
+
+.tablePDF__container {
+    /*  outline: 1px solid #F00;*/
+    display: grid;
+    height: 100%;
+}
+
+.tablePDF__container-noEdition {
+    display: grid;
+    height: 100%;
+    margin-top: 10px;
+}
+
+.tablePDF__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tablePDF__list--item_desc {
+    padding: 0 8px 8px 8px;
+}
+
+.tablePDF__list--item_desc p {
+    margin: 0;
+}
+
+.list--item_desc--title {
+    font-size: var(--fontSize-xtiny);
+    font-weight: 600;
+}
+
+.list--item_neutralTitle {
+    color: var(--palette-gray-smoke);
+}
+
+.list--item_desc--desc_quiz {
+    font-weight: 700;
+}
+.list--item_desc--desc_quiz-date {
+    font-size: var(--fontSize-tiny);
+}
+
+.tablePDF__container-noEdition li {
+    border-bottom: 1px solid var(--palette-gray-grayLigther);
+    margin-bottom: 5px;
+}
+
+.tablePDF__container-noEdition li:last-of-type {
+    border-bottom: 0;
+    margin-bottom: 0;
+}
+
+.list--item_desc--desc p {
+    margin-bottom: 8px;
+}
+
+table.tablePDF__content tbody tr td div.tablePDF__container:not(:first-child) {
+    border-top: 1px solid var(--palette-gray-silver);
+}

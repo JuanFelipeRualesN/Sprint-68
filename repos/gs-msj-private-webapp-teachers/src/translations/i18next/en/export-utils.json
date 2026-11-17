@@ -1,0 +1,49 @@
+{
+  "slideTypes": {
+    "hook":       "Activate",
+    "objective":  "Objective",
+    "concept":    "Concept",
+    "example":    "Example",
+    "comparison": "Compare",
+    "process":    "Process",
+    "activity":   "Activity",
+    "recap":      "Review",
+    "exit":       "Close"
+  },
+  "cover": {
+    "eyebrow":    "CLASS PRESENTATION",
+    "byline":     "AI for Education",
+    "readyBadge": "Ready to teach"
+  },
+  "defaults": {
+    "slideTitle":       "Content",
+    "visualPlaceholder": "Supporting visual",
+    "objectiveClaim":   "By the end, students will be able to demonstrate the key idea.",
+    "exampleClaim":     "Use this example to model reasoning before independent practice.",
+    "activityClaim":    "Quick activity to turn the explanation into evidence of learning.",
+    "activeWork":       "Active work",
+    "exitClaim":        "Close with a brief response that shows understanding.",
+    "ideaA":            "Idea A",
+    "ideaB":            "Idea B"
+  },
+  "bulletDefaults": {
+    "hook":       ["Connect", "Explore", "Respond"],
+    "objective":  ["Activate prior knowledge", "Explain the key idea", "Practice with evidence"],
+    "concept":    ["Key idea", "Evidence or example", "Student action"],
+    "example":    ["Observe", "Think", "Explain"],
+    "comparison": ["Point 1", "Point 2", "Point 3"],
+    "process":    ["Step 1", "Step 2", "Step 3"],
+    "activity":   ["Instruction 1", "Instruction 2", "Instruction 3"],
+    "recap":      ["Connect", "Explore", "Respond"],
+    "exit":       ["Activate prior knowledge", "Explain the key idea", "Practice with evidence"]
+  },
+  "pdf": {
+    "pageOf": "Page {{page}} of {{total}}"
+  },
+  "worksheet": {
+    "headerByline":        "Worksheet",
+    "nameLabel":           "Name: ____________________________________",
+    "dateLabel":           "Date: ___________",
+    "equationPlaceholder": "equation"
+  }
+}

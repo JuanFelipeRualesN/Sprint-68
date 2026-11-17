@@ -1,0 +1,25 @@
+{
+  "LevelId": 4,
+  "CategoryId": 4,
+  "TitleEn": "The Neighborhood Water",
+  "TitleEs": "El agua del barrio",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "After several dry days, Diego's neighbors noticed that the water from a community fountain was flowing with less force. Some thought it was a breakdown; others suspected the rain had decreased. Diego interviewed a worker from the water system and looked up information about responsible water use. He discovered that there could be different causes and that he should not choose an explanation without proof.",
+      "TextEs": "Después de varios días secos, los vecinos de Diego notaron que el agua de una fuente comunitaria corría con menos fuerza. Algunos pensaron que se trataba de una avería; otros sospecharon que había disminuido la lluvia. Diego entrevistó a un trabajador del sistema de agua y consultó información sobre el consumo responsable. Descubrió que podían existir distintas causas y que no debía elegir una explicación sin pruebas.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "While the problem was being investigated, his family fixed a leaking faucet and began collecting rainwater to water plants when it was safe to do so. Diego made a poster with practical tips. He understood that acting responsibly is possible even while answers are still being sought.",
+      "TextEs": "Mientras se investigaba el problema, su familia reparó una llave que goteaba y comenzó a recoger agua de lluvia para regar plantas cuando era seguro hacerlo. Diego preparó un cartel con consejos prácticos. Comprendió que actuar responsablemente es posible incluso mientras se buscan respuestas.",
+      "ImageUrl": null
+    }
+  ]
+}

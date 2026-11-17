@@ -1,0 +1,25 @@
+{
+  "LevelId": 4,
+  "CategoryId": 3,
+  "TitleEn": "The Plaza of Sounds",
+  "TitleEs": "La plaza de los sonidos",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/history.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Inés's grandfather took her to the town plaza during a cultural event. From one corner they heard plena; from another came the sound of a Puerto Rican cuatro. Near the fountain, a family was sharing stories about the celebrations of their country of origin. Inés wanted to listen to everything at once. Her grandfather explained that traditions change over time and are enriched when people exchange experiences.",
+      "TextEs": "El abuelo de Inés la llevó a la plaza del pueblo durante una actividad cultural. Desde una esquina escuchaban plena; desde otra llegaba el sonido de un cuatro puertorriqueño. Cerca de la fuente, una familia compartía historias de las celebraciones de su país de origen. Inés quería escuchar todo a la vez. Su abuelo le explicó que las tradiciones cambian con el tiempo y se enriquecen cuando las personas intercambian experiencias.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Inés talked with musicians and visitors, and wrote down new words in her notebook. When she got home, she drew a sound map of the plaza. She discovered that culture was not a single song, but many voices that could live together with respect.",
+      "TextEs": "Inés conversó con músicos y visitantes, y anotó palabras nuevas en su libreta. Al regresar a casa dibujó un mapa sonoro de la plaza. Descubrió que la cultura no era una sola canción, sino muchas voces que podían convivir con respeto.",
+      "ImageUrl": null
+    }
+  ]
+}

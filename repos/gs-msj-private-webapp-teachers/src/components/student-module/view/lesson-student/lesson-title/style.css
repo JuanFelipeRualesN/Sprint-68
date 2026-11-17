@@ -1,0 +1,35 @@
+.student-wrapper-iframe .student-lesson-title-subject {
+  background-color: #e8eff3;
+  font-size: 16px;
+  padding: 0.7em;
+  color: #27466D;
+}
+
+.student-lesson-title-subject img {
+  display: inline-block;
+  width: 35px;
+  vertical-align: middle;
+  margin: 0;
+  padding-right: 10px;
+  margin: 0 !important;
+}
+
+.student-lesson-title-subject {
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+      align-items: center;
+}
+
+.student-lesson-title-subject__left, .student-lesson-title-subject__right {
+  vertical-align: middle;
+}
+
+
+.student-lesson-title-subject .student-lesson-title-subject__lesson {
+  padding-left: 0.8em;
+}
+
+.student-lesson-title-subject .student-lesson-title-subject__subject {
+  font-weight: bold;
+}

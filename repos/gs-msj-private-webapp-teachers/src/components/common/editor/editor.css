@@ -1,0 +1,52 @@
+span.ql-formats.formats-history>*:last-child {
+    margin-right: 14px;
+}
+
+span.ql-formats.formats-history {
+    border-right: 1px solid #444;
+}
+
+.ql-formats button[disabled],
+.ql-formats button[disabled]:hover {
+    color: light-dark(#1010104d, #ffffff4d);
+    border: none;
+    cursor: default;
+}
+
+table[border]:not([border="0"]):not([style*=border-color]) td,
+table[border]:not([border="0"]):not([style*=border-color]) th {
+    border-color: #ccc;
+}
+
+.ql-hidden {
+    display: none;
+}
+
+.ql-table-menus-container > .ql-table-dropdown {
+    cursor: pointer;
+}
+
+.label-field-view label {
+    background-color: transparent;
+}
+
+.ql-editor ol li:before {
+    content: '';
+  }
+
+.ql-editor p video{
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain; 
+}
+
+.ql-editor table.ql-table-better td video {
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain; 
+}
+
+.ql-editor table.ql-table-better td audio {
+  max-width: 100% !important;
+  object-fit: contain; 
+}

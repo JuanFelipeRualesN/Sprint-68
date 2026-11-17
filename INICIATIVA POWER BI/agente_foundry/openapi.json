@@ -1,0 +1,500 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API de consultas de uso de Estudia y Avanza",
+    "version": "0.1.0",
+    "description": "Consultas de solo lectura que devuelven agregados de uso de la plataforma (conexiones y pruebas completadas). No devuelve datos por estudiante. Cada respuesta indica en 'datos_hasta' el último día con datos de ese tipo (las pruebas y las conexiones pueden tener fechas distintas)."
+  },
+  "servers": [
+    {
+      "url": "https://eya-api-ejemplo-42ee.azurewebsites.net"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/uso-por-area": {
+      "get": {
+        "operationId": "uso_por_area",
+        "summary": "Uso de cada área en un período",
+        "description": "Devuelve las áreas (materias) con sus pruebas asignadas y completadas entre dos fechas, ordenadas por pruebas completadas. Úsala para saber qué área fue la más o la menos utilizada: con orden desc la primera fila es la más utilizada; con orden asc la primera es la menos utilizada. Cada prueba cuenta en el período por su fecha de asignación; pruebas_completadas es de las asignadas en el período las que ya fueron realizadas (nunca supera a pruebas_asignadas) y porcentaje_completado ya viene calculado por la API; no lo recalcules. Ordena por pruebas_completadas. Cada fila trae porcentaje_del_total_completadas (qué % de todas las pruebas completadas aporta esa área) y la respuesta trae 'resumen' con los totales de TODAS las áreas (total_pruebas_asignadas, total_pruebas_completadas, porcentaje_completado_global, areas_sin_pruebas_asignadas): úsalos, no los calcules.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/conexiones-por-escuela": {
+      "get": {
+        "operationId": "conexiones_por_escuela",
+        "summary": "Conexiones por escuela en un período",
+        "description": "Devuelve el total de conexiones de cada escuela entre dos fechas, ordenado por conexiones. Incluye las escuelas con cero conexiones. Úsala para las escuelas con más o con menos actividad: orden desc para las de mayor actividad, orden asc para las de menor. Cada fila trae porcentaje_del_total (qué % de todas las conexiones aporta la escuela) y conexiones_por_usuario; la respuesta trae 'resumen' con total_conexiones y cuántas escuelas tuvieron o no conexiones (escuelas_con_conexiones, escuelas_sin_conexiones): úsalos, no los calcules. Con el parámetro escuela (nombre exacto, obtenido con buscar_escuela) devuelve solo esa escuela, pero su porcentaje_del_total sigue siendo sobre todas las escuelas.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/conexiones-por-maestro": {
+      "get": {
+        "operationId": "conexiones_por_maestro",
+        "summary": "Conexiones por maestro en un período",
+        "description": "Devuelve el total de conexiones de cada maestro entre dos fechas, ordenado por conexiones, con su escuela. Puede filtrarse por una escuela. Úsala para los maestros con más o con menos conexiones: orden desc o asc. Cada fila trae porcentaje_del_total; la respuesta trae 'resumen' con total_conexiones_maestros y cuántos maestros tuvieron o no conexiones (maestros_con_conexiones, maestros_sin_conexiones): úsalos, no los calcules.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/comparar-areas": {
+      "get": {
+        "operationId": "comparar_areas",
+        "summary": "Compara el uso de las áreas entre dos períodos",
+        "description": "Devuelve, por cada área, las pruebas completadas en el período A y en el período B, la diferencia (B menos A) y la variación porcentual. Úsala cuando se pida comparar el uso de las áreas entre dos períodos.",
+        "parameters": [
+          {
+            "name": "desde_a",
+            "in": "query",
+            "required": true,
+            "description": "Inicio del período A, formato AAAA-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta_a",
+            "in": "query",
+            "required": true,
+            "description": "Fin del período A, formato AAAA-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "desde_b",
+            "in": "query",
+            "required": true,
+            "description": "Inicio del período B, formato AAAA-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta_b",
+            "in": "query",
+            "required": true,
+            "description": "Fin del período B, formato AAAA-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/tendencia-conexiones": {
+      "get": {
+        "operationId": "tendencia_conexiones",
+        "summary": "Tendencia de conexiones por mes, trimestre o año",
+        "description": "Devuelve las conexiones agrupadas por mes, trimestre o año entre dos fechas, incluyendo los períodos con cero conexiones. Puede filtrarse por una escuela. Úsala para ver cómo cambia el uso en el tiempo. Para el total de conexiones de UNA escuela concreta en un período, usa esta consulta con escuela y granularidad=anio. Cada período (menos el primero) trae diferencia_con_periodo_anterior y variacion_pct respecto al anterior; el 'resumen' trae total_conexiones y el período con más y con menos conexiones: úsalos, no los calcules.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "name": "granularidad",
+            "in": "query",
+            "required": false,
+            "description": "Cómo agrupar el tiempo. Por defecto mes.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mes",
+                "trimestre",
+                "anio"
+              ],
+              "default": "mes"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/buscar-escuela": {
+      "get": {
+        "operationId": "buscar_escuela",
+        "summary": "Busca escuelas por nombre",
+        "description": "Devuelve los nombres EXACTOS de las escuelas que contienen el texto buscado (sin distinguir mayúsculas ni tildes). Úsala SIEMPRE antes de filtrar por una escuela. Si no devuelve filas, la escuela no existe. Si devuelve varias, pregunta cuál.",
+        "parameters": [
+          {
+            "name": "texto",
+            "in": "query",
+            "required": true,
+            "description": "Parte del nombre de la escuela, mínimo 2 caracteres.",
+            "schema": {
+              "type": "string",
+              "minLength": 2
+            }
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/promedio-full-quiz": {
+      "get": {
+        "operationId": "promedio_full_quiz",
+        "summary": "Promedio de % Full Quiz por escuela y/o materia",
+        "description": "Devuelve el promedio del porcentaje de la prueba completa (% Full Quiz, total_percent_full_quiz) entre dos fechas, agrupado por escuela, por materia o por escuela y materia, ordenado por promedio_solo_realizadas. Úsala para preguntas como «promedio de % Full Quiz por escuela y por materia», «qué escuela o materia tiene mejor/peor puntaje de pruebas» o «puntaje promedio de una escuela». Cada prueba cuenta en el período por su fecha de asignación. Cada fila trae pruebas_asignadas, pruebas_completadas, promedio_solo_realizadas (promedio de las pruebas ya realizadas) y promedio_todas_las_asignadas (las no realizadas cuentan como 0, igual que la vista vw_academics_average de Power BI). Los promedios ya vienen calculados por la API; no los recalcules. Si piden por escuela Y por materia usa agrupar=escuela_materia.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "$ref": "#/components/parameters/agrupar"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/comparar-escuelas": {
+      "get": {
+        "operationId": "comparar_escuelas",
+        "summary": "Compara las conexiones de cada escuela entre dos períodos",
+        "description": "Devuelve, por cada escuela, las conexiones en el período A y en el B, la diferencia (B menos A) y la variación porcentual, ordenadas por la diferencia. Úsala para saber qué escuelas crecieron o cayeron más entre dos períodos: orden desc = las que más crecieron, asc = las que más cayeron. El 'resumen' trae los totales de A y B y su variación ya calculados; no los recalcules.",
+        "parameters": [
+          {
+            "name": "desde_a",
+            "in": "query",
+            "required": true,
+            "description": "Primer día del período A, AAAA-MM-DD, inclusivo.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta_a",
+            "in": "query",
+            "required": true,
+            "description": "Último día del período A, AAAA-MM-DD, inclusivo.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "desde_b",
+            "in": "query",
+            "required": true,
+            "description": "Primer día del período B, AAAA-MM-DD, inclusivo.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta_b",
+            "in": "query",
+            "required": true,
+            "description": "Último día del período B, AAAA-MM-DD, inclusivo.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "parameters": {
+      "desde": {
+        "name": "desde",
+        "in": "query",
+        "required": true,
+        "description": "Primer día del período, formato AAAA-MM-DD, inclusivo.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "hasta": {
+        "name": "hasta",
+        "in": "query",
+        "required": true,
+        "description": "Último día del período, formato AAAA-MM-DD, inclusivo.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "orden": {
+        "name": "orden",
+        "in": "query",
+        "required": false,
+        "description": "desc = de mayor a menor (por defecto); asc = de menor a mayor.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "desc"
+        }
+      },
+      "limite": {
+        "name": "limite",
+        "in": "query",
+        "required": false,
+        "description": "Cantidad máxima de filas, de 1 a 50. Por defecto 10.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10
+        }
+      },
+      "escuela": {
+        "name": "escuela",
+        "in": "query",
+        "required": false,
+        "description": "Nombre exacto de una escuela para filtrar. Si se omite, incluye todas.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "agrupar": {
+        "name": "agrupar",
+        "in": "query",
+        "required": false,
+        "description": "Cómo agrupar: escuela, materia o escuela_materia (una fila por cada combinación). Por defecto escuela_materia.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "escuela",
+            "materia",
+            "escuela_materia"
+          ],
+          "default": "escuela_materia"
+        }
+      }
+    },
+    "responses": {
+      "Ok": {
+        "description": "Resultado de la consulta con el período y los filtros aplicados.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "consulta": {
+                  "type": "string",
+                  "description": "Nombre de la consulta que se ejecutó."
+                },
+                "fuente": {
+                  "type": "string",
+                  "description": "Origen de los datos."
+                },
+                "columna_fecha": {
+                  "type": "string",
+                  "description": "Columna de la base sobre la que se filtró el período (qué fecha significa 'desde' y 'hasta')."
+                },
+                "periodo": {
+                  "type": "object",
+                  "description": "Período realmente consultado."
+                },
+                "filtros": {
+                  "type": "object",
+                  "description": "Filtros aplicados."
+                },
+                "datos_hasta": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Último día con datos cargados. Si el período pedido termina después, los días posteriores no están incluidos."
+                },
+                "resultados": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "nota": {
+                  "type": "string",
+                  "description": "Aclaración sobre cómo leer el resultado."
+                },
+                "total_filas": {
+                  "type": "integer",
+                  "description": "Cantidad de filas devueltas."
+                },
+                "generado_en": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Momento (UTC) en que se generó la respuesta."
+                },
+                "resumen": {
+                  "type": "object",
+                  "description": "Totales y cifras derivadas ya calculadas sobre TODAS las filas del período (no solo las mostradas)."
+                }
+              }
+            }
+          }
+        }
+      },
+      "ParametrosInvalidos": {
+        "description": "Un parámetro falta o no es válido; el mensaje dice cuál.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string"
+                },
+                "mensaje": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

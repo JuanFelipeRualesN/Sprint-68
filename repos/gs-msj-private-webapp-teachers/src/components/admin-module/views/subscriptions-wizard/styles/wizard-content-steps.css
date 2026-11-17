@@ -1,0 +1,438 @@
+.content-wizard {
+  font-size: 14px;
+  color: #242424;
+}
+
+h1.content-wizard--title {
+  font-size: 20px;
+  margin-bottom: .5em;
+}
+
+button.content-wizard--w-icon {
+  background: #FFF;
+  border: 1px solid #28476D;
+  color: #28476D;
+  border-radius: 6px;
+  padding: 5px 15px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 1em;
+}
+
+button.content-wizard--primary,
+button.content-wizard--secondary {
+  color: #FFF;
+  border-radius: 6px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.25px;
+  font-weight: bold;
+  position: absolute;
+  right: 0;
+}
+
+
+
+button.content-wizard--secondary {
+  background: #28476D;
+  border: 1px solid #28476D;
+}
+
+button.content-wizard--w-icon i {margin-right: 5px;}
+
+button.content-wizard--w-icon:hover,
+button.content-wizard--secondary:hover {
+  background: #8f959b;
+  border: 1px solid #8f959b;
+  color: #FFF;
+}
+
+
+button.content-wizard--only-txt {
+  background: transparent;
+  color: #28476D;
+  border-radius: 0px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.25px;
+  font-weight: bold;
+}
+
+button.content-wizard--only-txt:hover {
+  color: #8f959b;
+}
+
+
+/***/
+
+/* .mt-3 {margin-top: 3em;}
+.mt-2 {margin-top: 2em;}
+.mt-1 {margin-top: 1em;} */
+.special-space {height: 2.9em; padding-top: .5em;}
+.txt-label {font-size: 12px;}
+.clear-p p {margin-bottom: .5em;}
+
+.wrapper-wizard-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+     -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+}
+
+.wrapper-wizard-form--col,
+.wrapper-wizard-form--col__four,
+.wrapper-wizard-form--col__five {
+  padding-right: 15px;
+}
+
+.wrapper-wizard-form--col {
+  flex: 1 1 30%;
+}
+
+.wrapper-wizard-form--col__four {
+  flex: 1 1 20%;
+}
+
+.wrapper-wizard-form--col__five {
+  flex: 1 1 15%;
+}
+
+/*.wrapper-wizard-form--col {
+  background: #CCC;
+  flex: 1 1 auto;
+  padding: 10px;
+}*/
+
+.form-wizard-fields label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: .25em;
+}
+
+.form-wizard-fields__box label {
+  display: inline-block;
+  width: 80%;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.form-wizard-fields__box {
+  display: flex;
+  flex: 1;
+  vertical-align: middle;
+}
+
+.form-wizard-fields__box input[type="radio" i],
+.form-wizard-fields__box input[type="checkbox" i]  {
+  margin-top: 1px;
+}
+
+input.form-wizard-fields__input {
+  height: 1.9rem;
+  background-color: #efefef;
+  font-size: 15px;
+  border: 1px solid #efefef;
+  line-height: 1.9;
+  width: 100%;
+  transition: all .28s ease;
+  box-shadow: none;
+  margin-bottom: 15px;
+  border-radius: .25rem;
+  height: 38px;
+  padding: 0 0.5em;
+}
+
+.wizard-fields__select {
+  margin-top: -12px;
+}
+
+input.form-wizard-fields__input:focus {
+  color: #495057;
+  background-color: #fff;
+}
+
+hr {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 0;
+  border-top: 1px solid #D5D5D5;
+  display: block;
+  width: 100%;
+}
+
+.content-wizard__footer {
+  margin-top: 2em;
+  padding-top: 1em;
+  border-top:  1px solid #D5D5D5;
+  position: relative;
+}
+
+/*
+*/
+.form-wizard-fields .css-14ojxsb-control,
+.form-wizard-fields .css-bg1rzq-control,
+.form-wizard-fields .css-1szy77t-control {
+    border: 0;
+    background: #EFEFEF;
+    font-size: 13px;
+    margin-bottom: .25em;
+    border-bottom: 1px solid #d3d5db;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+
+.form-wizard-fields .css-1szy77t-control {
+    border-bottom: 1px solid #27466C;
+}
+
+/**/
+
+@media screen and (max-width: 760px) {
+  .wrapper-wizard-form--col__five {
+    flex: 1 1 40%;
+  }
+}
+
+@media screen and (max-width: 500px) { 
+  .wrapper-wizard-form--col,
+  .wrapper-wizard-form--col__four {
+    flex: 1 1 40%;
+  }
+}
+
+
+/****/
+.wrapper-wizard-col {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+     -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+}
+
+.wrapper-wizard-col--col {
+  flex: 1;
+}
+
+.wrapper-wizard-col--col__shadowCol {
+  padding: 1em 1em 2em 1em;
+  width: 90%;
+  margin: auto;
+  box-shadow: 0 0 14px 0 rgb(12 10 61 / 10%);
+  margin-top: -14px;
+}
+
+@media screen and (max-width: 800px) { 
+  .wrapper-wizard-col--col {
+    width: 100%;
+    flex: 100%;
+  }
+
+  .wrapper-wizard-col--col__shadowCol {
+    margin-top: 4em;
+    width: 95%;
+    margin-left: 0;
+    margin-right: 0;
+  } 
+}
+
+
+/***/
+.period-form {
+  display: inline-block;
+}
+
+.period-form input {
+  width: 35%;
+}
+
+.period-form label {
+  display: inline-block;
+  width: 25%;
+}
+
+/***/ 
+.modal-countries {
+  max-width: 450px !important;
+}
+
+.modal-countries small {
+  font-size: 12px;
+  line-height: 1em;
+}
+
+#space-checkbox-country span {padding: 0 12px;}
+/* .modal-countries .jss161 {
+  padding: 0 12px;
+} */
+
+.modal-countries .modal-body .row .col-sm-12,
+.modal-countries .modal-body .row .col-md-12,
+.modal-countries .modal-body .row .col-lg-12 {
+  margin-bottom: 3px;
+}
+
+.modal-countries .modal-body {
+  padding-top: 0;
+}
+
+.modal-countries .offset-lg-1 {
+  margin-left: 25px;
+  margin-bottom: 3px;
+}
+
+.modal-countries .jss53,
+#space-checkbox-country svg {
+  color: #F2AF2C;
+  width: 20px;
+  height: 20px;
+}
+
+.style-checkboxes svg {
+  color: #F2AF2C;
+  width: 20px;
+  height: 20px;
+}
+
+.tax-space {
+  padding: 0;
+}
+
+.tax-space span:first-child {
+  padding: 0;
+  padding-right: 5px;
+}
+
+.tax-space label {padding-top: 10px;}
+
+.wrapper-wizard-form.style-checkboxes .row {
+  width: 100%;
+}
+
+/**/
+.wrapper-content-wizard .DateInput, .DateInput input {
+  width: 100%;
+}
+
+.wrapper-content-wizard .SingleDatePicker, .wrapper-content-wizard .SingleDatePickerInput {
+  display: block;
+}
+
+.wrapper-content-wizard .DateInput_input__focused, .wrapper-content-wizard .DateInput_input {
+  height: 37px;
+  font-size: 12px;
+}
+/* 
+.period-form .form-wizard-fields {
+  display: inline-block;
+  background-color: #F2AF2C;
+} */
+.period-form .wrapper-wizard-form--col {
+  margin-top: 10px;
+}
+
+.wizard-fields_datapicker-period .datapicker_input-step {
+  display: inline-block;
+  margin-right: 0.5em;
+}
+
+.wizard-fields_datapicker-period .DateInput_fang.DateInput_fang_1,
+.wrapper-content-wizard .DateInput_fang { 
+  top: 40px !important
+}
+
+.wizard-fields_datapicker-period .SingleDatePicker_picker__directionLeft { 
+  top: 50px !important; 
+  padding-bottom: 100px;
+}
+/* .wizard-fields_datapicker-period div:nth-child(1),
+.wizard-fields_datapicker-period div:nth-child(2) {
+  display: inline-block;
+  margin-right: 0.5em;
+} */
+
+/* .period-form .SingleDatePicker, .period-form .SingleDatePickerInput {
+  display: inline-block;
+} */
+
+/* BUTTON NEXT BACK */
+.wrapper-button-sec-wizard .next,
+.wrapper-button-sec-wizard .back {
+  color: #FFF;
+  border-radius: 6px;
+  padding: 5px 30px;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  font-weight: bold;
+  box-shadow: none;
+  margin-left: 0.5em;
+  /* border: 1px solid; */
+}
+
+.wrapper-button-sec-wizard .next:disabled,
+.wrapper-button-sec-wizard .back:disabled {
+  background: #d1d1d1;
+  cursor: not-allowed;
+  border-color: #d1d1d1;
+  color: #bdbdbd;
+}
+
+.wrapper-button-sec-wizard .back {
+  border-color: #8f959b;
+  color: #8f959b;
+}
+
+/*
+.wrapper-button-sec-wizard .next {
+  box-shadow: none;
+}
+
+.wrapper-button-sec-wizard .back{
+  padding: 5px 20px;
+  text-transform: capitalize;
+  font-size: 14px;
+  margin-right: 1em;
+}
+
+.wrapper-button-sec-wizard button {
+  text-transform: capitalize;
+  font-size: 14px;
+}
+
+.wrapper-button-sec-wizard button {
+  background-color: transparent;
+}
+*/
+
+
+button.btn_cancelation {
+  background-color: transparent;
+  box-shadow: none;
+  text-transform: lowercase;
+  padding: 0;
+  margin-bottom: 1em;
+  color: #d25964;
+  font-weight: bold;
+}
+
+button.btn_cancelation svg {
+  margin-left: 6px;
+}
+
+button.btn_cancelation:hover {
+  color: #8f959b;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.btn-align-right {
+  text-align: right;
+}

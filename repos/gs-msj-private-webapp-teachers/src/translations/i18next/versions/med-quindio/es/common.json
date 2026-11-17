@@ -1,0 +1,92 @@
+{
+  "common": {
+    "no-options": "Sin opciones",
+    "va-max": "El archivo supera el tamaño máximo permitido. Favor de validar que el tamaño del archivo es permitido."
+  },
+  "actions": {
+    "close": "Cerrar"
+  },
+  "general": {
+    "na": "N/A",
+    "clear": "Limpiar",
+    "details": "Detalles",
+    "edit": "Editar",
+    "quick-access": "Accesos rápidos",
+    "add-new": "+ Añadir nuevo",
+    "attention": "Atención",
+    "back": "Anterior",
+    "filter": "Filtrar",
+    "clear-filters": "Limpiar búsqueda",
+    "back-action": "Atrás",
+    "close": "Cerrar",
+    "enter": "Entrar",
+    "go": "Entrar",
+    "next": "Próximo",
+    "no": "No",
+    "ok": "Ok",
+    "search": "Buscar",
+    "select": "Seleccionar",
+    "successful-transaction": "La transacción fue completada satisfactoriamente.",
+    "unsuccessful-transaction": "Ha ocurrido un error inesperado. Favor de validar su data o su conexión.",
+    "submit": "Enviar",
+    "yes": "Sí",
+    "view": "Ver",
+    "error": "No se pueden obtener resultados en este momento. Intente nuevamente.",
+    "comingSoon": "Próximamente",
+    "loading": "Cargando…"
+  },
+  "form-updates": {
+    "attention": "Atención",
+    "edit-info-subtitle": "Actualice su dirección postal, luego presione \"Enviar\" ",
+    "edit-your-info": "Actualice su información.",
+    "old-password-instructions": "Ingrese su contraseña actual.",
+    "reset-your-password-subtitle": "Ingrese la contraseña anterior para actualizar su contraseña.",
+    "reset-your-password-title": "Ingrese su nueva contraseña.",
+    "update-information": "Actualice su información.",
+    "update-payment-info": "Actualice su método de pago.",
+    "update-payment-info-subtitle": "Entre los detalles de su tarjeta de crédito para actualizar la información de pago de su matrícula."
+  },
+  "drop-zone": {
+    "drop-file-here": "Arrastre su archivo hasta aquí.",
+    "file-uploaded": "Archivo subido satisfactoriamente. ",
+    "file-uploaded-some-error": "Archivo subido, pero se detectaron algunos errores. Por favor, revise, corrija y vuelva a subir el archivo. ",
+    "instructions": "Arrastre el archivo .CSV aquí. Recuerde que el .csv debe tener las siguientes columnas en este orden específico: <0/><1>Nombre de Usuario, Contraseña, Nombre, Apellido, Fecha de nacimiento (opcional, si no está, dejar columna en blanco), Género (opcional, si no está, dejar columna en blanco), SIE de docente o estudiante, se añadirá automáticamente. Si prefiere que no se añada automáticamente, por favor, asegúrese de tener el SIE al subir este archivo, seguido por el campo opcional de correo electrónico. Si la institución utiliza Teams y desea la opción de video llamadas, es necesario que el correo sea el mismo que el de Teams y, en ese caso, se requeriría el correo. Estos campos deben incluirse en la primera fila y deben seguir el orden especificado.</1> <0/> Es un archivo .CSV, así que evite que los datos dentro de cada columna contengan comas.  \nNota: Este proceso no actualiza ninguna contraseña, ID de institución educativa, de usuario ni nombre de usuario. Si el usuario ya existe (validado por el identificador escolar del usuario), el sistema actualiza el nombre completo, correo electrónico, género y fecha de nacimiento si difieren de la información que el usuario tiene en la base de datos.",
+    "one-file-at-time": "Suba un solo archivo a la vez.",
+    "only-csv-allowed": "Solo se permiten subir archivos en formato .csv",
+    "uploading-file": "Subiendo el archivo, este proceso podría tomar minutos, dependiendo de la cantidad de estudiantes que contenga el archivo.",
+    "attachFile": "Adjuntar archivo"
+  },
+  "downloads": {
+    "apple-computers": "(Computadores Apple)",
+    "are-ready-downloaded-the-app": "¿Ya terminó de descargar el app? Instálelo y estará listo para utilizar nuestro producto. ",
+    "download-app-for-your-child": "¡Descargue la aplicación de juegos para su estudiante!",
+    "downloads": "Descargas",
+    "downloads-subtitle": "Gracias por descargar nuestro producto. Recuerde que para usar nuestros apps tiene que estar suscrito. Si no lo está, presione ",
+    "here": "aquí.",
+    "important-1": "El app que necesita descargar es el app de estudiantes. Usted no puede acceder al app de estudiantes con sus credenciales. Debe haber configurado una cuenta de estudiante y acceder con esta cuenta configurada.",
+    "important-2": "Para ver los resultados del estudiante, utilice este portal. Vaya a Home.",
+    "important-3": "El estudiante puede utilizar su app desde cualquier parte. SusA resultados están guardados en la nube. La conexión a Internet siempre será necesaria.",
+    "important-read-the-following": "Importante: lea lo siguiente",
+    "select-operative-system": "Seleccione su sistema operativo.",
+    "tablets-and-phones": "Chromebooks, tabletas y teléfonos",
+    "to-see-progress": "Para ver el progreso del estudiante, administrar la matrícula, entre otras opciones, vaya al Home en Menú o simplemente descargue ",
+    "to-download-the-user-manual-press-here": "Para descargar el manual de usuario, presione aquí."
+  },
+  "status-accounts": {
+    "select-status-account": "Seleccione estatus de la cuenta"
+  },
+  "terms": {
+    "select-terms": "Seleccionar período",
+    "close": "Cerrar"
+  },
+  "permission": {
+    "permission": "Permisos",
+    "select": "Seleccionar",
+    "name": "Nombre",
+    "description": "Descripción",
+    "select-to-edit": "Seleccione para actualizar"
+  },
+  "selector-classes": {
+    "title": "Seleccione la clase que desee añadir a su matrícula"
+  }
+}

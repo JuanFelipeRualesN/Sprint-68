@@ -1,0 +1,19 @@
+{
+  "LevelId": 1,
+  "CategoryId": 2,
+  "TitleEn": "Clara's Box",
+  "TitleEs": "La caja de Clara",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Clara keeps lids, boxes, and paper.\nShe wants to make a toy boat.\nFirst she cuts a paper sail with an adult's help.\nThen she places the sail on a small box.\nThe boat tips over.\nClara changes the base to a wider one.\nNow the boat stands steady.\n“I did it!” she shouts.\nClara discovers that trying a different idea can solve a problem.",
+      "TextEs": "Clara guarda tapas, cajas y papel.\nQuiere crear un barco de juguete.\nPrimero corta una vela de papel con ayuda de un adulto.\nLuego coloca la vela en una caja pequeña.\nEl barco se cae.\nClara cambia la base por una más ancha.\nAhora el barco se sostiene.\n—¡Lo logré! —grita.\nClara descubre que probar otra idea puede resolver un problema.",
+      "ImageUrl": null
+    }
+  ]
+}

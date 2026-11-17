@@ -1,0 +1,101 @@
+/* .wrapper-lessons-progress {
+  border-radius: 15px;
+  -webkit-box-shadow: 0px 0px 12px 0px rgba(0,0,0,0.2);
+-moz-box-shadow: 0px 0px 12px 0px rgba(0,0,0,0.2);
+  box-shadow: 0px 0px 12px 0px rgba(0,0,0,0.2);  
+} */
+
+.wrapper-lessons-progress {
+    border-radius: 6px;
+    background-color: #ffffff;
+}
+
+/******/
+
+.container-items-lesson a {
+    border-bottom: 1px solid #DDD;
+    padding: 1em;
+    text-decoration: none;
+    color: #222;
+    cursor: pointer;
+    background-color: #f7f7f7;
+    font-size: 15px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    cursor: pointer;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+}
+
+.container-items-lesson a:hover {
+    background-color: #FFF;
+    /* background-color: #D9E8F2;
+  -webkit-box-shadow: inset -1px -1px 13px -1px rgba(184,202,214,1);
+-moz-box-shadow: inset -1px -1px 13px -1px rgba(184,202,214,1);
+box-shadow: inset -1px -1px 13px -1px rgba(184,202,214,1); */
+}
+
+.container-items-lesson:first-child a {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.container-items-lesson:last-child a {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border: 0;
+}
+
+
+.col-left--items-lesson {
+    width: 90%;
+}
+
+.col-right--items-lesson {
+    /* width: 100px; */
+    width: 30px;
+    text-align: center;
+}
+
+
+.progress {
+    padding: 0;
+    width: 150px;
+    height: 5px;
+    overflow: hidden;
+    background: #FFF;
+    border-radius: 26px;
+    border: 1px solid #DDD;
+}
+
+.bar {
+    position: relative;
+    float: left;
+    min-width: 1%;
+    height: 100%;
+    background: #B0D8B9;
+}
+
+.icon-finished-lesson {
+    font-size: 20px;
+    color: #B0D8B9;
+}
+
+/* COntendor */
+
+@media screen and (max-width: 450px) {
+
+    .col-right--items-lesson {
+        width: 30px;
+    }
+
+    .container-items-lesson a {
+        font-size: 14px;
+    }
+}

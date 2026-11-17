@@ -1,0 +1,19 @@
+{
+  "LevelId": 7,
+  "CategoryId": 4,
+  "TitleEn": "The Moon and the Lagoon",
+  "TitleEs": "La luna y la laguna",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "Lola looks at the moon.\nThe moon shows in the lagoon.\nLola does not throw anything in the water.\nPretty moon, pretty lagoon!",
+      "TextEs": "Lola mira la luna.\nLa luna se ve en la laguna.\nLola no tira nada al agua.\n¡Linda luna, linda laguna!",
+      "ImageUrl": null
+    }
+  ]
+}

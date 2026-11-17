@@ -1,0 +1,66 @@
+
+.student-wrapper-quiz-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: #2C3140;
+}
+
+.student-wrapper-quiz-list h4.title-lessons {
+  background-color: #e8eff3;
+  font-size: 16px;
+  padding: 0.7em;
+  color: #253084;
+}
+
+.student-wrapper-quiz-list h3 {
+font-weight: 800;
+font-size: 16px;
+margin: 0 0 2em 0;
+}
+
+
+/**********/
+
+.student-container-quiz-lesson:first-child a {
+border-top-left-radius: 15px;
+border-top-right-radius: 15px;
+}
+
+.student-container-quiz-lesson:last-child a {
+border-bottom-left-radius: 15px;
+border-bottom-right-radius: 15px;
+border: 0;
+}
+
+
+.student-col-left--quiz-lesson {
+width: 60%;
+}
+
+.student-col-right--quiz-lesson {
+width: 160px;
+text-align: center;
+}
+
+
+.student-container-quiz-lesson .icon-finished-lesson {
+font-size: 25px;
+color: #B0D8B9;
+}
+
+
+
+/* MQ 500px */
+
+@media screen and (max-width: 500px) {
+
+.student-col-left--quiz-lesson {
+  width: 100%;
+  margin-bottom: 1em;
+}
+}
+
+.student-col-right--quiz-lesson a {
+  justify-content: center;
+}

@@ -1,0 +1,212 @@
+.student-wrapper-iframe {
+  width: 100%;
+  max-width: 720px;
+  margin: -35px 0 0 10%;
+  padding: 0 1.5em 0.5em 1.5em;
+  color: #2C3140;
+  position: relative;
+}
+
+.student-wrapper-iframe p {
+  line-height: 1.5em;
+  font-size: 18px;
+  margin-bottom: 1.5em;
+}
+
+.student-vocabulary-title {
+  display: block;
+  font-weight: bold;
+  font-size: 20px;
+  color: #4F57A7;
+  border-bottom: 1px solid #ececec;
+  padding-bottom: 0.25em;
+  margin-top: 2em;
+}
+
+
+.student-wrapper-iframe h1, .student-wrapper-iframe h2, .student-wrapper-iframe h3 {
+  border-bottom: 1px solid #E7E7E7;
+  padding-bottom: 0.25em;    
+}
+
+.student-wrapper-iframe h1,
+.student-wrapper-iframe h2,
+.student-wrapper-iframe h3,
+.student-wrapper-iframe h4 {
+  color: #40539D;
+  margin: 1em 0 1.5em 0;
+}
+
+
+.student-wrapper-iframe ul {
+  margin: 2em 0;
+}
+
+.student-wrapper-iframe li {
+  margin-bottom: 0.5em;
+}
+
+.student-wrapper-iframe a {
+  color: #DC8520;
+  text-decoration: underline;
+}
+
+.student-wrapper-iframe a:hover {
+  text-decoration: none;
+}
+
+
+.student-wrapper-iframe table {
+  width: 100%; 
+  border-collapse: collapse; 
+  background: #F7F7F7;
+}
+
+/* Zebra striping */
+.student-wrapper-iframe tr:nth-of-type(odd) {
+  background: #FFF; 
+}
+
+.student-wrapper-iframe th {
+  background: #BEC9F8; 
+  color: #161E60; 
+  font-weight: bold; 
+}
+
+.student-wrapper-iframe td, .student-wrapper-iframe th {
+  padding: 10px 20px; 
+  border: 1px solid #DDD; 
+  text-align: center; 
+}
+
+.student-wrapper-iframe img {
+  display: block;
+  margin: 1em 0;
+}
+
+@media screen and (max-width: 750px) { 
+  .student-wrapper-iframe {
+    margin: -35px 0 0 0;
+  }
+}
+
+@media screen and (max-width: 450px) { 
+  .student-wrapper-iframe {
+    padding: 0 0.5em 0.5em 0.5em;
+  }
+}
+
+
+.student-wrapper-iframe-kids {
+  width: 100%;
+  max-width: 720px;
+  margin: -35px 0 0 10%;
+  padding: 0 1.5em 0.5em 1.5em;
+  color: #2C3140;
+  font-family: 'Quicksand', sans-serif;
+}
+
+.student-wrapper-iframe-kids p {
+  line-height: 1.6em;
+  font-size: 20px;
+  margin-bottom: 1.5em;
+}
+
+.student-wrapper-iframe-kids h1, .student-wrapper-iframe-kids h2, .student-wrapper-iframe-kids h3 {
+  border-bottom: 1px solid #E7E7E7;
+  padding-bottom: 0.25em;    
+}
+
+.student-wrapper-iframe-kids h1,
+.student-wrapper-iframe-kids h2,
+.student-wrapper-iframe-kids h3,
+.student-wrapper-iframe-kids h4 {
+  color: #40539d;
+  margin: 1em 0 1.5em 0;
+}
+
+.student-wrapper-iframe-kids h4, .student-wrapper-iframe-kids--FullWidth h4 {
+  background-color: #e8eff3;
+  font-size: 18px;
+  padding: 0.5em;
+  color: #7982a9;
+}
+
+.student-wrapper-iframe-kids h2 {
+  font-size: 22px;
+}
+
+.student-wrapper-iframe-kids h3 {
+  font-size: 20px;
+}
+
+.student-wrapper-iframe-kids ul {
+  margin: 2em 0;
+  font-size: 20px;
+}
+
+.student-wrapper-iframe-kids li {
+  margin-bottom: 0.5em;
+}
+
+.student-wrapper-iframe-kids table {
+  width: 100%; 
+  border-collapse: collapse; 
+  background: #FFF;
+  font-size: 20px;
+}
+
+.student-wrapper-iframe-kids th {
+  background: #BEC9F8; 
+  color: #161E60; 
+  font-weight: bold; 
+}
+
+.student-wrapper-iframe-kids td, .student-wrapper-iframe-kids th {
+  padding: 10px 20px; 
+  border: 1px solid #DDD; 
+  text-align: center; 
+}
+
+.student-wrapper-iframe-kids img {
+  display: block;
+  margin: 1em 0;
+}
+
+.student-wrapper-iframe--FullWidth, .student-wrapper-iframe-kids--FullWidth {
+  width: 100%;
+  max-width: 95%;
+  margin: -35px 0 0 0;
+  padding: 0 1.5em 0.5em 1.5em;
+  color: #2C3140;
+}
+
+.student-wrapper-iframe-kids--FullWidth {
+  font-family: 'Quicksand', sans-serif;
+}
+
+@media screen and (max-width: 750px) { 
+  .student-wrapper-iframe-kids {
+    margin: -35px 0 0 0;
+}
+}
+
+@media screen and (max-width: 450px) { 
+  .student-wrapper-iframe-kids {
+    padding: 0 0.5em 0.5em 0.5em;
+  }
+
+  .student-wrapper-iframe-kids p, .student-wrapper-iframe-kids table,
+  .student-wrapper-iframe-kids ul { font-size: 18px; }
+
+  .student-wrapper-iframe-kids h4, .student-wrapper-iframe-kids--FullWidth h4 {
+    font-size: 15px;
+  }
+
+  .student-wrapper-iframe--FullWidth, .student-wrapper-iframe-kids--FullWidth {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 0em 0.5em 0em;
+  }
+
+}

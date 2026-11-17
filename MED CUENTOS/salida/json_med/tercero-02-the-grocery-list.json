@@ -1,0 +1,25 @@
+{
+  "LevelId": 3,
+  "CategoryId": 4,
+  "TitleEn": "The Grocery List",
+  "TitleEs": "La lista del supermercado",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "My brothers and I have different assigned chores. My older brother washes the dishes. My younger brother washes and folds the laundry. I write the grocery list. I always keep my list close so I can write down what Mom tells me.\nOn Sunday we went to the supermarket. Before leaving home, I made sure to put the food list in my pocket. When we got there, I grabbed a basket and walked down the aisles of the supermarket. I found everything on the list except the ham. I could not see it anywhere. A store employee helped me find it.",
+      "TextEs": "Mis hermanos y yo tenemos diferentes tareas asignadas. Mi hermano mayor friega los platos. Mi hermano menor lava y dobla la ropa. Yo escribo la lista del supermercado. Siempre tengo mi lista cerca para anotar lo que mamá me dice.\nEl domingo fuimos al supermercado. Antes de salir de casa, me aseguré de guardar la lista de alimentos en mi bolsillo. Al llegar, agarré una canasta y recorrí los pasillos del supermercado. Hallé todo lo que había en la lista, menos la jamonilla. No lo veía por ninguna parte. Un empleado del supermercado me ayudó a encontrarla.",
+      "ImageUrl": null
+    },
+    {
+      "SlideOrder": 2,
+      "TextEn": "Mom was already in the checkout line. Very carefully, I placed the cans in the shopping cart so I would not damage the bread and the eggs.\nOn the way home, I realized how important it is to help Mom at home. Sharing the household chores makes us feel good about ourselves.",
+      "TextEs": "Mamá ya estaba en la fila para pagar. Con mucho cuidado, coloqué las latas en el carrito de compras para no dañar el pan y los huevos.\nDe regreso a casa, me di cuenta de lo importante que es ayudar a mamá en la casa. Compartir las tareas del hogar nos hace sentir satisfechos con nosotros mismos.",
+      "ImageUrl": null
+    }
+  ]
+}

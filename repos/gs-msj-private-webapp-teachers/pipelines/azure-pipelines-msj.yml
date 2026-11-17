@@ -1,0 +1,16 @@
+name: Teachers WebApp MSJ Pipeline
+
+trigger:
+  branches:
+    include:
+      - dev
+      - uat
+
+pool:
+  vmImage: ubuntu-latest
+
+extends:
+  template: azure-pipelines-template.yml
+  parameters:
+    appVariant: 'msj'
+    staticWebAppToken: $(AZURE_STATIC_WEB_APP_TOKEN_TEACHERS_MSJ)

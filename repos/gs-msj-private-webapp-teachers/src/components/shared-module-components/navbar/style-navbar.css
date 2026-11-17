@@ -1,0 +1,113 @@
+/**
+ * Created by c3om on 3/29/21.
+ */
+
+.user-comp_profile-wrapper {
+    position: relative;
+    top: 0;
+}
+
+.noticesDev {
+    font-size: .8em;
+    background: #FF6483;
+    padding: 5px 8px; 
+    color: #FFF;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 50px;
+    margin-left: 10px;
+}
+
+.noticesBeta{
+    font-size: .8em;
+    background: #FFC164;
+    padding: 5px 8px; 
+    color: #FFF;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 50px;
+    margin-left: 10px;
+}
+
+.version-prod {
+    font-size: .8em;
+    color: #FFC164;
+    font-weight: bold;
+    margin-left: 20px;
+    border-left: 1px solid #94a6c1;
+    padding-left: 7px;
+}
+
+.main-header {
+    padding: 0.2em 1em;
+}
+
+.top-bar-menu {
+    margin-right: 0 /*230px*/;
+}
+
+.user-comp_profile-wrapper {
+    width: auto /*225px*/;
+}
+
+.user-comp_menu {
+    top: 60px;
+}
+
+.user-comp_info-user .double-border img {
+    width: 87px;
+    background: #FFF;
+}
+
+.user-comp_info-user .double-border {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1em;
+}
+
+.user-comp_info-user h1 {
+    font-weight: bold;
+}
+
+ul.user-comp_submenu {
+    list-style: none;
+}
+
+ul.user-comp_submenu .nav-item svg {
+    margin-right: 10px;
+    color: #27466c
+}
+
+ul.user-comp_submenu .nav-item a:hover svg {
+    color: #838383;
+}
+
+.help svg {
+    margin-right: 5px;
+}
+
+.help-title {
+    font-weight: 300;
+    color:white;
+}
+
+.user-comp_submenu li {
+    display: block;
+}
+
+.frequent-questions {
+text-decoration: none;
+color: black;
+}
+
+@media screen and (max-width: 750px) {
+    .help {
+        margin-right: 5px;
+        font-size: 20px;
+    }
+
+    .top-bar-menu {
+        margin-right: 0;
+        font-size: 14px;
+    }
+}

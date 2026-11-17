@@ -1,0 +1,87 @@
+.form-group-fields .mantine-DatePicker-input,
+.form-group-fields .mantine-DateRangePicker-input {
+    color: var(--palette-gray-charcoal);
+    display: block;
+    background-color: var(--palette-gray-grayLigther);
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: var(--fontSize-xsm);
+    border-width: 0;
+    border-color: transparent;
+    line-height: 1.9;
+    transition: all 0.28s ease;
+    box-shadow: none;
+    font-family: inherit;
+    border-radius: 0;
+    width: 100%;
+}
+
+.form-group-fields .mantine-DatePicker-input,
+.form-group-fields .mantine-DateRangePicker-input,
+.mantine-DateRangePicker-day,
+button.mantine-DateRangePicker-calendarHeaderLevel,
+.mantine-DateRangePicker-weekday,
+.mantine-DateRangePicker-monthPickerControls>button,
+.mantine-DateRangePicker-yearPickerControls>button {
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+    font-size: var(--fontSize-xsm) !important;
+}
+
+.mantine-DatePicker-root,
+.mantine-DatePicker-input,
+.mantine-DatePicker-wrapper,
+.mantine-DateRangePicker-root,
+.mantine-DateRangePicker-input,
+.mantine-DateRangePicker-wrapper {
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+}
+
+.mantine-DatePicker-rightSection svg,
+.mantine-DateRangePicker-rightSection svg {
+    color: #868e96;
+}
+
+.date-picker-wrapper {
+    position: relative;
+    display: inline-flex;              
+    align-items: center;
+    width: 90%;
+}
+
+@media (max-width: 768px) {
+    .date-picker-wrapper {
+        width: 85%;
+    }
+}
+
+.date-picker-wrapper > .react-datepicker-popper {
+    position: absolute !important;
+    left: 0;                  
+    top: calc(100% + 4px);        
+    z-index: 999999;                  
+    pointer-events: auto;          
+    width: auto;                
+}
+
+.form-group-fields .date-picker-wrapper .react-datepicker-wrapper,
+.form-group-fields .date-picker-wrapper .react-datepicker__input-container {
+  display: block !important; 
+  width: 100% !important;    
+}
+
+
+.form-group-fields .date-picker-wrapper input.form-control {
+  width: 100%;
+  box-sizing: border-box; 
+}
+
+/* fix label date picker and date selections in mobile screen */
+@media (max-width: 768px) {
+    .form-group-fields > .forms-label {
+        position: relative;  
+        margin-bottom: 0.5rem;
+    }
+}
+

@@ -1,0 +1,40 @@
+.MuiBackdrop-root {
+    background-color: transparent !important;
+}
+
+.MuiPaper-elevation24 {
+    box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.1),
+    0px 0px 5px 0px rgba(0, 0, 0, 0.1),
+    0px 0px 5px 0px rgba(0, 0, 0, 0.1) !important;
+}
+
+.Dialog-Title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 16px 24px;
+}
+
+.Dialog-Title-Actions {
+    display: flex;
+    align-items: center;
+}
+
+.Dialog-Title>span {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.Dialog-Title-Actions>button.MuiIconButton-sizeSmall svg {
+    font-size: 1.1rem;
+}
+
+.Dialog-Title-Actions>button.fullscreen {
+    transform: rotate(45deg);
+}
+
+.MuiDialogContent-root {
+    /* max-width: 600px; */
+}

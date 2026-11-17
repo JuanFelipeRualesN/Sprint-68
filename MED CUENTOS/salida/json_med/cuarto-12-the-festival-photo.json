@@ -1,0 +1,19 @@
+{
+  "LevelId": 4,
+  "CategoryId": 2,
+  "TitleEn": "The Festival Photo",
+  "TitleEs": "La foto del festival",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/scifi.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "During the school festival, Marina took a photograph of her classmates dancing. She wanted to post it right away, but she remembered that not everyone wanted to appear on social media. Before sharing it, she asked the participants and checked the school's rules. Two students preferred that their image not be shared. Marina respected their decision and chose to photograph the instruments and the decorations instead. Her post explained the event without identifying those who had not given permission. Later, a classmate thanked her for her consideration. Marina understood that a photograph can tell a story, but sharing it also means respecting people's privacy.",
+      "TextEs": "Durante el festival escolar, Marina tomó una fotografía de sus compañeros bailando. Quiso publicarla de inmediato, pero recordó que no todos deseaban aparecer en redes sociales. Antes de compartirla, preguntó a los participantes y consultó las normas de la escuela. Dos estudiantes prefirieron que no se difundiera su imagen. Marina respetó su decisión y eligió fotografiar los instrumentos y la decoración. Su publicación explicó la actividad sin identificar a quienes no habían dado permiso. Más tarde, una compañera le agradeció su consideración. Marina comprendió que una fotografía puede contar una historia, pero compartirla también implica respetar la privacidad de las personas.",
+      "ImageUrl": null
+    }
+  ]
+}

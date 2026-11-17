@@ -1,0 +1,61 @@
+{
+  "header": {
+    "eyebrow": "My Documents",
+    "title": "AI Content Library",
+    "subtitle": "Everything you generate is saved here to review, reuse, and export whenever you are ready."
+  },
+  "sidebar": {
+    "ariaLabel": "Generated documents",
+    "documentSingular": "document",
+    "documentPlural": "documents",
+    "searchPlaceholder": "Search in this category...",
+    "emptyCategory": "No documents in this category."
+  },
+  "categories": {
+    "all": "All",
+    "lesson": "Lessons",
+    "assessment": "Assessments",
+    "other": "Other"
+  },
+  "badges": {
+    "lesson": "Lesson",
+    "assessment": "Assessment",
+    "other": "Other"
+  },
+  "reader": {
+    "titlePlaceholder": "Document title",
+    "titleTooltip": "Click to rename",
+    "toolLabel": "Tool",
+    "createdLabel": "Created",
+    "modelLabel": "Model",
+    "editorPlaceholder": "Write the content in Markdown format here..."
+  },
+  "tabs": {
+    "preview": "Preview",
+    "edit": "Edit Text",
+    "presentation": "Edit Presentation"
+  },
+  "actions": {
+    "downloadPdf": "Download PDF",
+    "downloadPdfTooltip": "Download as a print-ready PDF",
+    "downloadWord": "Download Word",
+    "downloadWordTooltip": "Download as an editable Word document",
+    "downloadPptx": "Download PPTX",
+    "downloadPptxTooltip": "Export as an editable PowerPoint presentation",
+    "downloadWorksheet": "Download Worksheet",
+    "downloadWorksheetTooltip": "Download as a worksheet with answer space",
+    "exporting": "Exporting...",
+    "copy": "Copy Text",
+    "copyTooltip": "Copy Markdown text to clipboard",
+    "copied": "Copied",
+    "delete": "Delete",
+    "deleteTooltip": "Permanently delete this document"
+  },
+  "confirmDelete": "Are you sure you want to delete this document? This action cannot be undone.",
+  "defaultDocTitle": "document",
+  "emptyState": {
+    "title": "Document Library is empty",
+    "subtitle": "Generate educational content using the AI tools to save, organize, and download it here.",
+    "cta": "Go to AI Assistant ➔"
+  }
+}

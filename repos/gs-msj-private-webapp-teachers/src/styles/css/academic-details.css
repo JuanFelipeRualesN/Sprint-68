@@ -1,0 +1,72 @@
+.wrapper-content-academic-details .DateInput, .DateInput input {
+    width: 100%;
+  }
+  
+  .wrapper-content-academic-details .SingleDatePicker, .wrapper-content-academic-details .SingleDatePickerInput {
+    display: block;
+  }
+  
+  .wrapper-content-academic-details .DateInput_input__focused, .wrapper-content-academic-details .DateInput_input {
+    height: 37px;
+    font-size: 12px;
+  }
+
+  .wizard-fields_datapicker-period .DateInput_fang.DateInput_fang_1,
+.wrapper-content-academic-details .DateInput_fang { 
+  top: 40px !important
+}
+
+
+.DateInput_input {
+  color: black !important;
+  font-weight: 500 !important;
+}
+
+.wrapper-content-academic-details {
+    width: 90%;
+    margin: 0 auto 100px auto;
+  }
+
+  .wrapper-content-academic-details .steps_stept svg.jss312 { /*all*/
+    color: #FFF;
+    /* border: 2px solid #DDD; */
+    fill: #DDD;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+  }
+  
+  .wrapper-content-academic-details .steps_stept svg.jss309 { /*current*/
+    color: #FFF;
+    /* border: 2px solid #5CB85C; */
+    fill: #5CB85C;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+  }
+  
+  .wrapper-content-academic-details .steps_stept svg.jss310 { /*ending*/
+    color: #FFF;
+    /* border: 2px solid #27466C; */
+    fill: #27466C;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+  }
+  
+  .wrapper-content-academic-details .steps_stept span.jss364 {
+    border-color: #EDEDED;
+    margin-top: 4px;
+  }
+
+  .wrapper-section-academics .wrapper-info-success-academics {
+    padding: 0;
+  }
+
+  .wrapper-section-academics svg {font-size: 14px; margin-right: 5px;}
+
+  @media screen and (max-width: 760px) {
+    .wrapper-content-academic-details {
+      margin: 0 auto 200px auto;
+    }
+  }

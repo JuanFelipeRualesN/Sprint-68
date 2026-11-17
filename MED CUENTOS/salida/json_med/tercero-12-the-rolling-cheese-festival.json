@@ -1,0 +1,19 @@
+{
+  "LevelId": 3,
+  "CategoryId": 4,
+  "TitleEn": "The Rolling Cheese Festival",
+  "TitleEs": "El Festival del Queso Rodante",
+  "ImageUrl": "https://stpubliceastus001.blob.core.windows.net/public-assets/categories/adventure.png",
+  "FluencyGoal": 70,
+  "AccuracyGoal": 70,
+  "CompletenessGoal": 70,
+  "PronunciationGoal": 70,
+  "Slides": [
+    {
+      "SlideOrder": 1,
+      "TextEn": "The cheese rolls, proud and swift,\nlike a golden lightning bolt that defies the wind,\nand the hill sings its mischievous laughter,\ncreaking beneath the steps of the brave.\nThe runners leap and thrash about,\nan army of shadows seeking glory,\nand the wind whispers in their ears:\n“Run, run, run!” in an endless echo.\nThe wheel rolls and echoes,\ncrack, crack! each blow, a challenge,\na thunder of cheese that does not stop,\nbeneath the sky that throbs with excitement.",
+      "TextEs": "El queso rueda, orgulloso y veloz,\ncomo un rayo dorado que desafía el viento,\ny la colina canta su risa traviesa,\nchirriando bajo los pasos de los valientes.\nLos corredores saltan y se agitan,\nun ejército de sombras buscando la gloria,\ny el viento susurra en los oídos:\n\"¡Corre, corre, corre!\", en un eco sin fin.\nLa rueda, rueda y resuena,\n¡crack, crack!, cada golpe, un desafío,\nun trueno de queso que no se detiene,\nbajo el cielo que late de emoción.",
+      "ImageUrl": null
+    }
+  ]
+}

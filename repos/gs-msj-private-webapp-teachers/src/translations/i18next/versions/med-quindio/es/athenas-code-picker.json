@@ -1,0 +1,51 @@
+{
+  "fields": {
+    "subject": "asignatura",
+    "grade": "grado"
+  },
+  "status": {
+    "loading": "Cargando…",
+    "error": "Error: {{message}}"
+  },
+  "search": {
+    "noResults": "No hay resultados para \"{{query}}\"."
+  },
+  "units": {
+    "panel": {
+      "title": "Unidades aplicables"
+    },
+    "status": {
+      "empty": "No hay unidades para {{subject}} en {{grade}}."
+    },
+    "search": {
+      "placeholder": "Buscar entre {{count}} unidades de {{subject}} · {{grade}}…"
+    }
+  },
+  "standards": {
+    "panel": {
+      "title": "Estándares aplicables"
+    },
+    "hint": {
+      "chooseMissing": "Elija {{missing}} arriba para cargar los estándares."
+    },
+    "status": {
+      "empty": "No hay estándares para {{subject}} en {{grade}}."
+    },
+    "search": {
+      "placeholder": "Buscar entre {{count}} estándares de {{subject}} · {{grade}}…"
+    }
+  },
+  "expectations": {
+    "panel": {
+      "title": "Expectativas aplicables"
+    },
+    "chip": "Expectativa {{code}}",
+    "status": {
+      "empty": "No hay expectativas para {{subject}} en {{grade}}."
+    },
+    "search": {
+      "placeholder": "Buscar entre {{count}} expectativas de {{subject}} · {{grade}}…"
+    },
+    "otherGroup": "Otras expectativas"
+  }
+}

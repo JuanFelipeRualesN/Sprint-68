@@ -1,0 +1,111 @@
+.wrapper-table-admin {
+    margin: 1em 0;
+    width: 100%;
+}
+
+table.content-table-admin {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 2em 0;
+}
+
+.content-table-admin tr:nth-of-type(odd) {
+  text-align: left;
+  color: #2A426D;
+  font-size: 13px;
+  background-color: rgb(231 233 234 / 90%)
+}
+
+.content-table-admin td:first-child,
+.content-table-admin thead th:first-child {
+  padding-left: 5px;
+}
+
+.content-table-admin tr {
+  border-bottom: 1px solid #EBEBEB;
+  vertical-align: top;
+  background-color: rgba(0,0,0,.05);
+}
+
+.content-table-admin thead tr {
+  border-bottom: 0;
+}
+
+.content-table-admin th {
+  padding-bottom: 1em;
+}
+
+.content-table-admin thead th {
+  border-bottom: 2px solid #dee2e6;
+  background: #f7f7f7;
+  padding-top: 10px
+}
+
+.content-table-admin td {
+  padding: 1em 0;
+  font-size: 13px;
+  color: #4B4B4B;
+}
+
+.content-table-admin p {
+    margin: 0.2em 0;
+}
+
+/***/
+
+.txt-LighterBlue {color: #404550 !important;}
+
+.table-admin--title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #000;
+}
+
+/* MQ 750 */
+
+@media screen and (max-width: 750px) {
+  table.content-table-admin, .content-table-admin thead, 
+  .content-table-admin tbody, 
+  .content-table-admin th, 
+  .content-table-admin td, 
+  .content-table-admin tr { 
+    display: block; 
+  }
+
+  .content-table-admin thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .content-table-admin tr { border-bottom: 1px solid #DDD; margin-bottom: 1em;  padding: 0.5em;}
+
+  .content-table-admin td { 
+    border: none;
+    position: relative;
+    font-size: 13px;
+    padding-bottom: 0.5em;
+    padding-top: 0; 
+  }
+
+  .content-table-admin td:last-child {margin-bottom: 1em;}  
+
+  .content-table-admin td:before { 
+    top: 15px;
+    left: 6px; 
+    padding-right: 10px; 
+    white-space: nowrap;
+    content: attr(data-column);
+    color: #2A426D;
+    font-weight: bold;
+  }
+
+  .content-table-admin tr {
+    background-color: #EFEFEF;
+  }
+
+  /***/
+  .content-table-admin td:nth-child(2):before {display: none;}
+  .content-table-admin td:last-child:before {display: none;}
+  .content-table-admin.clear-col-4 td:nth-child(4):before {display: none;}
+}
