@@ -172,3 +172,23 @@ La primera hipótesis («escuelas con al menos una conexión») dio **43** escue
 - «Escuelas con menor actividad» (1-sep → 10-nov): 35 de 47 escuelas con 0 conexiones; el agente lo dice («hay 25 filas más con cero conexiones, el listado no es exhaustivo»).
 - Agente con datos reales: **7/7** preguntas del ticket y **9/9** trampas sin observaciones.
 - Pruebas: mismas filas que el modelo de Power BI (10.628; 2025-2026 P1–P3 = 6.106 / 217 / 5.889). Sigue sin explicarse solo la tarjeta de la página demo (1.029 / 206 / 823 / 135).
+
+---
+
+# Resultados de `sql/09_crear_vistas_agente.sql` (Workbench, 17-nov-2026)
+Se ejecutaron las 20 sentencias sin errores: el esquema `agente`, 9 vistas, el usuario `agente_lector` y su permiso, y las 8 consultas de verificación. La referencia es el .pbix procesado el 5-nov (`../MSJ_Utilization_modelo_y_10_preguntas.md`).
+
+| Comprobación | Power BI (5-nov) | Vistas `agente` (17-nov) | |
+|---|---|---|---|
+| B1 cancelados · sin suscripción (usuarios / filas) | 14.479 / 62.412 · 489 / 489 | igual | ✅ |
+| B1 activos (usuarios / filas) | 6.988 / 9.674 | 7.277 / 9.982 | ⚠️ datos nuevos |
+| B2 conexiones / usuarios (corte 4-nov) | 6.994 / 2.433 | igual | ✅ |
+| B2 año 2025-2026: regla del tablero · regla ago–jul | 1.481 / 751 · 4.078 / 1.819 | igual | ✅ |
+| B3 conectados (definición del tablero) | 2.432 | 2.432 | ✅ |
+| B3 conectados con suscripción activa | 726 | 935 | ⚠️ datos nuevos |
+| B4 pruebas por año y período (tomadas / no tomadas) | 271 / 10.357 · página 206 / 6.883 | igual, fila por fila | ✅ |
+| B6 suscripciones 2022-23 a 2025-26 | 24 · 424 · 945 · 131 | igual (suscripciones, usuarios y filas) | ✅ |
+| B6 suscripciones 2026-27 (suscripciones / usuarios / filas) | 290 / 6.988 / 9.674 | 301 / 7.277 / 9.982 | ⚠️ datos nuevos |
+
+**Conclusión:** las reglas coinciden con las de Power BI. Las únicas diferencias están en la suscripción activa 2026-27, y salen del crecimiento de los datos después del corte del 5-nov: el total de activos fue 6.988 el 5-nov, 7.199 el 12-nov (servicio) y 7.277 el 17-nov. Los cancelados y los años cerrados coinciden exactos.
+Pendiente: #13 (total de usuarios), #19 (promedio de % Full Quiz, esperado 60,19) y `SELECT * FROM gs_data_analysis.vw_total_users_with_connection_details` (esperado 7.277 usuarios y unos 935 conectados).
