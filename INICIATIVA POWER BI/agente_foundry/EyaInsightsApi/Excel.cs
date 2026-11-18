@@ -52,7 +52,12 @@ static class Excel
                 else Texto(c, Columnas.Texto(v));
             }
         }
-        if (claves.Count > 0)
+        if (claves.Count == 0)
+        {
+            Texto(ws.Cell(1, 1), "Sin resultados para este filtro (ver la hoja Referencias).");
+            ws.Column(1).Width = 60;
+        }
+        else
         {
             ws.SheetView.FreezeRows(1);
             if (filas.Count > 0) ws.Range(1, 1, filas.Count + 1, claves.Count).SetAutoFilter();

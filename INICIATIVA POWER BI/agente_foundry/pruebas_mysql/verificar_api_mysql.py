@@ -14,6 +14,7 @@ import urllib.parse
 import urllib.request
 
 import datos_prueba as dp
+import leer_xlsx
 
 BASE = sys.argv[1].rstrip("/")
 OFF = int(sys.argv[2]) if len(sys.argv) > 2 else 0
@@ -495,6 +496,207 @@ _, tr = api("/tendencia-conexiones", desde="2026-07-01", hasta="2026-12-31", gra
 _, me = api("/tendencia-conexiones", desde="2026-07-01", hasta="2026-12-31", granularidad="mes")
 sx, st_, sm = (sum(x["conexiones"] for x in z["resultados"]) for z in (e, tr, me))
 igual("suma por escuela = suma por trimestre = suma por mes", (sx, st_, sm) == (sx, sx, sx), True)
+
+# ───────────────────────── Fase 4: exportar a Excel y gráficas ─────────────────────────
+print("\n[fase 4: exportar]")
+TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def api_bin(ruta, **q):
+    url = f"{BASE}{ruta}?{urllib.parse.urlencode(q)}"
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r:
+            return r.status, dict(r.headers), r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, dict(e.headers), e.read()
+
+
+def exportar(consulta, **q):
+    """(estado, cabeceras, hojas, nº de fórmulas) del .xlsx; hojas = {nombre: filas}."""
+    st, h, cuerpo = api_bin(f"/exportar/{consulta}", formato="xlsx", **q)
+    if st != 200:
+        return st, h, None, 0
+    hojas, formulas = leer_xlsx.leer(cuerpo, con_formulas=True)
+    return st, h, hojas, formulas
+
+
+def grafica(consulta, **q):
+    st, _, cuerpo = api_bin(f"/exportar/{consulta}", formato="grafica", **q)
+    return st, json.loads(cuerpo)
+
+
+def filas_json(filas):
+    """Resultados de la API → (claves en orden de aparición, filas como listas; None = celda vacía)."""
+    claves = []
+    for f in filas:
+        for k in f:
+            if k not in claves:
+                claves.append(k)
+    return claves, [[f.get(k) for k in claves] for f in filas]
+
+
+def rectangular(filas, n):
+    """El lector omite las celdas vacías del final de cada fila: se rellenan con None hasta n columnas."""
+    return [f + [None] * (n - len(f)) for f in filas]
+
+
+def tabla_referencias(hojas):
+    d = {}
+    for fila in hojas["Referencias"]:
+        if len(fila) >= 2 and fila[0] is not None:
+            d.setdefault(fila[0], fila[1])
+    return d
+
+
+def txt(v):                 # como Columnas.Texto en C#
+    return "sí" if v is True else "no" if v is False else str(v)
+
+
+D = dict(desde="2026-01-01", hasta="2026-11-10")
+CMP = dict(desde_a="2026-09-01", hasta_a="2026-09-30", desde_b="2026-10-01", hasta_b="2026-10-31")
+# (consulta, parámetros, nombre de archivo esperado, tipo de gráfica, columna de categorías, series)
+CASOS = [
+    ("uso-por-area", dict(desde="2026-09-01", hasta="2026-11-10"), "uso_por_area_2026-09-01_2026-11-10", "barras_agrupadas", "nombre", ["pruebas_asignadas", "pruebas_completadas"]),
+    ("conexiones-por-escuela", D, "conexiones_por_escuela_2026-01-01_2026-11-10", "barras_horizontales", "nombre", ["conexiones"]),
+    ("conexiones-por-maestro", D, "conexiones_por_maestro_2026-01-01_2026-11-10", "barras_horizontales", "nombre", ["conexiones"]),
+    ("comparar-areas", CMP, "comparar_areas_a_2026-09-01_2026-09-30_b_2026-10-01_2026-10-31", "barras_agrupadas", "nombre", ["pruebas_completadas_a", "pruebas_completadas_b"]),
+    ("comparar-escuelas", CMP, "comparar_escuelas_a_2026-09-01_2026-09-30_b_2026-10-01_2026-10-31", "barras_agrupadas", "nombre", ["conexiones_a", "conexiones_b"]),
+    ("tendencia-conexiones", D, "tendencia_conexiones_2026-01-01_2026-11-10", "lineas", "periodo", ["conexiones"]),
+    ("conexiones-acumuladas", D, "conexiones_acumuladas_2026-01-01_2026-11-10", "lineas", "periodo", ["conexiones_acumuladas", "usuarios_acumulados"]),
+    ("uso-docentes", dict(fecha="2026-11-18"), "uso_docentes_2026-11-18", "barras_agrupadas", "escuela", ["maestros", "con_conexiones", "con_asignaciones"]),
+    ("patrones-conexion", D, "patrones_conexion_2026-01-01_2026-11-10", "barras", "nombre", ["conexiones"]),
+    ("participacion-escuelas", D, "participacion_escuelas_2026-01-01_2026-11-10", "barras_horizontales", "nombre", ["porcentaje_participacion"]),
+]
+print("  (promedio-full-quiz: no se prueba aquí; el esquema sintético no tiene result_generic.total_percent_full_quiz)")
+
+for ruta, q, archivo, tipo, col_cat, series in CASOS:
+    _, r = api("/" + ruta, **q)
+    st, h, hojas, formulas = exportar(ruta, **q)
+    igual(f"{ruta}: xlsx → 200, content-type xlsx y nombre de archivo {archivo}.xlsx",
+          (st, h.get("Content-Type"), f"filename={archivo}.xlsx" in h.get("Content-Disposition", ""), formulas), (200, TIPO_XLSX, True, 0))
+    # la hoja Datos tiene las mismas filas, en el mismo orden, que el JSON de la consulta (las filas del JSON son un prefijo de la exportación)
+    claves, esperadas = filas_json(r["resultados"])
+    datos = hojas["Datos"]
+    igual(f"{ruta}: hoja Datos == resultados del JSON (limite normal)", (len(datos[0]), rectangular(datos, len(claves))[1:1 + len(esperadas)]), (len(claves), esperadas))
+    igual(f"{ruta}: hojas = Datos y Referencias", list(hojas), ["Datos", "Referencias"])
+    # gráfica
+    st, g = grafica(ruta, **q)
+    filas = r["resultados"]
+    etiquetas = [f[col_cat] for f in filas]
+    if ruta == "uso-docentes" and len(set(etiquetas)) != len(etiquetas):
+        etiquetas = [f"{f['escuela']} ({f['periodo_desde']})" for f in filas]
+    igual(f"{ruta}: gráfica tipo {tipo}, categorías y series = resultados",
+          (st, g.get("tipo"), g["eje_x"]["categorias"], [(s["clave"], s["valores"]) for s in g["series"]], g["filas"], g["consulta"]),
+          (200, tipo, etiquetas, [(k, [f.get(k) for f in filas]) for k in series], len(filas), r["consulta"]))
+
+# exportación = lista completa, contrastada con la fuerza bruta
+a, b = rango("2026-01-01", "2026-11-10")
+
+
+def datos_exportados(ruta, **q):
+    _, _, hojas, _ = exportar(ruta, **q)
+    n = len(hojas["Datos"][0])
+    return hojas["Datos"][0], rectangular(hojas["Datos"], n)[1:], tabla_referencias(hojas)
+
+
+for rg, min_max in [(D, {}), (dict(desde="2026-10-01", hasta="2026-10-07"), dict(min_conexiones=1, max_conexiones=1))]:
+    cab, filas, ref = datos_exportados("conexiones-por-maestro", **rg, **min_max)
+    todos = esperado_maestros(rg["desde"], rg["hasta"], True, 5000)
+    total_c = sum(f["conexiones"] for f in todos)
+    if min_max:
+        todos = [f for f in todos if f["conexiones"] == 1]
+    igual(f"fuerza bruta: exportar maestros {rg['desde']}..{rg['hasta']} {min_max or 'sin filtro'} = todos (nombre, escuela, conexiones, % del total)",
+          [(f[0], f[1], f[2], f[3]) for f in filas],
+          [(f["nombre"], f["escuela"], f["conexiones"], round(100.0 * f["conexiones"] / total_c, 1)) for f in todos])
+cab, filas, ref = datos_exportados("conexiones-por-maestro", **D, min_conexiones=9999)
+igual("exportar sin resultados → hoja Datos con el aviso «Sin resultados» y Referencias intacta", (cab, filas, ref["Filas exportadas"]),
+      (["Sin resultados para este filtro (ver la hoja Referencias)."], [], "0"))
+_, r = api("/conexiones-por-maestro", **D, limite=3)
+igual("exportar sin 'limite' trae TODAS las filas (> las 3 del JSON y = maestros_considerados del resumen)",
+      (len(datos_exportados("conexiones-por-maestro", **D)[1]) > 3, len(datos_exportados("conexiones-por-maestro", **D)[1])),
+      (True, r["resumen"]["maestros_considerados"]))
+cab, filas, ref = datos_exportados("conexiones-por-maestro", **D, limite=2)
+igual("exportar con limite=2 → 2 filas y Referencias dice que la lista NO es completa", (len(filas), ref["Lista completa"].startswith("NO")), (2, True))
+cab, filas, ref = datos_exportados("conexiones-por-escuela", **D)
+igual("fuerza bruta: exportar escuelas = todas (nombre, conexiones, usuarios conectados)",
+      [(f[0], f[1], f[2]) for f in filas],
+      [(f["nombre"], f["conexiones"], f["usuarios_conectados"]) for f in esperado_escuelas(D["desde"], D["hasta"], True, 5000)])
+cab, filas, ref = datos_exportados("participacion-escuelas", **D)
+esp = ordenar_participacion(esperado_participacion(D["desde"], D["hasta"]), True)
+igual("fuerza bruta: exportar participación = todas las escuelas",
+      [(f[0], f[1], f[2], f[3]) for f in filas], [(f["nombre"], f["usuarios_activos"], f["usuarios_conectados"], f["porcentaje_participacion"]) for f in esp])
+cab, filas, ref = datos_exportados("tendencia-conexiones", **D)
+igual("fuerza bruta: exportar tendencia mensual (período, conexiones)", [(f[0], f[1]) for f in filas],
+      [(f["periodo"], f["conexiones"]) for f in esperado_tendencia(D["desde"], D["hasta"], "mes")])
+
+# hoja Referencias
+_, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10")
+_, _, hojas, _ = exportar("uso-por-area", desde="2026-09-01", hasta="2026-11-10")
+ref = tabla_referencias(hojas)
+igual("Referencias: consulta, período, cuentas de prueba y datos hasta",
+      (ref["Consulta"], ref["Período · desde"], ref["Período · hasta"], ref["Cuentas de prueba"], ref["Datos hasta"], ref["Fuente"], ref["Columna de fecha"]),
+      ("uso_por_area", "2026-09-01", "2026-11-10", "excluidas" if EXCL else "incluidas", r["datos_hasta"], r["fuente"], r["columna_fecha"]))
+igual("Referencias: el AVISO de datos hasta 19-oct y la nota completa viajan con el archivo", (ref["Nota"] == r["nota"], "AVISO" in ref["Nota"]), (True, True))
+igual("Referencias: filas exportadas, lista completa y generado en", (ref["Filas exportadas"], ref["Lista completa"].startswith("Sí"), ref["Generado en (UTC)"][:10].count("-")),
+      (str(len(r["resultados"])), True, 2))
+igual("Referencias: cada clave del resumen, una por una", [ref[k.replace("_", " ")] for k in r["resumen"] if r["resumen"][k] is not None],
+      [txt(v) for v in r["resumen"].values() if v is not None])
+_, r = api("/comparar-escuelas", **CMP)
+_, _, hojas, _ = exportar("comparar-escuelas", **CMP)
+ref = tabla_referencias(hojas)
+igual("Referencias: comparación trae los dos períodos (a y b)", (ref["Período · a.desde"], ref["Período · a.hasta"], ref["Período · b.desde"], ref["Período · b.hasta"]),
+      ("2026-09-01", "2026-09-30", "2026-10-01", "2026-10-31"))
+
+# tipos de celda y tildes
+_, _, hojas, _ = exportar("uso-por-area", **D)
+datos = hojas["Datos"]
+_, r = api("/uso-por-area", **D, limite=50)
+igual("celdas numéricas son número (no texto) y los nombres con tilde se leen igual (Español, Matemáticas, Álgebra I)",
+      (all(type(f[1]) in (int, float) and type(f[2]) in (int, float) for f in datos[1:]),
+       {"Español", "Matemáticas", "Álgebra I"} <= {f[0] for f in datos[1:]}),
+      (True, True))
+igual("encabezados legibles en español", datos[0][:3], ["Nombre", "Pruebas asignadas", "Pruebas completadas"])
+
+# gráfica: coherencia con el resumen y filtros
+st, g = grafica("tendencia-conexiones", **D)
+_, r = api("/tendencia-conexiones", **D)
+igual("gráfica de tendencia: la suma de 'conexiones' = resumen.total_conexiones", sum(g["series"][0]["valores"]), r["resumen"]["total_conexiones"])
+igual("gráfica de tendencia: título, ejes y hay_mas_filas", (g["titulo"], g["eje_x"]["titulo"], g["eje_y"]["unidad"], g["hay_mas_filas"]),
+      ("Conexiones por mes", "Período", "conexiones", False))
+st, g = grafica("conexiones-por-maestro", **D, limite=3)
+igual("gráfica de maestros con limite=3: 3 barras y hay_mas_filas=true", (g["filas"], g["hay_mas_filas"]), (3, True))
+st, g = grafica("participacion-escuelas", **D)
+igual("gráfica de participación: unidad %", (g["eje_y"]["unidad"], g["datos_hasta"], g["filtros"]["cuentas_de_prueba"]),
+      ("%", api("/salud")[1]["datos_hasta_conexiones"], "excluidas" if EXCL else "incluidas"))
+
+# errores
+st, _, _ = api_bin("/exportar/buscar-escuela", texto="prueba")
+igual("exportar buscar-escuela (xlsx) → 404", st, 404)
+st, _, _ = api_bin("/exportar/buscar-escuela", texto="prueba", formato="grafica")
+igual("exportar buscar-escuela (gráfica) → 404", st, 404)
+st, _, cuerpo = api_bin("/exportar/no-existe", **D)
+igual("consulta desconocida → 404 consulta_desconocida", (st, json.loads(cuerpo)["error"]), (404, "consulta_desconocida"))
+st, _, cuerpo = api_bin("/exportar/conexiones-por-maestro", formato="pdf", **D)
+igual("formato=pdf → 400", (st, json.loads(cuerpo)["error"]), (400, "parametros_invalidos"))
+for formato in ("xlsx", "grafica"):
+    st, _, _ = api_bin("/exportar/conexiones-por-maestro", formato=formato, limite=0, **D)
+    igual(f"limite=0 ({formato}) → 400", st, 400)
+st, _, cuerpo = api_bin("/exportar/conexiones-por-maestro", limite=5001, **D)
+igual("limite=5001 (xlsx) → 400 «entre 1 y 5000»", (st, "entre 1 y 5000" in json.loads(cuerpo)["mensaje"]), (400, True))
+st, _, cuerpo = api_bin("/conexiones-por-maestro", limite=51, **D)
+igual("la ruta JSON sigue limitada a 50 (limite=51 → 400 «entre 1 y 50»)", (st, "entre 1 y 50." in json.loads(cuerpo)["mensaje"]), (400, True))
+for formato in ("xlsx", "grafica"):
+    st, h, cuerpo = api_bin("/exportar/conexiones-por-maestro", formato=formato, escuela="Escuela Inexistente", **D)
+    _, r = api("/conexiones-por-maestro", escuela="Escuela Inexistente", **D)
+    igual(f"escuela inexistente ({formato}) → el mismo 400 que la ruta JSON", (st, json.loads(cuerpo)), (400, r))
+st, _, cuerpo = api_bin("/exportar/conexiones-por-maestro", desde="2026-13-01", hasta="2026-11-10")
+igual("fecha inválida → 400", st, 400)
+st, _, cuerpo = api_bin("/exportar/participacion-escuelas", formato="grafica", escuela="Escuela Prueba B", **D)
+igual("una sola fila → 422 sin_grafica", (st, json.loads(cuerpo)["error"]), (422, "sin_grafica"))
+st, _, cuerpo = api_bin("/exportar/tendencia-conexiones", formato="grafica", desde="2026-10-01", hasta="2026-10-31")
+igual("un solo período → 422 sin_grafica", (st, json.loads(cuerpo)["error"]), (422, "sin_grafica"))
+st, h, _ = api_bin("/exportar/tendencia-conexiones", desde="2026-10-01", hasta="2026-10-31")
+igual("un solo período sí se puede exportar a Excel (xlsx → 200)", st, 200)
 
 print(f"\nResumen: {total - len(fallos)}/{total} comprobaciones coinciden.")
 sys.exit(1 if fallos else 0)
