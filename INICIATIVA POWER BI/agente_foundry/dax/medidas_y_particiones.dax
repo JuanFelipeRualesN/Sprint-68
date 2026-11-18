@@ -1,0 +1,13 @@
+// REQ-3741 · Leer las fórmulas del modelo Reports_Semantic_Model (solo lectura).
+// Dónde: app.powerbi.com → área MSJ → Reports_Semantic_Model → «Escribir consultas DAX» (o DAX query view en Desktop).
+// Ejecutar una consulta a la vez y copiar el resultado (botón Copiar de la tabla) al chat.
+
+// 1) Todas las medidas con su fórmula (buscar las de «acumulad»/«cumulative» y las de docentes/teacher)
+EVALUATE
+SELECTCOLUMNS ( INFO.MEASURES (), "medida", [Name], "formula", [Expression] )
+ORDER BY [medida]
+
+// 2) De dónde sale cada tabla (vista de MySQL, Excel o consulta M)
+EVALUATE
+SELECTCOLUMNS ( INFO.PARTITIONS (), "particion", [Name], "consulta", [QueryDefinition] )
+ORDER BY [particion]

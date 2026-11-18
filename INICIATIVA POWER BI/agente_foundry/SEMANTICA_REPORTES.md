@@ -63,6 +63,7 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 
 ## 4. Probar sin Power BI
 1. `sql/09_oraculo_power_bi.sql` en Workbench (solo lectura): reproduce las medidas del tablero sobre las vistas. Valores de control: 113 / 14 / 84 conexiones (2026 T3+T4); 6.106 / 217 / 5.889 / 146 pruebas (2025-2026 P1–P3); 10.628 filas históricas.
+1b. `sql/10_oraculo_acumuladas_y_docentes.sql`: páginas «Conexiones acumuladas» (3 lecturas posibles: total histórico de `vw_total_users_with_connection_details`, suma corrida de conexiones, usuarios nuevos acumulados) y «Uso de docentes» (`vw_teacher_activities`: 5 indicadores SI/NO, totales, por escuela y docentes duplicados). Compararlo con el tablero **el mismo día**, porque ambas vistas dependen de la fecha actual. `dax/medidas_y_particiones.dax` lee las fórmulas reales del modelo para decidir cuál lectura usa cada tarjeta.
 2. Levantar la API con `correr_api_mysql.sh` y comparar sus respuestas con el oráculo para el mismo período.
 3. `pruebas_mysql/verificar_api_mysql.py`: regresión offline (Docker, datos sintéticos) que debe seguir en 37/37 tras cada cambio de SQL.
 4. Power BI solo se abre para casos que el oráculo no cubre (pendiente: tarjetas de la página demo 1.029 / 206 / 823 / 135).
