@@ -242,6 +242,51 @@ app.MapGet("/tendencia-conexiones", (HttpRequest r, IConsultasUso c) => Ejecutar
               periodo_con_menos_conexiones = menor?.Periodo, conexiones_del_menor = menor?.Conexiones });
 }));
 
+app.MapGet("/conexiones-acumuladas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
+{
+    var (d, h) = P.Rango(r);
+    var gran = r.Query["granularidad"].FirstOrDefault() ?? "mes";
+    if (gran is not ("dia" or "mes" or "trimestre" or "anio")) throw new ErrorConsulta("'granularidad' debe ser 'dia', 'mes', 'trimestre' o 'anio'.");
+    if (gran == "dia" && h.DayNumber - d.DayNumber > 92) throw new ErrorConsulta("Con granularidad 'dia' el período puede tener como máximo 93 días; usa 'mes' para períodos más largos.");
+    var escuela = P.Escuela(r, c);
+    string Clave(DateOnly x) => gran == "dia" ? x.ToString("yyyy-MM-dd") : ConsultasEjemplo.Clave(x, gran);
+    var acc = new SortedDictionary<string, (int Con, int Nue)>(StringComparer.Ordinal);
+    for (var x = d; x <= h; x = x.AddDays(1)) acc.TryAdd(Clave(x), (0, 0));            // incluye períodos en cero
+    foreach (var (dia, con, nue) in c.ConexionesYNuevosPorDia(d, h, escuela)) { var k = Clave(dia); acc[k] = (acc[k].Con + con, acc[k].Nue + nue); }
+    int sc = 0, su = 0;
+    var filas = acc.Select(kv => { sc += kv.Value.Con; su += kv.Value.Nue; return new FilaAcumulada(kv.Key, kv.Value.Con, sc, kv.Value.Nue, su); }).ToList();
+    var act = escuela is null ? c.UsuariosActivos() : null;
+    static double? Pct2(int parte, int total) => total == 0 ? null : Math.Round(100.0 * parte / total, 2);
+    return new Respuesta("conexiones_acumuladas", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
+        new { granularidad = gran, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
+        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones),
+            P.Unir("conexiones_acumuladas y usuarios_acumulados son la suma corrida desde el inicio del período pedido; usuarios_nuevos = usuarios cuya primera conexión del período cae en esa fila.",
+                escuela is null ? c.NotaActivos : "Con filtro de escuela no se informan usuarios_activos ni porcentajes (la tarjeta de Power BI es de toda la plataforma).")),
+        new { total_conexiones = sc, usuarios_conectados = su,
+              usuarios_activos = act?.UsuariosActivos, porcentaje_conexion_usuarios = act is null ? null : Pct2(su, act.UsuariosActivos),
+              usuarios_conectados_alguna_vez = act?.ConectadosAlgunaVez, porcentaje_conectados_alguna_vez = act is null ? null : Pct2(act.ConectadosAlgunaVez, act.UsuariosActivos) });
+}));
+
+app.MapGet("/uso-docentes", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
+{
+    var pd = P.FechaOpcional(r, "periodo_desde");
+    var fecha = pd is null ? P.FechaOpcional(r, "fecha") ?? DateOnly.FromDateTime(DateTime.UtcNow.AddMinutes(-240)) : (DateOnly?)null;   // hoy en Puerto Rico
+    var (_, limite) = P.OrdenLimite(r);
+    var escuela = P.Escuela(r, c);
+    var (todas, total) = c.UsoDocentes(fecha, pd, escuela);
+    var filas = todas.Take(limite).ToList();
+    var seleccion = pd is { } p0 ? (object)new { periodo_desde = p0.ToString("yyyy-MM-dd") } : new { fecha = fecha!.Value.ToString("yyyy-MM-dd") };
+    return new Respuesta("uso_docentes", c.Fuente, "vw_teacher_activities.from_period / to_period (período académico de cada escuela)", seleccion,
+        new { limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, null, filas,
+        P.Unir(c.NotaDocentes, todas.Count == 0
+            ? "NO HAY DATOS: ninguna escuela tiene un período académico que cumpla esa condición."
+            : todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} combinaciones escuela-período; el 'resumen' trae el total de todas." : null),
+        new { escuelas = todas.Select(f => f.Escuela).Distinct().Count(), combinaciones_escuela_periodo = todas.Count,
+              maestros = total.Maestros, con_conexiones = total.ConConexiones, con_planes = total.ConPlanes, planes_con_datos = total.PlanesConDatos,
+              con_grupos = total.ConGrupos, con_asignaciones = total.ConAsignaciones,
+              maestros_sin_conexiones = total.Maestros - total.ConConexiones });
+}));
+
 app.Run();
 
 static IResult Ejecutar(Func<Respuesta> consulta)
@@ -293,6 +338,9 @@ static class P
         return nota;
     }
     public static object Periodo(DateOnly d, DateOnly h) => new { desde = d.ToString("yyyy-MM-dd"), hasta = h.ToString("yyyy-MM-dd") };
+
+    public static DateOnly? FechaOpcional(HttpRequest r, string nombre) =>
+        string.IsNullOrEmpty(r.Query[nombre].FirstOrDefault()) ? null : Fecha(r, nombre);
 
     static DateOnly Fecha(HttpRequest r, string nombre)
     {

@@ -8,6 +8,13 @@ public record FilaComparacion(string Nombre, int PruebasCompletadasA, int Prueba
 public record FilaTendencia(string Periodo, int Conexiones, int? DiferenciaConPeriodoAnterior = null, double? VariacionPct = null);
 public record FilaComparacionEscuela(string Nombre, int ConexionesA, int ConexionesB, int Diferencia, double? VariacionPct);
 public record FilaCatalogoEscuela(string Nombre);
+/// <summary>Conexiones acumuladas (página «Conexiones acumuladas» de Power BI). usuarios_nuevos = usuarios cuya PRIMERA conexión del rango cae en este período.</summary>
+public record FilaAcumulada(string Periodo, int Conexiones, int ConexionesAcumuladas, int UsuariosNuevos, int UsuariosAcumulados);
+/// <summary>Usuarios con suscripción activa (tarjeta «Activos» / «Total de usuarios matrícula» de Power BI) y cuántos se conectaron alguna vez.</summary>
+public record ConteoActivos(int UsuariosActivos, int ConectadosAlgunaVez);
+/// <summary>Uso de la plataforma por los maestros en un período académico (página «Teachers_Activity» de Power BI): maestros DISTINTOS.</summary>
+public record FilaUsoDocentes(string Escuela, string PeriodoDesde, string PeriodoHasta, int Maestros, int ConConexiones,
+    int ConPlanes, int PlanesConDatos, int ConGrupos, int ConAsignaciones);
 /// <summary>Promedio de % Full Quiz. Escuela/Materia son null cuando no se agrupa por ese eje.</summary>
 public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsignadas, int PruebasCompletadas,
     double? PromedioSoloRealizadas, double PromedioTodasLasAsignadas);
@@ -59,4 +66,13 @@ public interface IConsultasUso
     string? NotaPromedioQuiz { get; }
     /// <summary>agrupar: «escuela», «materia» o «escuela_materia».</summary>
     List<FilaPromedioQuiz> PromedioFullQuiz(DateOnly desde, DateOnly hasta, string agrupar, bool desc, int limite, string? escuela);
+    /// <summary>Día por día: conexiones y usuarios nuevos (primera conexión del rango). La API los agrupa y acumula.</summary>
+    List<(DateOnly Dia, int Conexiones, int UsuariosNuevos)> ConexionesYNuevosPorDia(DateOnly desde, DateOnly hasta, string? escuela);
+    /// <summary>Total de la plataforma (no se filtra por escuela, igual que la tarjeta de Power BI).</summary>
+    ConteoActivos UsuariosActivos();
+    string? NotaActivos { get; }
+    /// <summary>Período académico de cada escuela que contiene <paramref name="fecha"/>, o el que empieza en <paramref name="periodoDesde"/>.
+    /// Devuelve las filas por escuela y una fila de total (maestros distintos en todo el resultado).</summary>
+    (List<FilaUsoDocentes> Filas, FilaUsoDocentes Total) UsoDocentes(DateOnly? fecha, DateOnly? periodoDesde, string? escuela);
+    string? NotaDocentes { get; }
 }

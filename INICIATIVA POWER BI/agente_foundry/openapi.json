@@ -334,6 +334,91 @@
           }
         }
       }
+    },
+    "/conexiones-acumuladas": {
+      "get": {
+        "operationId": "conexiones_acumuladas",
+        "summary": "Conexiones y usuarios conectados acumulados, y usuarios activos de la plataforma",
+        "description": "Devuelve, por día, mes, trimestre o año entre dos fechas, las conexiones del período, las conexiones acumuladas (suma corrida desde 'desde'), los usuarios_nuevos (usuarios cuya primera conexión del rango cae en ese período) y los usuarios_acumulados. Es la página «Conexiones acumuladas» y las tarjetas de «% de conexiones» de Power BI. El 'resumen' trae total_conexiones, usuarios_conectados (usuarios distintos del período) y, sin filtro de escuela, usuarios_activos (usuarios con suscripción activa), porcentaje_conexion_usuarios (usuarios conectados del período / activos), usuarios_conectados_alguna_vez y porcentaje_conectados_alguna_vez: úsalos, no los calcules. Úsala para preguntas de cuántos usuarios distintos se conectaron, crecimiento acumulado, usuarios activos o % de usuarios que se conecta.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "name": "granularidad",
+            "in": "query",
+            "required": false,
+            "description": "Cómo agrupar el tiempo. Por defecto mes. 'dia' solo para períodos de hasta 93 días.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dia",
+                "mes",
+                "trimestre",
+                "anio"
+              ],
+              "default": "mes"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/uso-docentes": {
+      "get": {
+        "operationId": "uso_docentes",
+        "summary": "Uso de la plataforma por los maestros en un período académico",
+        "description": "Por escuela y período académico: maestros (distintos, con suscripción activa), con_conexiones (se conectaron en el período), con_planes (crearon planes instruccionales en el período), planes_con_datos (esos planes tienen quizzes o lecciones), con_grupos (crearon grupos en el año académico) y con_asignaciones (han creado alguna asignación). Es la página de uso de maestros de Power BI. Cada escuela tiene su propio calendario: por defecto se usa el período vigente HOY de cada escuela; con 'fecha' el período que contiene esa fecha; con 'periodo_desde' el período que empieza ese día. El 'resumen' trae los totales de maestros distintos de todas las filas (escuelas, maestros, con_conexiones, …, maestros_sin_conexiones): úsalos, no los calcules.",
+        "parameters": [
+          {
+            "name": "fecha",
+            "in": "query",
+            "required": false,
+            "description": "Fecha AAAA-MM-DD: se usa el período académico de cada escuela que la contiene. Si se omite, hoy (período vigente).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "periodo_desde",
+            "in": "query",
+            "required": false,
+            "description": "Fecha AAAA-MM-DD en que EMPIEZA el período (igual al filtro «Periodo desde» de Power BI). Tiene prioridad sobre 'fecha'.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
     }
   },
   "components": {

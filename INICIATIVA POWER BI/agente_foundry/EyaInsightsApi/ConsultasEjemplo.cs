@@ -118,4 +118,42 @@ public class ConsultasEjemplo : IConsultasUso
             acc[Clave(c.Dia, granularidad)] += c.Cantidad;
         return acc.Select(kv => new FilaTendencia(kv.Key, kv.Value)).ToList();
     }
+
+    // ── Conexiones acumuladas y uso de docentes (datos inventados) ─────────────────────
+    public List<(DateOnly Dia, int Conexiones, int UsuariosNuevos)> ConexionesYNuevosPorDia(DateOnly desde, DateOnly hasta, string? escuela)
+    {
+        var sel = _conexiones.Where(c => c.Dia >= desde && c.Dia <= hasta && (escuela is null || c.Escuela == escuela)).ToList();
+        var primera = sel.GroupBy(c => c.Maestro).ToDictionary(g => g.Key, g => g.Min(c => c.Dia));
+        return sel.GroupBy(c => c.Dia).OrderBy(g => g.Key)
+            .Select(g => (g.Key, g.Sum(c => c.Cantidad), g.Select(c => c.Maestro).Distinct().Count(m => primera[m] == g.Key))).ToList();
+    }
+
+    public ConteoActivos UsuariosActivos() => new(Maestros.Length * 4, _conexiones.Select(c => c.Maestro).Distinct().Count());
+    public string? NotaActivos => "Datos de ejemplo: usuarios_activos y usuarios_conectados_alguna_vez son inventados.";
+
+    public (List<FilaUsoDocentes> Filas, FilaUsoDocentes Total) UsoDocentes(DateOnly? fecha, DateOnly? periodoDesde, string? escuela)
+    {
+        // Dos calendarios inventados: escuelas A–F (ago–oct / oct–ene) y G–J (sep–oct / oct–ene).
+        (DateOnly D, DateOnly H)[] Cal(int i) => i < 6
+            ? [(new(2026, 8, 28), new(2026, 10, 23)), (new(2026, 10, 24), new(2027, 1, 8))]
+            : [(new(2026, 9, 12), new(2026, 10, 15)), (new(2026, 10, 16), new(2027, 1, 21))];
+        var filas = new List<FilaUsoDocentes>();
+        for (var i = 0; i < EscuelasActivas.Length; i++)
+        {
+            var esc = EscuelasActivas[i];
+            if (escuela is not null && esc != escuela) continue;
+            foreach (var (d, h) in Cal(i))
+            {
+                if (periodoDesde is { } pd ? d != pd : !(fecha is { } f && f >= d && f <= h)) continue;
+                int m = Maestros.Count(x => x.Escuela == esc), k = (i + d.Month) % 3;
+                filas.Add(new(esc, d.ToString("yyyy-MM-dd"), h.ToString("yyyy-MM-dd"), m, Math.Min(m, k + 1), k % 2, 0, Math.Min(m, k), Math.Min(m, 2)));
+            }
+        }
+        filas = filas.OrderByDescending(f => f.Maestros).ThenBy(f => f.Escuela, StringComparer.Ordinal).ToList();
+        var total = new FilaUsoDocentes("TOTAL", "", "", filas.Sum(f => f.Maestros), filas.Sum(f => f.ConConexiones), filas.Sum(f => f.ConPlanes),
+            filas.Sum(f => f.PlanesConDatos), filas.Sum(f => f.ConGrupos), filas.Sum(f => f.ConAsignaciones));
+        return (filas, total);
+    }
+
+    public string? NotaDocentes => "Datos de ejemplo: maestros y actividades inventados.";
 }

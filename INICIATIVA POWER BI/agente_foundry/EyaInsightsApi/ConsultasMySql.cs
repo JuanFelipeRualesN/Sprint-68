@@ -344,4 +344,95 @@ public class ConsultasMySql : IConsultasUso
         foreach (var (dia, n) in porDia) acc[ConsultasEjemplo.Clave(dia, granularidad)] += n;
         return acc.Select(kv => new FilaTendencia(kv.Key, kv.Value)).ToList();
     }
+
+    // ── Conexiones acumuladas ───────────────────────────────────────────────────────────
+    // Mismo universo que Tendencia (usuarios con escuela, rol ≠ client, sin cuentas de prueba). «Usuario nuevo» = día de su
+    // PRIMERA conexión dentro del rango, así la suma de nuevos = usuarios distintos del rango (la tarjeta «Conectado único»).
+    public List<(DateOnly Dia, int Conexiones, int UsuariosNuevos)> ConexionesYNuevosPorDia(DateOnly desde, DateOnly hasta, string? escuela)
+    {
+        var sql = $@"SELECT x.dia, SUM(x.n) AS conexiones, SUM(x.es_primera) AS nuevos
+            FROM (SELECT d.dia, d.user_id, d.n, d.dia = MIN(d.dia) OVER (PARTITION BY d.user_id) AS es_primera
+                  FROM (SELECT DATE(DATE_ADD(dt.connected_date, INTERVAL {_offsetMin} MINUTE)) AS dia, dt.user_id, COUNT(*) AS n
+                        FROM connected_date dt
+                        JOIN user us ON us.user_id = dt.user_id AND us.role_id <> {RolCliente}
+                        LEFT JOIN school sh ON sh.school_id = us.school_id
+                        WHERE dt.connected_date >= @a AND dt.connected_date < @b AND us.school_id IS NOT NULL
+                          AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
+                        GROUP BY dia, dt.user_id) d) x
+            GROUP BY x.dia ORDER BY x.dia";
+        return Leer(sql, p =>
+        {
+            p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta));
+            p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); ParamsExcl(p);
+        }, r => (DateOnly.FromDateTime(r.GetDateTime(0)), Entero(r, 1), Entero(r, 2)));
+    }
+
+    // Réplica de vw_total_users_with_connection_details (wiki): suscripción con status 'active' (SIN mirar cancellation_date),
+    // rol ≠ client. Solo se aplica la exclusión por ORE y por dominio: la tarjeta de Power BI no tiene escuela, así que el filtro
+    // de página «no es Facilitadores MSJ» no la afecta (cruce 18-nov: 7.277 = 7.277).
+    public ConteoActivos UsuariosActivos()
+    {
+        var fo = new StringBuilder();
+        if (_excl.Activa) for (var i = 0; i < _excl.Ores.Length; i++) fo.Append($" AND sh.ore NOT LIKE @xo{i}");
+        var filtro = $"sph.status = 'active' AND us.role_id <> {RolCliente} {fo} {FD("us")}";
+        var sql = $@"SELECT
+            (SELECT COUNT(DISTINCT us.user_id) FROM user us LEFT JOIN school sh ON sh.school_id = us.school_id
+                    JOIN subscription_profile_history sph ON sph.user_id = us.user_id WHERE {filtro}) AS activos,
+            (SELECT COUNT(DISTINCT us.user_id) FROM user us LEFT JOIN school sh ON sh.school_id = us.school_id
+                    JOIN subscription_profile_history sph ON sph.user_id = us.user_id
+                    WHERE {filtro} AND EXISTS (SELECT 1 FROM connected_date dt WHERE dt.user_id = us.user_id)) AS conectados";
+        return Leer(sql, ParamsExcl, r => new ConteoActivos(Entero(r, 0), Entero(r, 1))).First();
+    }
+
+    public string? NotaActivos =>
+        "usuarios_activos = usuarios con una suscripción en estado 'active' (no se revisa la fecha de cancelación), de cualquier rol salvo client; es la tarjeta «Activos» de Power BI y NO cambia con el filtro de escuela. " +
+        "porcentaje_conexion_usuarios = usuarios_conectados del período / usuarios_activos, igual que la tarjeta «% Conexión usuarios» de Power BI: los conectados se cuentan tengan o no suscripción activa, así que no es una proporción exacta (en teoría puede pasar de 100 %). usuarios_conectados_alguna_vez = activos con al menos una conexión en todo el histórico.";
+
+    // ── Uso de docentes (vw_teacher_activities) ─────────────────────────────────────────
+    // La vista (definición real 18-nov, distinta de la wiki) trae UNA FILA POR DOCENTE Y PERÍODO ACADÉMICO de su escuela, con los
+    // indicadores calculados dentro de ese período. Power BI elige un período y cuenta maestros DISTINTOS (validado 18-nov:
+    // Escuela del Deporte, período 2026-09-12 → 18 · 8 asignaciones · 7 grupos · 0 planes · 0 planes con datos).
+    // Lee bases de producción de otras APIs a través de la vista: los datos son del momento de la consulta (Power BI = foto diaria).
+    string FiltroDocentes()
+    {
+        if (!_excl.Activa) return "";
+        var sb = new StringBuilder();
+        for (var i = 0; i < _excl.Ores.Length; i++) sb.Append($" AND t.ore NOT LIKE @xo{i}");
+        for (var i = 0; i < _excl.Escuelas.Length; i++) sb.Append($" AND COALESCE(t.school, '') <> @xe{i}");
+        return sb.ToString();
+    }
+
+    public (List<FilaUsoDocentes> Filas, FilaUsoDocentes Total) UsoDocentes(DateOnly? fecha, DateOnly? periodoDesde, string? escuela)
+    {
+        const string Indicadores = @"COUNT(DISTINCT t.sie),
+            COUNT(DISTINCT CASE WHEN t.has_connections_current_period = 'SI' THEN t.sie END),
+            COUNT(DISTINCT CASE WHEN t.has_created_instructional_plans_current_period = 'SI' THEN t.sie END),
+            COUNT(DISTINCT CASE WHEN t.plans_have_data_current_period = 'SI' THEN t.sie END),
+            COUNT(DISTINCT CASE WHEN t.has_created_groups_current_year = 'SI' THEN t.sie END),
+            COUNT(DISTINCT CASE WHEN t.has_created_assignments_overall = 'SI' THEN t.sie END)";
+        var donde = $@"FROM vw_teacher_activities t
+            WHERE (CASE WHEN @pd IS NULL THEN @f BETWEEN DATE(t.from_period) AND DATE(t.to_period) ELSE DATE(t.from_period) = @pd END)
+              AND (@e IS NULL OR t.school = @e) {FiltroDocentes()}";
+        void Par(MySqlParameterCollection p)
+        {
+            p.AddWithValue("@f", fecha is { } f ? f.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+            p.AddWithValue("@pd", periodoDesde is { } d ? d.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+            p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); ParamsExcl(p);
+        }
+        static string Dia(MySqlDataReader r, int i) => r.IsDBNull(i) ? "" : DateOnly.FromDateTime(r.GetDateTime(i)).ToString("yyyy-MM-dd");
+        var filas = Leer($@"SELECT t.school, DATE(t.from_period), DATE(t.to_period), {Indicadores} {donde}
+            GROUP BY t.school, DATE(t.from_period), DATE(t.to_period)
+            ORDER BY COUNT(DISTINCT t.sie) DESC, t.school, DATE(t.from_period)", Par,
+            r => new FilaUsoDocentes(r.IsDBNull(0) ? "(sin escuela)" : r.GetString(0), Dia(r, 1), Dia(r, 2),
+                Entero(r, 3), Entero(r, 4), Entero(r, 5), Entero(r, 6), Entero(r, 7), Entero(r, 8)));
+        var total = Leer($"SELECT {Indicadores} {donde}", Par,
+            r => new FilaUsoDocentes("TOTAL", "", "", Entero(r, 0), Entero(r, 1), Entero(r, 2), Entero(r, 3), Entero(r, 4), Entero(r, 5))).First();
+        return (filas, total);
+    }
+
+    public string? NotaDocentes =>
+        "Fuente: vista vw_teacher_activities (la misma de la página de uso de maestros de Power BI). Cuenta maestros DISTINTOS con suscripción activa. " +
+        "Cada escuela tiene su propio calendario: se usa, por escuela, el período académico que contiene la fecha pedida (o el que empieza en periodo_desde). " +
+        "con_conexiones = se conectó dentro de ese período; con_planes / planes_con_datos = creó planes instruccionales en el período / con quizzes o lecciones; " +
+        "con_grupos = creó grupos en el año académico; con_asignaciones = ha creado alguna asignación (histórico). Datos al momento de la consulta (Power BI muestra la foto de su refresco diario). " + NotaExclusion;
 }

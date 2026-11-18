@@ -96,6 +96,39 @@ def generar():
     return usuarios, conexiones, resultados
 
 
+# ── Suscripciones y uso de docentes (generador aparte para no alterar los datos de arriba) ──
+CALENDARIOS = {"A": [(D(2026, 8, 28), D(2026, 10, 23)), (D(2026, 10, 24), D(2027, 1, 8))],      # como las 40 escuelas ORE
+               "B": [(D(2026, 9, 12), D(2026, 10, 15)), (D(2026, 10, 16), D(2027, 1, 21))]}     # como Escuela del Deporte
+INDICADORES = ["has_connections_current_period", "has_created_instructional_plans_current_period",
+               "plans_have_data_current_period", "has_created_groups_current_year", "has_created_assignments_overall"]
+
+
+def suscripciones(usuarios):
+    """(user_id, status). Activo si user_id % 5 != 0; algunos tienen además una fila 'inactive' (prueba el DISTINCT)."""
+    filas = []
+    for u in usuarios:
+        filas.append((u[0], "inactive" if u[0] % 5 == 0 else "active"))
+        if u[0] % 7 == 0:
+            filas.append((u[0], "inactive"))
+    return filas
+
+
+def docentes(usuarios):
+    """Filas de vw_teacher_activities: una por docente × período de su escuela (+ un duplicado con otros indicadores)."""
+    r = random.Random(77)
+    nom = dict(ESCUELAS)
+    filas = []                                   # (sie, nombre, ore, escuela, desde, hasta, [5 x 'SI'/'NO'])
+    for u in usuarios:
+        if u[1] != 5 or u[2] is None:
+            continue
+        for d, h in CALENDARIOS["A" if u[2] <= 4 else "B"]:
+            ind = ["SI" if r.random() < 0.4 else "NO" for _ in INDICADORES]
+            filas.append((f"SIE{u[0]}", f"{u[3]} {u[4]}", ORE[u[2]], nom[u[2]], d, h, ind))
+            if u[0] % 4 == 0:                    # misma persona y período otra vez: cuenta UNA vez y vale el 'SI' de cualquiera
+                filas.append((f"SIE{u[0]}", f"{u[3]} {u[4]}", ORE[u[2]], nom[u[2]], d, h, ["SI" if x == "NO" else "NO" for x in ind]))
+    return filas
+
+
 def a_sql(usuarios, conexiones, resultados):
     q = lambda s: "NULL" if s is None else "'" + str(s).replace("'", "''") + "'"
     f = lambda d: "NULL" if d is None else f"'{d:%Y-%m-%d %H:%M:%S}'"
@@ -113,7 +146,12 @@ def a_sql(usuarios, conexiones, resultados):
            "CREATE TABLE subject (id INT PRIMARY KEY, subject_code VARCHAR(15), subject_name VARCHAR(100));",
            "CREATE TABLE result_generic (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subject_code VARCHAR(15),"
            " quiz_assigned_to_plan_date TIMESTAMP NULL, quiz_taken_date TIMESTAMP NULL, quiz_title VARCHAR(1000));",
-           "CREATE TABLE etl_last_date (id INT PRIMARY KEY, etl_last_date DATETIME(6));"]
+           "CREATE TABLE etl_last_date (id INT PRIMARY KEY, etl_last_date DATETIME(6));",
+           "CREATE TABLE subscription_profile_history (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subscription_id INT, status VARCHAR(25), cancellation_date DATETIME NULL);",
+           # En producción es una VISTA que cruza otras bases; aquí una tabla con las mismas columnas.
+           "CREATE TABLE vw_teacher_activities (teacher_name VARCHAR(200), invitation_code VARCHAR(100), sie VARCHAR(100), ore VARCHAR(100),"
+           " school VARCHAR(250), school_number VARCHAR(50), from_period DATETIME, to_period DATETIME, "
+           + ", ".join(f"{c} VARCHAR(2)" for c in INDICADORES) + ");"]
     out.append("INSERT INTO role VALUES " + ",".join(f"({i},{q(n)})" for i, n in ROLES) + ";")
     out.append("INSERT INTO school (school_id, school_name, school_type, city, ore, ore_id, country, country_iso) VALUES "
                + ",".join(f"({i},{q(n)},'Public','Ciudad Prueba',{q(ORE[i])},1,'Puerto Rico','PR')" for i, n in ESCUELAS) + ";")
@@ -128,6 +166,11 @@ def a_sql(usuarios, conexiones, resultados):
         out.append("INSERT INTO result_generic (user_id, subject_code, quiz_assigned_to_plan_date, quiz_taken_date, quiz_title) VALUES "
                    + ",".join(f"({u},{q(m)},{f(a)},{f(t)},'Prueba sintetica')" for u, m, a, t in resultados[i:i + 500]) + ";")
     out.append("INSERT INTO etl_last_date VALUES (1, '2026-11-12 03:00:00.000000');")
+    out.append("INSERT INTO subscription_profile_history (user_id, subscription_id, status, cancellation_date) VALUES "
+               + ",".join(f"({u},1,{q(st)},'2027-06-30 00:00:00')" for u, st in suscripciones(usuarios)) + ";")
+    out.append(f"INSERT INTO vw_teacher_activities (sie, teacher_name, ore, school, from_period, to_period, {', '.join(INDICADORES)}) VALUES "
+               + ",".join(f"({q(a)},{q(b)},{q(c)},{q(e)},{f(d)},{f(h)}," + ",".join(q(x) for x in ind) + ")"
+                          for a, b, c, e, d, h, ind in docentes(usuarios)) + ";")
     return "\n".join(out) + "\n"
 
 

@@ -56,8 +56,22 @@ def api(ruta, **q):
         return e.code, json.loads(e.read())
 
 
+# Campos que la API calcula a partir de los valores base (porcentajes, variaciones). Este verificador comprueba los valores
+# base por fuerza bruta; si la fila esperada no trae uno de estos campos, se quita de la fila de la API antes de comparar.
+DERIVADOS = {"porcentaje_del_total", "conexiones_por_usuario", "porcentaje_del_total_completadas",
+             "diferencia_con_periodo_anterior", "variacion_pct"}
+
+
+def sin_derivados(obtenido, esperado):
+    if isinstance(obtenido, list) and isinstance(esperado, list) and len(obtenido) == len(esperado) \
+            and all(isinstance(o, dict) and isinstance(e, dict) for o, e in zip(obtenido, esperado)):
+        return [{k: v for k, v in o.items() if k in e or k not in DERIVADOS} for o, e in zip(obtenido, esperado)]
+    return obtenido
+
+
 def igual(nombre, obtenido, esperado):
     global total
+    obtenido = sin_derivados(obtenido, esperado)
     total += 1
     if obtenido != esperado:
         fallos.append(nombre)
@@ -168,6 +182,78 @@ def esperado_tendencia(desde, hasta, g, escuela=None):
     return [dict(periodo=k, conexiones=v) for k, v in sorted(acc.items())]
 
 
+def clave_ac(d, g):
+    return d.isoformat() if g == "dia" else clave(d, g)
+
+
+def esperado_acumuladas(desde, hasta, g, escuela=None):
+    """Brute force: conexiones por período, suma corrida, usuarios nuevos (primera conexión del rango) y acumulados."""
+    a, b = rango(desde, hasta)
+    acc, d = {}, dt.date.fromisoformat(desde)
+    while d <= dt.date.fromisoformat(hasta):
+        acc.setdefault(clave_ac(d, g), [0, 0]); d += dt.timedelta(days=1)
+    primera = {}
+    for u, h in CONEX:
+        if a <= h < b and cuenta_conexion(u) and ESC_DE[u] is not None and (escuela is None or NOM_ESC.get(ESC_DE[u]) == escuela):
+            dia = (h + dt.timedelta(minutes=OFF)).date()
+            acc[clave_ac(dia, g)][0] += 1
+            primera[u] = min(primera.get(u, dia), dia)
+    for u, dia in primera.items():
+        acc[clave_ac(dia, g)][1] += 1
+    filas, sc, su = [], 0, 0
+    for k, (c, n) in sorted(acc.items()):
+        sc += c; su += n
+        filas.append(dict(periodo=k, conexiones=c, conexiones_acumuladas=sc, usuarios_nuevos=n, usuarios_acumulados=su))
+    return filas
+
+
+def esperado_activos():
+    """Réplica de vw_total_users_with_connection_details: status 'active', rol ≠ client, sin ORE DEMOSTRACION (y sin dominio en modo dominio).
+    El filtro por NOMBRE de escuela NO aplica (la tarjeta de Power BI no tiene escuela); usuarios sin escuela quedan fuera si hay exclusión."""
+    activos = {u for u, st in dp.suscripciones(USUARIOS) if st == "active"}
+    def cuenta(u):
+        if ROL[u] == 1 or u not in activos:
+            return False
+        if not EXCL:
+            return True
+        if ESC_DE[u] is None or "DEMOSTRACION" in dp.ORE[ESC_DE[u]]:
+            return False
+        return not (CON_DOMINIO and EMAIL[u].endswith("@" + dp.DOMINIO_INTERNO))
+    tot = {u for u in ROL if cuenta(u)}
+    con = {u for u, _ in CONEX if u in tot}
+    return len(tot), len(con)
+
+
+def esperado_docentes(fecha=None, periodo_desde=None, escuela=None):
+    """Brute force sobre las filas de vw_teacher_activities: maestros DISTINTOS por (escuela, período), 'SI' en cualquiera de sus filas."""
+    excl_nombre = NOMBRES_EXCL if EXCL else set()
+    grupos = {}
+    for sie, _, ore, esc, d, h, ind in dp.docentes(USUARIOS):
+        if EXCL and ("DEMOSTRACION" in ore or esc in excl_nombre):
+            continue
+        if escuela is not None and esc != escuela:
+            continue
+        if periodo_desde is not None:
+            if d.date() != dt.date.fromisoformat(periodo_desde):
+                continue
+        elif not (d.date() <= dt.date.fromisoformat(fecha) <= h.date()):
+            continue
+        g = grupos.setdefault((esc, d.date().isoformat(), h.date().isoformat()), {})
+        prev = g.get(sie, [False] * 5)
+        g[sie] = [p or x == "SI" for p, x in zip(prev, ind)]
+    def fila(nombre, d, h, m):
+        return dict(escuela=nombre, periodo_desde=d, periodo_hasta=h, maestros=len(m),
+                    **{k: sum(1 for v in m.values() if v[i]) for i, k in enumerate(
+                        ["con_conexiones", "con_planes", "planes_con_datos", "con_grupos", "con_asignaciones"])})
+    filas = [fila(e, d, h, m) for (e, d, h), m in grupos.items()]
+    filas.sort(key=lambda f: (-f["maestros"], kn(f["escuela"]), f["periodo_desde"]))
+    todos = {}
+    for m in grupos.values():
+        for sie, v in m.items():
+            todos[sie] = [p or x for p, x in zip(todos.get(sie, [False] * 5), v)]
+    return filas, fila("TOTAL", "", "", todos)
+
+
 print(f"API {BASE}  offset={OFF} min")
 print("\n[salud / frescura]")
 _, s = api("/salud")
@@ -214,6 +300,48 @@ for desde, hasta, g, esc in [("2026-01-01", "2026-11-10", "trimestre", None), ("
     _, r = api("/tendencia-conexiones", **q)
     igual(f"{desde}..{hasta} {g} esc={esc}", r["resultados"], esperado_tendencia(desde, hasta, g, esc))
 
+print("\n[conexiones_acumuladas]")
+for desde, hasta, g, esc in [("2026-01-01", "2026-11-12", "mes", None), ("2026-07-01", "2026-12-31", "trimestre", None),
+                              ("2026-08-25", "2026-09-05", "dia", None), ("2026-01-01", "2026-11-12", "mes", "Escuela Prueba B")]:
+    q = dict(desde=desde, hasta=hasta, granularidad=g)
+    if esc: q["escuela"] = esc
+    _, r = api("/conexiones-acumuladas", **q)
+    esp = esperado_acumuladas(desde, hasta, g, esc)
+    igual(f"{desde}..{hasta} {g} esc={esc}", r["resultados"], esp)
+    igual(f"  resumen total/usuarios {g} esc={esc}", (r["resumen"]["total_conexiones"], r["resumen"]["usuarios_conectados"]),
+          (esp[-1]["conexiones_acumuladas"], esp[-1]["usuarios_acumulados"]))
+_, r = api("/conexiones-acumuladas", desde="2026-07-01", hasta="2026-12-31", granularidad="mes")
+act, alguna = esperado_activos()
+igual("usuarios_activos y conectados alguna vez (réplica de vw_total_users_with_connection_details)",
+      (r["resumen"]["usuarios_activos"], r["resumen"]["usuarios_conectados_alguna_vez"]), (act, alguna))
+igual("porcentaje_conexion_usuarios = conectados / activos (2 decimales, como Power BI)",
+      r["resumen"]["porcentaje_conexion_usuarios"], round(100 * r["resumen"]["usuarios_conectados"] / act, 2))
+_, r = api("/conexiones-acumuladas", desde="2026-07-01", hasta="2026-12-31", escuela="Escuela Prueba B")
+igual("con escuela no se informan activos ni porcentajes", "usuarios_activos" in r["resumen"], False)
+st, _ = api("/conexiones-acumuladas", desde="2026-01-01", hasta="2026-11-12", granularidad="dia")
+igual("granularidad dia con más de 93 días → 400", st, 400)
+_, tr = api("/tendencia-conexiones", desde="2026-07-01", hasta="2026-12-31", granularidad="trimestre")
+_, ac = api("/conexiones-acumuladas", desde="2026-07-01", hasta="2026-12-31", granularidad="trimestre")
+igual("coherencia: conexiones de acumuladas = tendencia", [x["conexiones"] for x in ac["resultados"]], [x["conexiones"] for x in tr["resultados"]])
+
+print("\n[uso_docentes]")
+for kw in [dict(fecha="2026-09-20"), dict(fecha="2026-10-20"), dict(fecha="2026-11-18"), dict(periodo_desde="2026-09-12"),
+           dict(periodo_desde="2026-10-24", escuela="Escuela Prueba B"), dict(fecha="2025-01-01")]:
+    _, r = api("/uso-docentes", limite=50, **kw)
+    filas, tot = esperado_docentes(kw.get("fecha"), kw.get("periodo_desde"), kw.get("escuela"))
+    igual(f"filas {kw}", r["resultados"], filas)
+    igual(f"  resumen {kw}", {k: r["resumen"][k] for k in tot if k in r["resumen"]},
+          {k: v for k, v in tot.items() if k not in ("escuela", "periodo_desde", "periodo_hasta")})
+_, r = api("/uso-docentes", fecha="2025-01-01")
+igual("sin períodos → aviso NO HAY DATOS", "NO HAY DATOS" in r.get("nota", ""), True)
+_, r = api("/uso-docentes", fecha="2026-11-18", limite=2)
+igual("limite 2 → aviso HAY MÁS FILAS y resumen de todas", ("HAY MÁS FILAS" in r.get("nota", ""), len(r["resultados"]), r["resumen"]["maestros"]),
+      (True, 2, esperado_docentes("2026-11-18")[1]["maestros"]))
+_, r = api("/uso-docentes")
+igual("sin fecha usa hoy (período vigente)", "fecha" in r["periodo"], True)
+st, _ = api("/uso-docentes", fecha="2026-02-30")
+igual("fecha inválida → 400", st, 400)
+
 print("\n[buscar_escuela y entradas hostiles]")
 _, r = api("/buscar-escuela", texto="prueba b")
 igual("texto 'prueba b'", r["resultados"], [{"nombre": "Escuela Prueba B"}])
@@ -235,7 +363,7 @@ igual("fecha inválida → 400", st, 400)
 print("\n[referencias en la respuesta]")
 _, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10", limite=2)
 igual("claves de referencia presentes", sorted(k for k in r if k != "resultados" and k != "nota"),
-      sorted(["consulta", "fuente", "columna_fecha", "periodo", "filtros", "datos_hasta", "total_filas", "generado_en"]))
+      sorted(["consulta", "fuente", "columna_fecha", "periodo", "filtros", "datos_hasta", "total_filas", "generado_en", "resumen"]))
 igual("completadas nunca supera a asignadas (coherencia)", all(f["pruebas_completadas"] <= f["pruebas_asignadas"] for f in api("/uso-por-area", desde="2026-01-01", hasta="2026-11-10", limite=50)[1]["resultados"]), True)
 igual("aviso: el período pasa de datos_hasta de PRUEBAS (19-oct)", "AVISO" in r.get("nota", "") and "2026-10-19" in r["nota"], True)
 _, r = api("/conexiones-por-escuela", desde="2026-09-01", hasta="2026-11-10", limite=2)
