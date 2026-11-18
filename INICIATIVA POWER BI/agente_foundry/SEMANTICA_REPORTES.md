@@ -73,3 +73,9 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 - Confirmar con negocio si directores y docentes deben ver todo (`ViewAll`) o solo su escuela.
 - El filtro oculto de las tarjetas de la página «Reporte Académico (end user-demo)».
 - Confirmar con el equipo de datos la fecha del último ETL de `result_generic` (la actividad real de pruebas termina el 23-abr-2026).
+
+## 6. Hallazgos de `sql/10` con datos reales (18-nov-2026)
+- **Conexiones acumuladas:** C = 949 / 7.277 (13,04 %); A = 1.564 conexiones en 2026; B = 789 usuarios distintos en 2026. Jul–sep = 23 y oct + nov (hasta el 11) = 90, igual que el cruce del 12-nov.
+- **Uso de docentes, filas duplicadas:** 2.196 filas para 553 docentes; casi todos salen 4 veces (uno, «Maestro Serv. Servicio», sale 9). Los indicadores cambian entre las filas de un mismo docente, porque dependen del período académico de cada fila. Contar filas infla las tarjetas.
+- **Uso de docentes, cuentas de prueba incluidas:** la vista excluye por número de escuela una lista vieja (`00000X`, `REQ120349DM`, `w45567`, `TRAININGSCHOOLS`, `12.01.2023`), **no por ORE DEMOSTRACION** como el resto de las vistas. Aparecen Escuela Equipo Require (`2023`), Calidad IT Require (`ECITRP0001`), Escalera González (`XXXXDEMO001`) y SMEs (`SME0001`). Esas 4 aportan, en filas, 16 de 47 «conectados», **16 de 20 «con planes»**, **16 de 18 «planes con contenido»**, 19 de 63 «con grupos» y 24 de 141 «con asignaciones». Sin ellas, el uso real de planes es casi nulo (Escuela del Deporte y Gustavo A Becquer).
+- Pendiente: la consulta G (docentes distintos) y las capturas de Power BI, para saber si el tablero cuenta filas y si muestra las escuelas de prueba.
