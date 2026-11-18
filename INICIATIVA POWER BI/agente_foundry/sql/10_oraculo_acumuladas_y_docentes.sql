@@ -74,3 +74,17 @@ GROUP BY school, school_number ORDER BY docentes DESC, school;
 -- F) Docentes duplicados (explica una diferencia filas vs. docentes)
 SELECT sie, teacher_name, COUNT(*) AS veces
 FROM vw_teacher_activities GROUP BY sie, teacher_name HAVING COUNT(*) > 1 ORDER BY veces DESC LIMIT 20;
+
+-- G) Docentes DISTINTOS por indicador (un docente cuenta si tiene 'SI' en cualquiera de sus filas).
+--    18-nov: la vista dio 2.196 filas para 553 docentes (≈4 filas por docente: varios períodos académicos vigentes
+--    a la vez). Si Power BI usa COUNTROWS, sus tarjetas salen infladas; esta consulta da la lectura «por docente».
+SELECT COUNT(*)                                            AS docentes,
+       SUM(con_periodo = 1) AS conectados_periodo, SUM(planes = 1) AS con_planes, SUM(contenido = 1) AS planes_con_contenido,
+       SUM(grupos = 1) AS con_grupos, SUM(asign = 1) AS con_asignaciones
+FROM (SELECT sie,
+             MAX(has_connections_current_period = 'SI')                 AS con_periodo,
+             MAX(has_created_instructional_plans_current_period = 'SI') AS planes,
+             MAX(plans_have_data_current_period = 'SI')                 AS contenido,
+             MAX(has_created_groups_current_year = 'SI')                AS grupos,
+             MAX(has_created_assignments_overall = 'SI')                AS asign
+      FROM vw_teacher_activities GROUP BY sie) t;
