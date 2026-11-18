@@ -123,6 +123,28 @@ app.MapGet("/salud", (IConsultasUso c) => new { estado = "ok", fuente = c.Fuente
 foreach (var (ruta, f) in Rutas.Consultas)
     app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => f(r, c)));
 
+// Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
+// NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
+// y el modelo no debe poder pedir archivos. Solo la usa el panel, vía /asistente/descargas/{id}.
+app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUso c) =>
+{
+    if (consulta == "buscar-escuela" || !Rutas.Consultas.TryGetValue(consulta, out var f))
+        return Results.Json(new { error = "consulta_desconocida", mensaje = $"No se puede exportar '{consulta}'." }, statusCode: 404);
+    var formato = r.Query["formato"].FirstOrDefault() ?? "xlsx";
+    if (formato is not ("xlsx" or "grafica"))
+        return Results.Json(new { error = "parametros_invalidos", mensaje = "'formato' debe ser 'xlsx' o 'grafica'." }, statusCode: 400);
+    return Rutas.Intentar(() =>
+    {
+        if (formato == "xlsx") r.HttpContext.Items["exportar"] = true;           // límite hasta 5000 (P.OrdenLimite)
+        var resp = Columnas.ANodo(f(r, c));
+        if (formato == "xlsx")
+            return Results.File(Excel.Libro(resp), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Columnas.NombreArchivo(resp));
+        return Graficas.Desde(resp) is { } spec
+            ? Results.Json(spec, Columnas.JsonApi)
+            : Results.Json(new { error = "sin_grafica", mensaje = "Esta consulta no tiene gráfica: hacen falta al menos 2 filas y una consulta graficable." }, statusCode: 422);
+    });
+});
+
 app.Run();
 
 /// <summary>Lectura y validación de parámetros (mismos mensajes que la API de ejemplo en Python).</summary>

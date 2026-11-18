@@ -24,13 +24,15 @@ static class Rutas
         ["participacion-escuelas"] = ParticipacionEscuelas,
     };
 
-    /// <summary>Ejecuta una consulta y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base).</summary>
-    public static IResult Ejecutar(Func<Respuesta> consulta)
+    /// <summary>Ejecuta una acción y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base).</summary>
+    public static IResult Intentar(Func<IResult> accion)
     {
-        try { return Results.Ok(consulta()); }
+        try { return accion(); }
         catch (ErrorConsulta e) { return Results.Json(new { error = "parametros_invalidos", mensaje = e.Message }, statusCode: 400); }
         catch (MySqlException) { return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503); }
     }
+
+    public static IResult Ejecutar(Func<Respuesta> consulta) => Intentar(() => Results.Ok(consulta()));
 
     static Respuesta UsoPorArea(HttpRequest r, IConsultasUso c)
     {
