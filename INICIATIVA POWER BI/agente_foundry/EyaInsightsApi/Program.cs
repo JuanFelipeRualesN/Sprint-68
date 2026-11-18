@@ -61,13 +61,19 @@ var asistenteOn = string.Equals(builder.Configuration["Asistente:Habilitado"], "
 if (asistenteOn)
 {
     builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration));
-    var origenes = (builder.Configuration["Asistente:Origenes"] ?? "http://localhost:3000")
-        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes).WithHeaders("content-type").WithMethods("GET", "POST").WithExposedHeaders("content-disposition")));   // GET + content-disposition: descarga directa de /exportar desde el panel
 }
 
+// CORS (A3): orígenes del front por ambiente en Cors:Origenes (variable Cors__Origenes, separados por coma). Aplica a TODAS las rutas
+// (consultas, /exportar y /asistente/*), no solo al asistente. Sin «*» en Production; sin cookies (la sesión va en el header Token).
+// Compatibilidad: sin Cors:Origenes y con el asistente habilitado se usa Asistente:Origenes (por defecto http://localhost:3000, solo desarrollo).
+var origenes = Auth.OrigenesCors(builder.Configuration, asistenteOn, builder.Environment.IsProduction());
+if (origenes.Length > 0)
+    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes)
+        .WithHeaders("content-type", "token", "accept-language").WithMethods("GET", "POST")
+        .WithExposedHeaders("content-disposition").SetPreflightMaxAge(TimeSpan.FromMinutes(10))));
+
 var app = builder.Build();
-if (asistenteOn) app.UseCors("panel");
+if (origenes.Length > 0) app.UseCors("panel");
 
 if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
 {
@@ -88,14 +94,27 @@ if (asistenteOn)
 {
     var local = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
     Console.WriteLine($"Asistente HABILITADO (modelo {app.Services.GetRequiredService<AsistenteFoundry>().Modelo}, {app.Services.GetRequiredService<AsistenteFoundry>().Herramientas} consultas). Solo para desarrollo local.");
+    // Las llamadas internas (herramientas del modelo y descargas) van a la propia API por la dirección en la que ESTE proceso escucha, nunca por el
+    // Host de la petición (ese header lo controla quien llama). Reenvían el Token de quien pregunta, así el alcance (ORE/escuela) sigue aplicando.
+    string BaseLoopback()
+    {
+        var dir = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features
+            .Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses.FirstOrDefault(a => a.StartsWith("http", StringComparison.OrdinalIgnoreCase));
+        if (dir is null) return "http://127.0.0.1:5000";
+        var u = new Uri(dir.Replace("://*", "://127.0.0.1").Replace("://+", "://127.0.0.1").Replace("://[::]", "://127.0.0.1").Replace("://0.0.0.0", "://127.0.0.1"));
+        return $"{u.Scheme}://{u.Authority}";
+    }
     app.MapPost("/asistente/preguntar", async (HttpContext ctx, PreguntaAsistente p, AsistenteFoundry asistente) =>
     {
         if (string.IsNullOrWhiteSpace(p.Pregunta) || p.Pregunta.Trim().Length < 2)
             return Results.Json(new { error = "pregunta_vacia", mensaje = "Escribe una pregunta." }, statusCode: 400);
-        var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
+        var baseUrl = BaseLoopback();
+        var usuario = Auth.Usuario(ctx);
+        var cabeceras = Auth.HeadersParaReenviar(ctx);
         try
         {
-            var r = await asistente.PreguntarAsync(p, (op, a) => asistente.EjecutarAsync(local, baseUrl, claveEsperada, op, a, ctx.RequestAborted), ctx.RequestAborted);
+            var r = await asistente.PreguntarAsync(p, usuario, (op, a) => asistente.EjecutarAsync(local, baseUrl, cabeceras, op, a, ctx.RequestAborted), ctx.RequestAborted);
+            Console.WriteLine($"asistente usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consultas={r.Consultas.Count} descargas={r.Descargas?.Count ?? 0}");
             return Results.Json(r);
         }
         catch (ErrorFoundry e) when (e.FiltroContenido)    // p. ej. el filtro anti-jailbreak de Azure
@@ -114,6 +133,24 @@ if (asistenteOn)
             Console.WriteLine($"Asistente: modelo no disponible ({e.GetType().Name}: {e.Message}).");
             return Results.Json(new { error = "modelo_no_disponible", mensaje = "El asistente no está disponible en este momento. Intenta de nuevo." }, statusCode: 502);
         }
+    });
+
+    // Descarga del Excel de una respuesta: id opaco ↔ consulta, ligado a quien preguntó. Id inexistente, vencido o DE OTRA PERSONA → el mismo 404.
+    // El archivo se reconstruye por loopback con el Token de quien lo pide (alcance aplicado otra vez); la API no guarda datos, solo la consulta.
+    app.MapGet("/asistente/descargas/{id}", async (string id, HttpContext ctx, AsistenteFoundry asistente) =>
+    {
+        var usuario = Auth.Usuario(ctx);
+        if (asistente.BuscarDescarga(id, usuario) is not { } d)
+            return Results.Json(new { error = "descarga_expirada", mensaje = "El enlace expiró; vuelve a preguntar." }, statusCode: 404);
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"{BaseLoopback()}/exportar/{Uri.EscapeDataString(d.Consulta)}?{d.Query}");
+        foreach (var (n, v) in Auth.HeadersParaReenviar(ctx)) req.Headers.TryAddWithoutValidation(n, v);
+        using var resp = await local.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
+        var cuerpo = await resp.Content.ReadAsByteArrayAsync(ctx.RequestAborted);
+        Console.WriteLine($"descarga usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consulta={d.Consulta} estado={(int)resp.StatusCode} bytes={cuerpo.Length}");
+        if (resp.IsSuccessStatusCode)
+            return Results.File(cuerpo, resp.Content.Headers.ContentType?.ToString() ?? "application/octet-stream",
+                resp.Content.Headers.ContentDisposition?.FileNameStar ?? resp.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        return Results.Content(System.Text.Encoding.UTF8.GetString(cuerpo), resp.Content.Headers.ContentType?.ToString() ?? "application/json", System.Text.Encoding.UTF8, (int)resp.StatusCode);
     });
 }
 

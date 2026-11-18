@@ -190,6 +190,17 @@ public sealed class ValidadorSesion
 
 public static class Auth
 {
+    /// <summary>Orígenes CORS permitidos (Cors:Origenes). «*» solo se tolera fuera de Production. En Production sin orígenes no hay CORS (solo mismo origen).</summary>
+    public static string[] OrigenesCors(IConfiguration cfg, bool asistenteOn, bool produccion)
+    {
+        string[] Lista(string? t) => (t ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => x.TrimEnd('/')).ToArray();
+        var o = Lista(cfg["Cors:Origenes"]);
+        if (o.Length == 0 && asistenteOn && !produccion) o = Lista(cfg["Asistente:Origenes"] ?? "http://localhost:3000");
+        if (produccion && o.Any(x => x == "*" || !Uri.TryCreate(x, UriKind.Absolute, out var u) || u.Scheme is not ("http" or "https") || u.AbsolutePath != "/"))
+            throw new InvalidOperationException("Cors:Origenes (variable Cors__Origenes) debe ser una lista de orígenes http(s) exactos, p. ej. https://app.ejemplo.invalid ; en Production no se permite «*».");
+        return o;
+    }
+
     public const string ClaveItem = "eya.usuario";
 
     /// <summary>El usuario autenticado de esta petición (lo deja el middleware; nunca null tras él).</summary>
