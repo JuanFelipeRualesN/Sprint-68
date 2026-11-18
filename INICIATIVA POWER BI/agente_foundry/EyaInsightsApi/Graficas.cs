@@ -40,9 +40,17 @@ static class Graficas
         var filtros = respuesta["filtros"];
 
         var etiquetas = filas.Select(f => Categoria(consulta, f!)).ToList();
-        // uso_docentes puede repetir una escuela en varios períodos académicos: se distingue con el período.
-        if (consulta == "uso_docentes" && etiquetas.Distinct().Count() != etiquetas.Count)
-            etiquetas = filas.Select(f => $"{Columnas.Texto(f!["escuela"])} ({Columnas.Texto(f["periodo_desde"])})").ToList();
+        // Etiquetas repetidas (dos maestros con el mismo nombre; una escuela en varios períodos académicos) se distinguen para que Recharts no las confunda.
+        if (etiquetas.Distinct().Count() != etiquetas.Count)
+        {
+            if (consulta == "uso_docentes") etiquetas = filas.Select(f => $"{Columnas.Texto(f!["escuela"])} ({Columnas.Texto(f["periodo_desde"])})").ToList();
+            else if (consulta == "conexiones_por_maestro") etiquetas = filas.Select(f => $"{Columnas.Texto(f!["nombre"])} ({Columnas.Texto(f["escuela"])})").ToList();
+        }
+        if (etiquetas.Distinct().Count() != etiquetas.Count)       // siguen repetidas (mismo nombre y misma escuela): se numeran
+        {
+            var vistas = new Dictionary<string, int>();
+            etiquetas = etiquetas.Select(e => vistas[e] = vistas.GetValueOrDefault(e) + 1).Zip(etiquetas, (n, e) => n == 1 ? e : $"{e} #{n}").ToList();
+        }
 
         var data = new JsonArray();                                   // objetos planos para Recharts; null se conserva como null
         for (var i = 0; i < filas.Count; i++)

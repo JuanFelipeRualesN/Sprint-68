@@ -24,6 +24,18 @@ static class Rutas
         ["participacion-escuelas"] = ParticipacionEscuelas,
     };
 
+    // Topes internos de las consultas «completas» (la lista entera se trae para dar totales, % y empates exactos).
+    const int TopeMaestros = 5000, TopeEscuelas = 1000;
+
+    /// <summary>Se pidió tope+1 filas: si llegan más que el tope, el resultado está cortado y se recorta al tope.</summary>
+    static (List<T> Lista, bool Cortado) ConTope<T>(List<T> pedida, int tope) =>
+        pedida.Count > tope ? (pedida.Take(tope).ToList(), true) : (pedida, false);
+
+    /// <summary>«HAY MÁS FILAS» en la nota: así lo detectan la hoja Referencias del Excel, hay_mas_filas de la gráfica y el asistente.</summary>
+    static string? NotaTope(bool cortado, string que, int tope) => cortado
+        ? $"HAY MÁS FILAS: existen más de {tope} {que}; solo se consideran los primeros {tope} (los de más conexiones), así que la lista, los totales y los porcentajes NO son completos. No presentes la lista como completa."
+        : null;
+
     /// <summary>Ejecuta una acción y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base).</summary>
     public static IResult Intentar(Func<IResult> accion)
     {
@@ -62,7 +74,7 @@ static class Rutas
     {
         var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
         var escuela = P.Escuela(r, c); var (minC, maxC) = P.RangoConexiones(r);
-        var todasLas = c.ConexionesPorEscuela(d, h, desc, 1000);     // todas las escuelas: permite totales, participación y empates exactos
+        var (todasLas, cortado) = ConTope(c.ConexionesPorEscuela(d, h, desc, TopeEscuelas + 1), TopeEscuelas);     // todas las escuelas: permite totales, participación y empates exactos
         int total = todasLas.Sum(f => f.Conexiones);
         var todas = escuela is null ? todasLas : todasLas.Where(f => f.Nombre == escuela).ToList();   // con filtro, solo esa escuela (el % sigue siendo sobre el total)
         var conFiltroN = minC > 0 || maxC < int.MaxValue;
@@ -72,29 +84,31 @@ static class Rutas
             PorcentajeDelTotal = P.Pct(f.Conexiones, total),
             ConexionesPorUsuario = f.UsuariosConectados == 0 ? null : Math.Round((double)f.Conexiones / f.UsuariosConectados, 1)
         }).ToList();
-        return new Respuesta("conexiones_por_escuela", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
+        var resp = new Respuesta("conexiones_por_escuela", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
             new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", min_conexiones = conFiltroN ? minC : (int?)null, max_conexiones = conFiltroN && maxC < int.MaxValue ? maxC : (int?)null, cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
             P.Unir(P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), conFiltroN ? "Filtro por número de conexiones: una conexión = un día con ingreso (no ingresos dentro del mismo día); «una sola vez» = min_conexiones 1 y max_conexiones 1 dentro del período pedido." : null),
                 P.Empates(todas, limite, f => f.Conexiones, completa: true)),
             new { total_conexiones = total, escuelas_consideradas = todasLas.Count, escuelas_con_conexiones = todasLas.Count(f => f.Conexiones > 0),
                   escuelas_sin_conexiones = todasLas.Count(f => f.Conexiones == 0), escuelas_que_cumplen_el_filtro = conFiltroN ? todas.Count : (int?)null });
+        return resp with { Nota = P.Unir(resp.Nota, NotaTope(cortado, "escuelas", TopeEscuelas)) };
     }
 
     static Respuesta ConexionesPorMaestro(HttpRequest r, IConsultasUso c)
     {
         var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
         var escuela = P.Escuela(r, c); var (minC, maxC) = P.RangoConexiones(r);
-        var todosLos = c.ConexionesPorMaestro(d, h, desc, 5000, escuela);   // todos los maestros: totales, participación y empates exactos
+        var (todosLos, cortado) = ConTope(c.ConexionesPorMaestro(d, h, desc, TopeMaestros + 1, escuela), TopeMaestros);   // todos los maestros: totales, participación y empates exactos
         int total = todosLos.Sum(f => f.Conexiones);
         var conFiltroN = minC > 0 || maxC < int.MaxValue;
         var todos = conFiltroN ? todosLos.Where(f => f.Conexiones >= minC && f.Conexiones <= maxC).ToList() : todosLos;
         var filas = todos.Take(limite).Select(f => f with { PorcentajeDelTotal = P.Pct(f.Conexiones, total) }).ToList();
-        return new Respuesta("conexiones_por_maestro", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
+        var resp = new Respuesta("conexiones_por_maestro", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
             new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", min_conexiones = conFiltroN ? minC : (int?)null, max_conexiones = conFiltroN && maxC < int.MaxValue ? maxC : (int?)null, cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
             P.Unir(P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), conFiltroN ? "Filtro por número de conexiones: una conexión = un día con ingreso; «una sola vez» = min_conexiones 1 y max_conexiones 1 dentro del período pedido." : null),
                 P.Empates(todos, limite, f => f.Conexiones, completa: true)),
             new { total_conexiones_maestros = total, maestros_considerados = todosLos.Count, maestros_con_conexiones = todosLos.Count(f => f.Conexiones > 0),
                   maestros_sin_conexiones = todosLos.Count(f => f.Conexiones == 0), maestros_que_cumplen_el_filtro = conFiltroN ? todos.Count : (int?)null });
+        return resp with { Nota = P.Unir(resp.Nota, NotaTope(cortado, "maestros", TopeMaestros)) };
     }
 
     static Respuesta CompararAreas(HttpRequest r, IConsultasUso c)
@@ -109,8 +123,10 @@ static class Rutas
     {
         var (da, ha) = P.Rango(r, "desde_a", "hasta_a"); var (db, hb) = P.Rango(r, "desde_b", "hasta_b");
         var (desc, limite) = P.OrdenLimite(r);
-        var a = c.ConexionesPorEscuela(da, ha, true, 1000).ToDictionary(f => f.Nombre, f => f.Conexiones);
-        var b = c.ConexionesPorEscuela(db, hb, true, 1000).ToDictionary(f => f.Nombre, f => f.Conexiones);
+        var (la, corteA) = ConTope(c.ConexionesPorEscuela(da, ha, true, TopeEscuelas + 1), TopeEscuelas);
+        var (lb, corteB) = ConTope(c.ConexionesPorEscuela(db, hb, true, TopeEscuelas + 1), TopeEscuelas);
+        var a = la.ToDictionary(f => f.Nombre, f => f.Conexiones);
+        var b = lb.ToDictionary(f => f.Nombre, f => f.Conexiones);
         var todas = a.Keys.Union(b.Keys).Select(n =>
         {
             int va = a.GetValueOrDefault(n), vb = b.GetValueOrDefault(n), dif = vb - va;
@@ -119,12 +135,13 @@ static class Rutas
         var ord = (desc ? todas.OrderByDescending(f => f.Diferencia).ThenByDescending(f => f.Nombre, StringComparer.Ordinal)
                         : todas.OrderBy(f => f.Diferencia).ThenBy(f => f.Nombre, StringComparer.Ordinal)).ToList();
         int ta = a.Values.Sum(), tb = b.Values.Sum();
-        return new Respuesta("comparar_escuelas", c.Fuente, c.ColumnaFechaConexiones, new { a = P.Periodo(da, ha), b = P.Periodo(db, hb) },
+        var resp = new Respuesta("comparar_escuelas", c.Fuente, c.ColumnaFechaConexiones, new { a = P.Periodo(da, ha), b = P.Periodo(db, hb) },
             new { orden = P.Texto(desc), limite, escuela = "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, ord.Take(limite).ToList(),
             P.Unir(P.Nota(c.NotaConexiones, P.Max(ha, hb), c.DatosHastaConexiones),
                 "Diferencia = conexiones del período B menos las del A; con orden desc primero las escuelas que más crecieron, con asc las que más cayeron. Solo escuelas con conexiones en A o B. Si los períodos tienen distinta duración, la comparación no está normalizada."),
             new { total_conexiones_a = ta, total_conexiones_b = tb, diferencia_total = tb - ta, variacion_total_pct = ta == 0 ? (double?)null : Math.Round(100.0 * (tb - ta) / ta, 1),
                   escuelas_comparadas = ord.Count });
+        return resp with { Nota = P.Unir(resp.Nota, NotaTope(corteA || corteB, "escuelas en uno de los períodos", TopeEscuelas)) };
     }
 
     static Respuesta PromedioFullQuiz(HttpRequest r, IConsultasUso c)
@@ -138,7 +155,7 @@ static class Rutas
         return new Respuesta("promedio_full_quiz", c.Fuente, c.ColumnaFechaPruebas, P.Periodo(d, h),
             new { agrupar, orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaPruebas,
             filas, P.Unir(P.Nota(c.NotaPromedioQuiz, h, c.DatosHastaPruebas),
-                hayMas ? $"HAY MÁS FILAS: se muestran solo las primeras {limite} (límite máximo 50); existen más combinaciones con el mismo filtro. No presentes la lista como completa." : null));
+                hayMas ? $"HAY MÁS FILAS: se muestran solo las primeras {limite} (límite máximo {P.MaxLimite(r)}); existen más combinaciones con el mismo filtro. No presentes la lista como completa." : null));
     }
 
     static Respuesta TendenciaConexiones(HttpRequest r, IConsultasUso c)
