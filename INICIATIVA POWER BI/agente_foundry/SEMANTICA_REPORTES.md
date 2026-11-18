@@ -83,3 +83,9 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
   - Consulta G (vista de la wiki, maestros distintos, con escuelas de prueba): 553 docentes · 36 conectados en el período · 10 con planes · 8 con planes con contenido · 16 con grupos · 36 con asignaciones.
   - «Uso de docentes» **cuenta maestros distintos, no filas**: Escuela del Deporte = 18 maestros, 8 con asignaciones (32 filas / 4) y 7 con grupos (28 / 4). ✅ Los duplicados no inflan el tablero.
   - La página filtra por «Periodo desde/hasta» (2026-09-12 → 2026-10-15) y **solo muestra Escuela del Deporte**. No aparecen las escuelas de prueba. La vista de la wiki no tiene esas columnas de período, así que la página lee **otra variante** (página «Teachers_Activity_(admin)»). → `sql/11_vista_real_uso_docentes.sql`.
+
+## 7. «Uso de docentes» validado (18-nov, `sql/12`)
+- **Definición real de `vw_teacher_activities` ≠ wiki**: una fila por docente × período académico de su escuela (`from_period` / `to_period`), sin filtrar el período vigente; trae `ore`; `sie` = `us.identifier`.
+- **Réplica del tablero, período 2026-09-12 → 2026-10-15:** Escuela del Deporte **18 maestros · 8 con asignaciones · 7 con grupos · 0 con planes · 0 con planes con datos** = Power BI. ✅ Fórmula: `COUNT(DISTINCT sie)` con el indicador en 'SI', filtrado por `from_period`.
+- **Calendarios:** las 40 escuelas ORE (489 docentes) comparten períodos (2026-08-28 → 10-23, **2026-10-24 → 2027-01-08 = vigente**, 2027-01-09 → 03-20, 03-21 → 06-06). Escuela del Deporte (18) y otros grupos pequeños (20 y 38 docentes) tienen calendario propio. Las escuelas de prueba tienen períodos de 1 docente con fechas propias.
+- ⚠️ **Hallazgo del tablero:** el filtro «Periodo desde» solo ofrece 2026-09-12 (período ya cerrado, de una sola escuela). El período vigente de las 40 escuelas ORE no se puede elegir. Hay un filtro oculto de visual o de página que conviene revisar con el dueño del informe.
