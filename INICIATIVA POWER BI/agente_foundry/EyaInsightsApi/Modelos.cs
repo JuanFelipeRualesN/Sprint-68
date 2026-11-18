@@ -31,6 +31,8 @@ public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsig
 public record Respuesta(string Consulta, string Fuente, string ColumnaFecha, object Periodo, object Filtros,
     DateOnly? DatosHasta, object Resultados, string? Nota = null, object? Resumen = null)
 {
+    /// <summary>Qué datos incluye esta respuesta según quien la pidió: «todas las escuelas», «ORE …» o «escuela …» (Fase 4 · A2).</summary>
+    public string? Alcance { get; init; }
     public int TotalFilas => Resultados is System.Collections.ICollection c ? c.Count : 0;
     public DateTime GeneradoEn { get; } = DateTime.UtcNow;
 }
@@ -44,6 +46,15 @@ public class ErrorConsulta(string mensaje) : Exception(mensaje);
 /// </summary>
 public interface IConsultasUso
 {
+    /// <summary>
+    /// Vista de las consultas limitada al <paramref name="alcance"/> (A2): el filtro va en SQL (escuela.ore_id / school_id), no sobre filas ya cortadas.
+    /// <see cref="Alcance.Todo"/> devuelve las mismas consultas sin filtro.
+    /// </summary>
+    IConsultasUso Para(Alcance alcance);
+    /// <summary>«todas las escuelas», «ORE &lt;nombre&gt;» o «escuela &lt;nombre&gt;»; va en las referencias de cada respuesta y del Excel.</summary>
+    string DescripcionAlcance { get; }
+    /// <summary>Escuela del usuario (gs_data_analysis.user.school_id) o null si no se encuentra; sirve para el alcance del director.</summary>
+    int? EscuelaDeUsuario(string userId);
     string Fuente { get; }
     string? NotaArea { get; }
     /// <summary>Columna sobre la que se filtra el período en las consultas de pruebas (se cita en la respuesta).</summary>

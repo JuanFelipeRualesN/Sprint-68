@@ -32,13 +32,64 @@ public class ConsultasMySql : IConsultasUso
     readonly object _candado = new();
     DateTime _expira = DateTime.MinValue;
     DateOnly? _hastaPruebas, _hastaConexiones;
+    // A2 — alcance. La instancia raíz (Alcance.Todo) comparte conexión y metadatos con las vistas acotadas que crea Para().
+    readonly ConsultasMySql _raiz;
+    readonly Alcance _alc = Alcance.Todo;
+    string? _descAlcance;
 
     public ConsultasMySql(string cadena, int offsetUtcMinutos, ExclusionCuentas exclusion)
     {
         _cadena = cadena;
         _offsetMin = offsetUtcMinutos;
         _excl = exclusion;
+        _raiz = this;
     }
+
+    ConsultasMySql(ConsultasMySql raiz, Alcance alcance)
+    {
+        _cadena = raiz._cadena; _offsetMin = raiz._offsetMin; _excl = raiz._excl;
+        _raiz = raiz; _alc = alcance;
+    }
+
+    public IConsultasUso Para(Alcance alcance) => alcance.EsTodo ? _raiz : new ConsultasMySql(_raiz, alcance);
+
+    /// <summary>
+    /// Filtro de alcance sobre la escuela (alias <paramref name="sc"/>), SIEMPRE en SQL. Con alcance, un usuario sin escuela queda fuera
+    /// (la comparación con NULL no se cumple). ORE por <c>school.ore_id</c> = OreId de UsersAPI (SUPUESTO sin verificar: ver DISENO_AUTH.md pregunta 8).
+    /// </summary>
+    string FA(string sc)
+    {
+        if (_alc.EsTodo) return "";
+        var sb = new StringBuilder();
+        if (_alc.OreId is not null) sb.Append($" AND {sc}.ore_id = @eya_ore");
+        if (_alc.EscuelaId is not null) sb.Append($" AND {sc}.school_id = @eya_esc");
+        return sb.ToString();
+    }
+
+    void ParamsAlcance(MySqlParameterCollection p)
+    {
+        if (_alc.OreId is { } o) p.AddWithValue("@eya_ore", o);
+        if (_alc.EscuelaId is { } e) p.AddWithValue("@eya_esc", e);
+    }
+
+    public string DescripcionAlcance
+    {
+        get
+        {
+            if (_alc.EsTodo) return "todas las escuelas";
+            if (_descAlcance is not null) return _descAlcance;
+            string? Uno(string sql, Action<MySqlParameterCollection> par) => Leer(sql, par, r => r.IsDBNull(0) ? null : r.GetString(0)).FirstOrDefault();
+            var d = _alc.EscuelaId is { } e
+                ? "escuela " + (Uno("SELECT school_name FROM school WHERE school_id = @e", p => p.AddWithValue("@e", e)) ?? $"#{e}")
+                : "ORE " + (Uno("SELECT MIN(ore) FROM school WHERE ore_id = @o", p => p.AddWithValue("@o", _alc.OreId!.Value)) ?? $"#{_alc.OreId}");
+            return _descAlcance = d;
+        }
+    }
+
+    public int? EscuelaDeUsuario(string userId) =>
+        int.TryParse(userId, NumberStyles.None, CultureInfo.InvariantCulture, out var id)
+            ? Leer("SELECT school_id FROM user WHERE user_id = @u AND school_id IS NOT NULL LIMIT 1", p => p.AddWithValue("@u", id), r => (int?)Entero(r, 0)).FirstOrDefault()
+            : null;
 
     // ── Metadatos que se citan en cada respuesta ────────────────────────────────────────
     string Tz => _offsetMin switch
@@ -84,10 +135,10 @@ public class ConsultasMySql : IConsultasUso
         return sb.ToString();
     }
 
-    string FE(string sc)      // por ORE y por nombre de la escuela (los usuarios sin escuela pasan)
+    string FE(string sc)      // por alcance (A2) y por ORE / nombre de la escuela excluidos (los usuarios sin escuela quedan fuera)
     {
-        if (!_excl.Activa) return "";
-        var sb = new StringBuilder();
+        if (!_excl.Activa) return FA(sc);
+        var sb = new StringBuilder(FA(sc));
         // Misma semántica que las vistas de Power BI: NOT (ore LIKE '%X%'); si la escuela o su ORE son NULL, la fila queda fuera.
         for (var i = 0; i < _excl.Ores.Length; i++) sb.Append($" AND {sc}.ore NOT LIKE @xo{i}");
         for (var i = 0; i < _excl.Escuelas.Length; i++) sb.Append($" AND COALESCE({sc}.school_name, '') <> @xe{i}");
@@ -98,6 +149,7 @@ public class ConsultasMySql : IConsultasUso
 
     void ParamsExcl(MySqlParameterCollection p)
     {
+        ParamsAlcance(p);
         if (!_excl.Activa) return;
         for (var i = 0; i < _excl.Dominios.Length; i++) p.AddWithValue($"@xd{i}", "%@" + _excl.Dominios[i]);
         for (var i = 0; i < _excl.Ores.Length; i++) p.AddWithValue($"@xo{i}", "%" + _excl.Ores[i] + "%");
@@ -115,8 +167,9 @@ public class ConsultasMySql : IConsultasUso
         }
     }
 
-    public DateOnly? DatosHastaPruebas { get { Refrescar(); return _hastaPruebas; } }
-    public DateOnly? DatosHastaConexiones { get { Refrescar(); return _hastaConexiones; } }
+    // «Datos hasta» es de toda la base (no revela nada del resto): lo calcula y cachea la instancia raíz.
+    public DateOnly? DatosHastaPruebas { get { _raiz.Refrescar(); return _raiz._hastaPruebas; } }
+    public DateOnly? DatosHastaConexiones { get { _raiz.Refrescar(); return _raiz._hastaConexiones; } }
 
     // ── Infraestructura ─────────────────────────────────────────────────────────────────
     MySqlConnection Abrir()
@@ -372,7 +425,7 @@ public class ConsultasMySql : IConsultasUso
     // de página «no es Facilitadores MSJ» no la afecta (cruce 18-nov: 7.277 = 7.277).
     public ConteoActivos UsuariosActivos()
     {
-        var fo = new StringBuilder();
+        var fo = new StringBuilder(FA("sh"));      // con alcance, solo usuarios de las escuelas del alcance (los sin escuela quedan fuera)
         if (_excl.Activa) for (var i = 0; i < _excl.Ores.Length; i++) fo.Append($" AND sh.ore NOT LIKE @xo{i}");
         var filtro = $"sph.status = 'active' AND us.role_id <> {RolCliente} {fo} {FD("us")}";
         var sql = $@"SELECT
@@ -381,7 +434,7 @@ public class ConsultasMySql : IConsultasUso
             (SELECT COUNT(DISTINCT us.user_id) FROM user us LEFT JOIN school sh ON sh.school_id = us.school_id
                     JOIN subscription_profile_history sph ON sph.user_id = us.user_id
                     WHERE {filtro} AND EXISTS (SELECT 1 FROM connected_date dt WHERE dt.user_id = us.user_id)) AS conectados";
-        return Leer(sql, ParamsExcl, r => new ConteoActivos(Entero(r, 0), Entero(r, 1))).First();
+        return Leer(sql, ParamsExcl, r => new ConteoActivos(Entero(r, 0), Entero(r, 1))).First();   // ParamsExcl incluye @eya_*
     }
 
     public string? NotaActivos =>
@@ -395,8 +448,11 @@ public class ConsultasMySql : IConsultasUso
     // Lee bases de producción de otras APIs a través de la vista: los datos son del momento de la consulta (Power BI = foto diaria).
     string FiltroDocentes()
     {
-        if (!_excl.Activa) return "";
         var sb = new StringBuilder();
+        // A2: la vista solo trae NOMBRES (escuela y ORE), no ids. Se exige que exista una escuela del alcance con el MISMO nombre de escuela
+        // y el MISMO nombre de ORE (restrictivo: no se filtra por solo uno). SUPUESTO por verificar: nombre de ORE ↔ ore_id es 1:1.
+        if (!_alc.EsTodo) sb.Append($" AND EXISTS (SELECT 1 FROM school sa WHERE sa.school_name = t.school AND sa.ore = t.ore {FA("sa")})");
+        if (!_excl.Activa) return sb.ToString();
         for (var i = 0; i < _excl.Ores.Length; i++) sb.Append($" AND t.ore NOT LIKE @xo{i}");
         for (var i = 0; i < _excl.Escuelas.Length; i++) sb.Append($" AND COALESCE(t.school, '') <> @xe{i}");
         return sb.ToString();

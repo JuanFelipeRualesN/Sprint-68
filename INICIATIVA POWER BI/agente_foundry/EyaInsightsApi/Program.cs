@@ -6,6 +6,10 @@ using EyaInsightsApi;
 using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
+// Autenticación (Fase 4 · A1): Auth:Modo = local (solo desarrollo, solo loopback) | plataforma (Token de la plataforma validado en UsersAPI).
+// En Production solo vale «plataforma» y Auth:UsersApiUrl es obligatoria: si falta, la API no arranca.
+var auth = AuthOpciones.Leer(builder.Configuration);
+auth.ValidarArranque(builder.Configuration, builder.Environment.IsProduction());
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
     o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
@@ -71,19 +75,14 @@ if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
     catch (Exception e) { Console.WriteLine($"No se pudo conectar a MySQL ({e.GetType().Name}): revisa VPN, host, usuario y clave."); throw; }
 }
 
-// Clave de API: se exige el header x-api-key cuando existe EYA_API_KEY (menos en /salud).
-var claveEsperada = app.Configuration["EYA_API_KEY"];
-app.Use(async (ctx, next) =>
-{
-    if (!string.IsNullOrEmpty(claveEsperada) && ctx.Request.Path != "/salud"
-        && ctx.Request.Headers["x-api-key"] != claveEsperada)
-    {
-        ctx.Response.StatusCode = 401;
-        await ctx.Response.WriteAsJsonAsync(new { error = "no_autorizado", mensaje = "Falta o es incorrecto x-api-key." });
-        return;
-    }
-    await next();
-});
+// Autenticación (después de CORS, antes de las rutas). Ver Auth.cs y DISENO_AUTH.md.
+var consultasRaiz = app.Services.GetRequiredService<IConsultasUso>();
+var validador = auth.EsPlataforma ? new ValidadorSesion(auth, new HttpClient(), consultasRaiz.EscuelaDeUsuario) : null;
+app.UsarAutenticacion(auth, validador);
+Console.WriteLine(auth.EsPlataforma
+    ? $"Autenticación: plataforma (UsersAPI {new Uri(auth.UsersApiUrl).Host}, permiso «{auth.Permiso}», caché {auth.CacheSegundos} s)."
+    : "Autenticación: LOCAL (sin validación; solo desarrollo, la API solo escucha en loopback).");
+var claveEsperada = auth.ApiKey;     // loopback del asistente (A3 lo reemplaza por la identidad de quien pregunta)
 
 if (asistenteOn)
 {
@@ -121,7 +120,7 @@ if (asistenteOn)
 app.MapGet("/salud", (IConsultasUso c) => new { estado = "ok", fuente = c.Fuente, datos_hasta_pruebas = c.DatosHastaPruebas, datos_hasta_conexiones = c.DatosHastaConexiones });
 
 foreach (var (ruta, f) in Rutas.Consultas)
-    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => f(r, c)));
+    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => Rutas.Con(f, r, c)));
 
 // Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
 // NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
@@ -136,7 +135,9 @@ app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUs
     return Rutas.Intentar(() =>
     {
         if (formato == "xlsx") r.HttpContext.Items["exportar"] = true;           // límite hasta 5000 (P.OrdenLimite)
-        var resp = Columnas.ANodo(f(r, c));
+        var resp = Columnas.ANodo(Rutas.Con(f, r, c));
+        var u = Auth.Usuario(r.HttpContext);        // auditoría: quién exportó qué (sin token ni datos)
+        Console.WriteLine($"exportar usuario={u.Id} rol={u.Rol} origen={u.Origen} alcance=\"{resp["alcance"]}\" consulta={consulta} formato={formato} filas={resp["resultados"]?.AsArray().Count ?? 0}");
         if (formato == "xlsx")
             return Results.File(Excel.Libro(resp), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Columnas.NombreArchivo(resp));
         return Graficas.Desde(resp) is { } spec
