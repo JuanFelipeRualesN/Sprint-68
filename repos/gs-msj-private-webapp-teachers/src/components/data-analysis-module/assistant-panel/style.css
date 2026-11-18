@@ -208,3 +208,39 @@
     .asst-fab { bottom: 14px; right: 14px; }
     .asst-fab--sobre-chatbot { right: 40px; bottom: 208px; } /* el Chatbot sube a 110 px en móvil */
 }
+
+/* ---- Fase 4: gráficas y descarga de Excel ---- */
+.asst-grafica { margin: 10px 0 0; padding: 8px 6px 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+.asst-grafica--destacada { border-color: #1A7BAA; }
+.asst-grafica-titulo { margin: 0 4px 4px; font-size: 0.78rem; font-weight: 600; color: #0f172a; }
+.asst-grafica-lienzo { width: 100%; min-width: 0; }
+.asst-grafica .asst-aviso-dato { margin: 4px 4px 4px; }
+
+.asst-descarga-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.asst-descarga-fila--destacada .asst-descarga { box-shadow: 0 0 0 2px rgba(26, 123, 170, 0.3); }
+.asst-descarga-nota { font-size: 0.7rem; color: #64748b; }
+.asst-descarga-fila .asst-advertencia { flex-basis: 100%; margin-top: 0; }
+.asst-descarga {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border: none;
+    border-radius: 8px;
+    background: #1A7BAA;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.asst-descarga:hover:not(:disabled) { background: #14638a; }
+.asst-descarga:disabled { opacity: .55; cursor: default; }
+
+.asst-exportar { margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+.asst-exportar-form { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.asst-exportar-form label { display: flex; flex-direction: column; gap: 3px; font-size: 0.72rem; color: #475569; }
+.asst-exportar-form select, .asst-exportar-form input { padding: 6px 8px; font-family: inherit; font-size: 0.78rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #0f172a; }
+.asst-exportar-fechas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.asst-exportar-form .asst-descarga { align-self: flex-start; }
+.asst-panel select:focus-visible, .asst-panel input:focus-visible { outline: 2px solid #1A7BAA; outline-offset: 2px; }
