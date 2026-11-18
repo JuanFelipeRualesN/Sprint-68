@@ -3,6 +3,11 @@ Es una segunda implementación independiente: si el SQL de ConsultasMySql.cs se 
 universo de materias/escuelas, orden, empates, zona horaria...), aquí aparece la diferencia.
 
 Uso:  python3 verificar_api_mysql.py http://127.0.0.1:5101 0        (URL de la API, offset UTC en minutos que usa la API)
+      python3 verificar_api_mysql.py http://127.0.0.1:5101 0 paridad auth
+El 4.º argumento «auth» (Fase 4 · A4) es para la API con Auth__Modo=plataforma apuntando a usersapi_falso.py (puerto 5199): todas las
+comprobaciones de siempre se hacen como admin (Token tok-admin) y se añade el bloque [auth]. Variables de entorno opcionales del bloque:
+EYA_API_KEY (la misma de la API → prueba la identidad de servicio), ORIGEN_FRONT (origen CORS permitido; por defecto https://front.ejemplo.invalid),
+USERSAPI_FALSA (por defecto http://127.0.0.1:5199). Si la API tiene el asistente habilitado con foundry_falso.py, también se prueba /asistente/*.
 """
 import datetime as dt
 import json
@@ -28,6 +33,8 @@ NOM_MAT = dict(dp.MATERIAS)
 #   "dominio":         paridad + Datos__DominiosExcluidos=requiretechnology.com + Datos__EscuelasExcluidas="Escuela Demo T3 School,Escuela Facilitadores MSJ"
 #   "incluir":         Datos__ExcluirCuentasDePrueba=false (no se excluye nada)
 MODO = sys.argv[3] if len(sys.argv) > 3 else "paridad"
+AUTH = len(sys.argv) > 4 and sys.argv[4] == "auth"
+HEADERS = {"Token": "tok-admin"} if AUTH else {}      # con «auth», las comprobaciones de siempre van como admin
 EXCL = MODO != "incluir"
 CON_DOMINIO = MODO == "dominio"
 NOMBRES_EXCL = {"Escuela Facilitadores MSJ"} | ({"Escuela Demo T3 School"} if CON_DOMINIO else set())
@@ -51,7 +58,7 @@ fallos, total = [], 0
 def api(ruta, **q):
     url = f"{BASE}{ruta}?{urllib.parse.urlencode(q)}"
     try:
-        with urllib.request.urlopen(url, timeout=30) as r:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=30) as r:
             return r.status, json.loads(r.read())
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read())
@@ -506,7 +513,7 @@ TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 def api_bin(ruta, **q):
     url = f"{BASE}{ruta}?{urllib.parse.urlencode(q)}"
     try:
-        with urllib.request.urlopen(url, timeout=60) as r:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=60) as r:
             return r.status, dict(r.headers), r.read()
     except urllib.error.HTTPError as e:
         return e.code, dict(e.headers), e.read()
@@ -698,6 +705,203 @@ st, _, cuerpo = api_bin("/exportar/tendencia-conexiones", formato="grafica", des
 igual("un solo período → 422 sin_grafica", (st, json.loads(cuerpo)["error"]), (422, "sin_grafica"))
 st, h, _ = api_bin("/exportar/tendencia-conexiones", desde="2026-10-01", hasta="2026-10-31")
 igual("un solo período sí se puede exportar a Excel (xlsx → 200)", st, 200)
+
+# ───────────────────────── Fase 4: autenticación y alcance (A4) ─────────────────────────
+if AUTH:
+    import os
+    import uuid
+    print("\n[auth: Token de la plataforma, alcance por ORE, CORS y asistente]")
+    USERS = os.environ.get("USERSAPI_FALSA", "http://127.0.0.1:5199")
+    ORIGEN = os.environ.get("ORIGEN_FRONT", "https://front.ejemplo.invalid")
+    CLAVE_SERVICIO = os.environ.get("EYA_API_KEY", "")
+    ESC_ORE2 = {NOM_ESC[s] for s, _ in dp.ESCUELAS if dp.ORE_ID[s] == 2}          # escuelas del ORE 2 (admin-ore tok-ore2)
+    ESC_ORE1 = {NOM_ESC[s] for s, _ in dp.ESCUELAS if dp.ORE_ID[s] == 1}
+    JSON = "Content-Type"
+
+    def http(metodo, ruta, token=None, extra=None, cuerpo=None, **q):
+        """(estado, cabeceras en minúsculas, bytes) sin lanzar en 4xx/5xx."""
+        h = dict(extra or {})
+        if token:
+            h["Token"] = token
+        if cuerpo is not None:
+            h[JSON] = "application/json"
+        url = f"{BASE}{ruta}" + (f"?{urllib.parse.urlencode(q)}" if q else "")
+        req = urllib.request.Request(url, data=json.dumps(cuerpo).encode() if cuerpo is not None else None, headers=h, method=metodo)
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.status, {k.lower(): v for k, v in r.headers.items()}, r.read()
+        except urllib.error.HTTPError as e:
+            return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read()
+
+    def jget(ruta, token=None, **q):
+        st, h, c = http("GET", ruta, token, None, None, **q)
+        try:
+            return st, json.loads(c)
+        except ValueError:
+            return st, {}
+
+    def stub(metodo, ruta):
+        with urllib.request.urlopen(urllib.request.Request(USERS + ruta, data=b"" if metodo == "POST" else None, method=metodo), timeout=10) as r:
+            return json.loads(r.read())
+
+    CON = dict(desde="2026-01-01", hasta="2026-11-10")
+
+    # 1) quién entra
+    st, r = jget("/conexiones-por-escuela", None, **CON)
+    igual("sin Token → 401 no_autorizado", (st, r.get("error")), (401, "no_autorizado"))
+    st, r = jget("/conexiones-por-escuela", "token-que-no-existe", **CON)
+    igual("Token que UsersAPI rechaza → 401 no_autorizado", (st, r.get("error")), (401, "no_autorizado"))
+    st, r = jget("/conexiones-por-escuela", "tok-teacher", **CON)
+    igual("rol teacher (5) → 403 sin_permiso", (st, r.get("error")), (403, "sin_permiso"))
+    st, r = jget("/conexiones-por-escuela", "tok-ore-sin-ore", **CON)
+    igual("admin-ore SIN OreId → 403 (nunca «todo»)", (st, r.get("error")), (403, "sin_permiso"))
+    st, r = jget("/conexiones-por-escuela", "tok-director-x", **CON)
+    igual("director cuya escuela no se encuentra → 403", (st, r.get("error")), (403, "sin_permiso"))
+    st, h, _ = http("GET", "/salud")
+    igual("/salud sin Token → 200", st, 200)
+
+    # 2) admin = lo de siempre (todas las escuelas)
+    st, r = jget("/conexiones-por-escuela", "tok-admin", limite=50, **CON)
+    esp = esperado_escuelas(CON["desde"], CON["hasta"], True, 50)
+    igual("admin: conexiones-por-escuela = fuerza bruta de TODAS las escuelas y alcance «todas las escuelas»",
+          (st, sin_derivados(r["resultados"], esp), r["alcance"]), (200, esp, "todas las escuelas"))
+
+    # 3) admin-ore (ORE 2): solo sus escuelas, en todas las consultas
+    def solo_ore2(nombre, filas, campo="nombre", esperado=None):
+        nombres = [f[campo] for f in filas]
+        igual(f"admin-ore: {nombre} → solo escuelas del ORE 2" + (" y = fuerza bruta" if esperado is not None else ""),
+              (sorted(set(nombres) - ESC_ORE2), nombres if esperado is None else sin_derivados(filas, esperado)),
+              ([], nombres if esperado is None else esperado))
+
+    st, r = jget("/conexiones-por-escuela", "tok-ore2", limite=50, **CON)
+    solo_ore2("conexiones-por-escuela", r["resultados"], esperado=[f for f in esperado_escuelas(CON["desde"], CON["hasta"], True, 5000) if f["nombre"] in ESC_ORE2])
+    igual("admin-ore: alcance declarado y total = suma de sus escuelas", (r["alcance"], r["resumen"]["total_conexiones"]),
+          ("ORE MUNICIPIO SEGUNDO", sum(f["conexiones"] for f in esperado_escuelas(CON["desde"], CON["hasta"], True, 5000) if f["nombre"] in ESC_ORE2)))
+    st, r = jget("/conexiones-por-maestro", "tok-ore2", limite=50, **CON)
+    solo_ore2("conexiones-por-maestro", r["resultados"], campo="escuela",
+              esperado=[f for f in esperado_maestros(CON["desde"], CON["hasta"], True, 5000) if f["escuela"] in ESC_ORE2][:50])
+    st, r = jget("/participacion-escuelas", "tok-ore2", limite=50, **CON)
+    solo_ore2("participacion-escuelas", r["resultados"], esperado=[f for f in ordenar_participacion(esperado_participacion(CON["desde"], CON["hasta"]), True) if f["nombre"] in ESC_ORE2])
+    st, r = jget("/uso-docentes", "tok-ore2", fecha="2026-10-01", limite=50)
+    solo_ore2("uso-docentes", r["resultados"], campo="escuela")
+    igual("admin-ore: uso-docentes no suma maestros de otras escuelas en el total",
+          r["resumen"]["maestros"] if "maestros" in r.get("resumen", {}) else None,
+          sum(f["maestros"] for f in r["resultados"]) if "maestros" in r.get("resumen", {}) else None)
+    st, r = jget("/buscar-escuela", "tok-ore2", texto="Prueba", limite=50)
+    solo_ore2("buscar-escuela (texto «Prueba»)", r["resultados"])
+    st, r = jget("/uso-por-area", "tok-ore2", limite=50, **CON)
+    igual("admin-ore: uso-por-area no cuenta pruebas de otros ORE (total ≤ el de todas las escuelas, y el ORE 2 tiene estudiantes con pruebas)",
+          (st, 0 < r["resumen"]["total_pruebas_asignadas"] < jget("/uso-por-area", "tok-admin", limite=50, **CON)[1]["resumen"]["total_pruebas_asignadas"]), (200, True))
+    st, rt = jget("/tendencia-conexiones", "tok-ore2", granularidad="mes", **CON)
+    igual("admin-ore: tendencia suma lo mismo que conexiones-por-escuela de su ORE",
+          sum(f["conexiones"] for f in rt["resultados"]), jget("/conexiones-por-escuela", "tok-ore2", limite=50, **CON)[1]["resumen"]["total_conexiones"])
+    st, r = jget("/promedio-full-quiz", "tok-ore2", agrupar="escuela", limite=50, **CON)
+    igual("admin-ore: promedio-full-quiz (si la fuente lo calcula) solo de sus escuelas", sorted({f["escuela"] for f in r.get("resultados", [])} - ESC_ORE2), [])
+    for ruta in ("/patrones-conexion", "/conexiones-acumuladas"):
+        st, r = jget(ruta, "tok-ore2", **CON)
+        igual(f"admin-ore: {ruta[1:]} responde 200 con alcance de su ORE", (st, r.get("alcance")), (200, "ORE MUNICIPIO SEGUNDO"))
+    # una escuela de OTRO ORE se trata como inexistente: mismo 400 (no se revela que existe)
+    st, r = jget("/conexiones-por-maestro", "tok-ore2", escuela="Escuela Prueba A", **CON)
+    st2, r2 = jget("/conexiones-por-maestro", "tok-ore2", escuela="Escuela Prueba Z", **CON)
+    igual("escuela de OTRO ORE → 400 igual que una inexistente (mismo código y texto salvo el nombre)",
+          (st, r["error"], r["mensaje"].replace("Escuela Prueba A", "X")), (st2, r2["error"], r2["mensaje"].replace("Escuela Prueba Z", "X")))
+    # ORE 1 no ve el ORE 2
+    st, r = jget("/conexiones-por-escuela", "tok-ore1", limite=50, **CON)
+    igual("admin-ore del ORE 1: nada de las escuelas del ORE 2", sorted({f["nombre"] for f in r["resultados"]} & ESC_ORE2), [])
+    # director: solo su escuela
+    st, r = jget("/conexiones-por-maestro", "tok-director-1", limite=50, **CON)
+    igual("director (user 1): solo maestros de su escuela y alcance «escuela …»", (st, {f["escuela"] for f in r["resultados"]}, r["alcance"]),
+          (200, {"Escuela Prueba A"}, "escuela Escuela Prueba A"))
+
+    # 4) exportaciones con alcance: xlsx y gráfica
+    _, h, cuerpo = http("GET", "/exportar/conexiones-por-maestro", "tok-ore2", None, None, **CON)
+    hojas, _ = leer_xlsx.leer(cuerpo, con_formulas=True)
+    cab = hojas["Datos"][0]
+    col = cab.index("Escuela") if "Escuela" in cab else 1
+    igual("xlsx de admin-ore: ninguna fila de otro ORE, y la hoja Referencias dice el alcance",
+          (sorted({f[col] for f in hojas["Datos"][1:] if f and f[col] is not None} - ESC_ORE2), tabla_referencias(hojas).get("Alcance")), ([], "ORE MUNICIPIO SEGUNDO"))
+    st, g = jget("/exportar/conexiones-por-escuela", "tok-ore2", formato="grafica", **CON)
+    igual("gráfica de admin-ore: solo categorías de su ORE", (st, sorted({d["categoria"] for d in g["data"]} - ESC_ORE2)), (200, []))
+    st, _, cuerpo = http("GET", "/exportar/conexiones-por-maestro", "tok-ore2", None, None, escuela="Escuela Prueba A", **CON)
+    igual("xlsx de una escuela de otro ORE → 400", st, 400)
+    st, _, _ = http("GET", "/exportar/conexiones-por-maestro", None, None, None, **CON)
+    igual("exportar sin Token → 401", st, 401)
+
+    # 5) identidad de servicio
+    if CLAVE_SERVICIO:
+        st, _, _ = http("GET", "/conexiones-por-escuela", None, {"x-api-key": CLAVE_SERVICIO}, None, **CON)
+        igual("x-api-key correcta sin Token → 200 (servicio, todas las escuelas)", st, 200)
+        st, _, _ = http("GET", "/conexiones-por-escuela", None, {"x-api-key": CLAVE_SERVICIO + "x"}, None, **CON)
+        igual("x-api-key incorrecta → 401", st, 401)
+    else:
+        print("  · (sin EYA_API_KEY en el entorno: no se prueba la identidad de servicio)")
+
+    # 6) caché y falla cerrada
+    nuevo = "tok-admin-" + uuid.uuid4().hex
+    stub("POST", "/reiniciar")
+    estados = [http("GET", "/conexiones-por-escuela", nuevo, None, None, limite=1, **CON)[0] for _ in range(5)]
+    igual("caché: 5 peticiones con el mismo Token = 1 llamada a UsersAPI", (estados, stub("GET", "/llamadas")["llamadas"]), ([200] * 5, 1))
+    stub("POST", "/caer")
+    try:
+        st, r = jget("/conexiones-por-escuela", "tok-admin-" + uuid.uuid4().hex, **CON)
+    finally:
+        stub("POST", "/levantar")
+    igual("UsersAPI caída (Token sin caché) → 503 autenticacion_no_disponible", (st, r.get("error")), (503, "autenticacion_no_disponible"))
+    st, r = jget("/conexiones-por-escuela", "tok-admin-" + uuid.uuid4().hex, **CON)
+    igual("UsersAPI repuesta → vuelve a responder 200 (el 503 no se cachea)", st, 200)
+
+    # 7) CORS
+    st, h, _ = http("OPTIONS", "/exportar/uso-por-area", None, {"Origin": ORIGEN, "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "token"})
+    igual("preflight sin Token desde el origen del front → 204, permite el header token (no 401)",
+          (st, h.get("access-control-allow-origin"), "token" in h.get("access-control-allow-headers", "").lower()), (204, ORIGEN, True))
+    st, h, _ = http("OPTIONS", "/exportar/uso-por-area", None, {"Origin": "https://otro-origen.invalid", "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "token"})
+    igual("preflight desde otro origen → sin cabeceras CORS", h.get("access-control-allow-origin"), None)
+    st, h, _ = http("GET", "/exportar/uso-por-area", "tok-admin", {"Origin": ORIGEN}, None, **CON)
+    igual("GET desde el origen del front expone content-disposition", (st, "content-disposition" in h.get("access-control-expose-headers", "").lower()), (200, True))
+
+    # 8) asistente (necesita foundry_falso.py y Asistente__Habilitado=true; si no, se omite)
+    st, _, _ = http("POST", "/asistente/preguntar", "tok-ore2", None, {"pregunta": "hola"})
+    if st == 404:
+        print("  · (asistente no habilitado: no se prueban /asistente/*)")
+    else:
+        def pregunta(token, texto, conversacion=None):
+            cuerpo = {"pregunta": texto}
+            if conversacion:
+                cuerpo["conversacion_id"] = conversacion
+            st, _, c = http("POST", "/asistente/preguntar", token, None, cuerpo)
+            return st, json.loads(c)
+
+        igual("asistente sin Token → 401", http("POST", "/asistente/preguntar", None, None, {"pregunta": "hola"})[0], 401)
+        igual("asistente con rol teacher → 403", http("POST", "/asistente/preguntar", "tok-teacher", None, {"pregunta": "hola"})[0], 403)
+        st, r = pregunta("tok-ore2", "dame la lista de maestros en Excel")
+        d = (r.get("descargas") or [{}])[0]
+        igual("asistente (admin-ore): descargas[] con id, nombre y url, destacar=true si pidió Excel; referencia con el alcance",
+              (st, len(r["descargas"]), d.get("url") == "/asistente/descargas/" + d.get("id", "?"), d.get("destacar"), r["referencias"][0].get("alcance")),
+              (200, 1, True, True, "ORE MUNICIPIO SEGUNDO"))
+        st, h, cuerpo = http("GET", d["url"], "tok-ore2")
+        hojas, _ = leer_xlsx.leer(cuerpo, con_formulas=True)
+        cab = hojas["Datos"][0]
+        col = cab.index("Escuela") if "Escuela" in cab else 1
+        igual("el enlace baja el .xlsx con el Token: content-disposition y solo filas de su ORE",
+              (st, h.get("content-type"), d["nombre"] in h.get("content-disposition", ""), sorted({f[col] for f in hojas["Datos"][1:] if f and f[col]} - ESC_ORE2)),
+              (200, TIPO_XLSX, True, []))
+        igual("la descarga de otra persona (admin-ore del ORE 1) → 404 descarga_expirada, igual que un id inventado",
+              (http("GET", d["url"], "tok-ore1")[0], http("GET", "/asistente/descargas/inventado", "tok-ore2")[0], json.loads(http("GET", d["url"], "tok-ore1")[2])["error"]),
+              (404, 404, "descarga_expirada"))
+        igual("la descarga sin Token → 401", http("GET", d["url"])[0], 401)
+        st, r = pregunta("tok-ore2", "AJENA dime los maestros de la escuela A")
+        igual("asistente: el admin-ore pregunta por una escuela de otro ORE → la consulta falla (400) y no recibe datos ni descargas",
+              (st, [c["estado"] for c in r["consultas"]], r.get("descargas")), (200, [400], None))
+        st, r = pregunta("tok-ore2", "DUP maestros")
+        igual("asistente: dos consultas idénticas en el turno → una sola descarga (dedupe), destacar=false si no pidió Excel", (len(r["descargas"]), r["descargas"][0]["destacar"]), (1, False))
+        st, r = pregunta("tok-ore2", "TENDENCIA grafica de conexiones por mes")
+        igual("asistente: consulta graficable → graficas[] (formato Recharts) con destacar=true si pidió gráfica",
+              (len(r["graficas"]), r["graficas"][0]["tipo"], r["graficas"][0]["destacar"]), (1, "line", True))
+        st, r1 = pregunta("tok-ore2", "primera")
+        st, r2 = pregunta("tok-ore1", "segunda", r1["conversacion_id"])
+        st, r3 = pregunta("tok-ore2", "tercera", r1["conversacion_id"])
+        igual("conversaciones: otra persona con tu conversacion_id empieza una nueva; tú continúas la tuya",
+              (r2["conversacion_id"] != r1["conversacion_id"], r3["conversacion_id"] == r1["conversacion_id"]), (True, True))
 
 print(f"\nResumen: {total - len(fallos)}/{total} comprobaciones coinciden.")
 sys.exit(1 if fallos else 0)
