@@ -96,3 +96,8 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 - Contrato del agente en `openapi.json` (10 operaciones) e instrucciones (regla 2a: uso_docentes no exige fechas).
 - Verificación (MySQL 8.0.46, datos sintéticos): `pruebas_mysql/verificar_api_mysql.py` **66/66 en los tres modos** (paridad, dominio, incluir), con 29 comprobaciones nuevas. El verificador ya no compara los campos derivados (porcentajes, variaciones) que no recalcula.
 - Pendiente con la base real: `correr_api_mysql.sh` y comparar `/conexiones-acumuladas?desde=2026-07-01&hasta=2026-11-18` (131 / 95 / 7.277 / 1,31 %) y `/uso-docentes?periodo_desde=2026-09-12` (Escuela del Deporte 18 / 8 / 7 / 0 / 0).
+
+## 9. API contra la base real, validada con Power BI (18-nov, 16:09 UTC)
+- `/conexiones-acumuladas` (2026-07-01 → 2026-11-18, trimestre): **131 conexiones · 95 usuarios conectados · 7.277 activos · 1,31 %** = tarjetas de «Reporte de Conexión» y «% de Conexiones y usuarios». Por trimestre: T3 23 / T4 108. Conectados alguna vez: 949 (13,04 %). ✅
+- `/uso-docentes?periodo_desde=2026-09-12`: Escuela del Deporte **18 maestros · 8 con asignaciones · 7 con grupos · 0 con planes · 0 con planes con datos** = página de uso de maestros. ✅ (con_conexiones = 1 coincide con el oráculo SQL 12.)
+- La API avisó que sus datos llegan al 17-nov; no cambió las cifras.
