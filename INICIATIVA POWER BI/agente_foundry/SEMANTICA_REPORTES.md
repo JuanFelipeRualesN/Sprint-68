@@ -2,17 +2,22 @@
 
 Objetivo: que el agente responda **lo mismo que el tablero** y poder probarlo **sin abrir Power BI**.
 Fuentes: `repos/gs-msj-private-webapp-teachers` (frontend), `repos/gs-base-api/DataAnalysisAPI` (backend), modelo `Reports_Semantic_Model` (ver `CRUCE_POWER_BI.md`).
-La wiki `msj-and-private.wiki` (Azure DevOps) pide credenciales y no se pudo leer desde la sesión en la nube. Si contradice algo de aquí, manda la wiki.
+Wiki `msj-and-private.wiki`, página «PowerBI Data Analysis Dashboard Setup and Breakdown» (leída el 18-nov-2026) y `gs-base-api` rama `main` en Azure DevOps (`PowerBIController.cs`, `PowerBI.cs`).
+⚠️ La copia local `repos/gs-base-api` está desactualizada (equivale a `master`): no trae `PowerBIController.cs` ni `PowerBI.cs`. Hay que sincronizarla desde `main`.
 
 ## 1. Cómo llega el reporte al usuario
 | Capa | Qué hace | Dónde |
 |---|---|---|
 | Menú de reportes | 5 categorías y quién las ve: **Usuarios** (admin, admin-ORE, director, employee), **Conexiones** (admin, admin-ORE, director; el docente ve «actividad de estudiantes»), **Académico** (admin, admin-ORE para la página PBI), **Administrativo** (solo admin) | `src/reportConfig.js` |
-| Embed de Power BI | El front solo envía `reportId` + `workspaceId` a la DataWarehouse API (`getPowerBIReportsAPI`), que devuelve `embedToken`. Panel de filtros oculto, sin navegación entre páginas | `data-analysis-module/powerbi-embed/index.js` |
+| Embed de Power BI | El front envía `reportId` + `workspaceId` a `GET /dataanalysisapi/embed-powerbi-info`. El backend obtiene un token del service principal y llama a `GenerateToken` con una identidad **RLS** que depende de la sesión (ver §1b). Panel de filtros oculto, sin navegación entre páginas | `powerbi-embed/index.js` → `PowerBIController.cs` → `PowerBI.cs` |
 | Descargas Excel | Componentes `REPORT_USER / CONNECTIONS / ACADEMICS / STUDENT_ACTIVITIES_TEACHER` → DataAnalysisAPI (SQL directo a tablas, no a vistas) | `DataAnalysisAPI/*Infrastructure/Dapper` |
 | Asistente | Panel junto al tablero → `EyaInsightsApi /asistente/preguntar` | `assistant-panel/` |
 
-⚠️ El backend que genera el `embedToken` (y que decidiría si hay RLS por ORE o escuela) **no está en estos repos**. Hay que confirmarlo en la wiki o con el equipo antes de dar cifras por rol.
+## 1b. Alcance de los datos (RLS): confirmado en wiki y código
+- Si la sesión tiene `OreId` (admin-ORE): rol RLS **`Admin_ORE_Filter`**, regla `[ore] = USERNAME()`. Solo ve su ORE.
+- Si no lo tiene (admin, director, docente, employee): rol **`ViewAll`**. Ve **todos** los datos. El menú limita qué páginas ve cada rol, pero no filtra filas: un director no queda limitado a su escuela.
+- ⚠️ **Discrepancia wiki vs. código:** la wiki dice `username = oreId`, pero en `main` el código envía `username = "ORE"` fijo. Con la regla `[ore] = USERNAME()`, el admin-ORE solo vería filas cuyo ORE se llame literalmente «ORE», o sea nada o un filtro equivocado. Hay que revisar la regla real en *Manage roles* del modelo y probar el embed con un usuario admin-ORE.
+- **Para el agente:** las cifras validadas (113 / 14 / 84…) corresponden a `ViewAll`. Para un admin-ORE, el agente tiene que recibir el ORE del usuario de sesión y filtrar igual que la regla RLS; hoy no lo hace.
 
 ## 2. Tres fuentes y sus criterios
 | Criterio | Power BI (vistas `vw_*`) | Excel DataAnalysisAPI (tablas) | API del agente (modo paridad) |
@@ -24,9 +29,12 @@ La wiki `msj-and-private.wiki` (Azure DevOps) pide credenciales y no se pudo lee
 | Pruebas | solo estudiantes (`role_id = 3`) | solo estudiantes | solo estudiantes |
 | Filtro de fecha en pruebas | año académico por **mes de inicio ≥ 8** + `period_no` | `period_from` entre fechas, o `academic_year_id` | igual que Power BI |
 | «Conectados» | `DISTINCTCOUNT(email)` | usuarios distintos (`UserId`) | `usuarios_conectados` |
-| Alcance por rol | ¿RLS? (sin confirmar) | ORE → escuelas del ORE (`AutoFilters.GetOreSchoolIds`); docente → `user_relation` | no aplica alcance por rol (vista de administrador) |
+| Alcance por rol | RLS: admin-ORE → su ORE; resto → todo | ORE → escuelas del ORE (`AutoFilters.GetOreSchoolIds`); docente → `user_relation` | no aplica alcance por rol (vista de administrador) |
 
 Consecuencia: **el Excel descargado NO es una referencia válida** para la paridad (incluye cuentas de prueba y usuarios sin escuela). La referencia es el tablero, y el tablero es reproducible con SQL sobre las vistas.
+
+## 2b. Vistas del modelo (DDL en la wiki)
+`vw_connections_report`, `vw_not_connected` (usuarios con suscripción activa y `cancellation_date >= NOW()` sin ninguna conexión histórica), `vw_teacher_activities` (cruza `gs_users_db_prod`, `gs_teachers_web_db_prod`, `gs_subscription_api_db_prod` y `gs_schools_api_db_prod`, período académico vigente), `vw_total_users_with_connection_details` (conectados / total con suscripción activa → %), `vw_users_report`, `vw_users_details_report`, `vw_academics_average`, `vw_academics_details`. Todas excluyen `ore LIKE '%DEMOSTRACION%'`. Las dos de suscripción dependen de `NOW()`, así que su resultado cambia con el día en que se consultan.
 
 ## 3. Glosario (definición operativa = la del tablero)
 - **Conexión**: fila de `connected_date` (1 por usuario y día) de un usuario con escuela, rol ≠ client, fuera de ORE DEMOSTRACION. Día en hora de Puerto Rico (UTC-4).
@@ -43,6 +51,7 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 4. Power BI solo se abre para casos que el oráculo no cubre (pendiente: tarjetas de la página demo 1.029 / 206 / 823 / 135).
 
 ## 5. Pendientes que cambian cifras
-- Confirmar si el embed aplica **RLS** por ORE o escuela. Si lo hace, el agente tiene que recibir el alcance del usuario de sesión (hoy responde como administrador global).
+- RLS de admin-ORE: confirmar la regla real (`username = "ORE"` en el código vs. `oreId` en la wiki) y pasar el ORE de la sesión al agente.
+- Confirmar con negocio si directores y docentes deben ver todo (`ViewAll`) o solo su escuela.
 - El filtro oculto de las tarjetas de la página «Reporte Académico (end user-demo)».
 - Confirmar con el equipo de datos la fecha del último ETL de `result_generic` (la actividad real de pruebas termina el 23-abr-2026).

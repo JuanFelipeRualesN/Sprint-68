@@ -12,7 +12,7 @@
 --   Period                     = 'P' + period_no
 -- Filtro de página de «Reporte de Conexión»: school_name <> 'ESCUELA FACILITADORES MSJ' (el modelo pone el nombre en mayúsculas y sin espacios sobrantes).
 -- Ya incluido en las vistas: ORE NOT LIKE '%DEMOSTRACION%', usuarios sin escuela fuera, rol client fuera (conexiones), solo estudiantes (pruebas).
--- Si algún nombre de columna no existe, correr antes `DESCRIBE vw_connections_report; DESCRIBE vw_academics_details;` (sql/08).
+-- Columnas confirmadas con el DDL de la wiki. Cifras = rol RLS «ViewAll» (admin). Para admin-ORE añadir AND ore = '<ORE del usuario>'.
 -- =====================================================================================
 USE gs_data_analysis;
 
