@@ -31,6 +31,16 @@ namespace TeachersAPI.Domain.Models.Generals.Responses
         public string LevelCode { get; set; }
 
         /// <summary>
+        /// Gets or sets the subject's code of the plan the lesson was assigned from.
+        /// </summary>
+        public string PlanSubject { get; set; }
+
+        /// <summary>
+        /// Gets or sets the display name of the plan's subject.
+        /// </summary>
+        public string PlanSubjectName { get; set; }
+
+        /// <summary>
         /// Gets or sets the due date.
         /// </summary>
         public string DueDate { get; set; }

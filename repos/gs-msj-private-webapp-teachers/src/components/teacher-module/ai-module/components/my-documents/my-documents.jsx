@@ -9,6 +9,7 @@ import { exportPPTX } from '../tools/tool-modal/utils/exporters-pptx.jsx';
 import { exportWord } from '../tools/tool-modal/utils/exporters-word.jsx';
 import {ExportButton} from "../tools/tool-modal/export-button";
 import {toDisplayMarkdown} from "../tools/tool-modal/tool-modal-utils";
+import { TOOLS } from "../tools/tool-config/tools-config";
 
 function formatDate(value) {
     if (!value) return '';
@@ -67,8 +68,13 @@ const CATEGORY_TABS = [
     { key: 'other',      icon: '📁' },
 ];
 
+function toolDisplayName(toolTitle, t) {
+    const tool = Object.values(TOOLS).find((item) => item.title === toolTitle);
+    return tool ? t(`ai-tools:tools.${tool.key}.name`, { defaultValue: toolTitle }) : toolTitle;
+}
+
 export default function MyDocuments({ onNavigate }) {
-    const { t } = useTranslation(['my-documents', 'common']);
+    const { t } = useTranslation(['my-documents', 'common', 'ai-tools']);
 
     const [docs, setDocs] = React.useState(() => listDocuments());
     const [query, setQuery] = React.useState('');
@@ -150,7 +156,7 @@ export default function MyDocuments({ onNavigate }) {
         setExporting('pdf');
         try {
             const safeTitle = (active.title || t('my-documents:defaultDocTitle')).replace(/\s+/g, '_');
-            await exportMarkdownPDF(active.content, `${safeTitle}.pdf`, active.toolTitle, t);
+            await exportMarkdownPDF(active.content, `${safeTitle}.pdf`, toolDisplayName(active.toolTitle, t), t);
         } finally {
             setExporting('');
         }
@@ -161,7 +167,7 @@ export default function MyDocuments({ onNavigate }) {
         setExporting('word');
         try {
             const safeTitle = (active.title || t('my-documents:defaultDocTitle')).replace(/\s+/g, '_');
-            await exportWord(active.content, `${safeTitle}.docx`, active.toolTitle, t);
+            await exportWord(active.content, `${safeTitle}.docx`, toolDisplayName(active.toolTitle, t), t);
         } finally {
             setExporting('');
         }
@@ -172,7 +178,7 @@ export default function MyDocuments({ onNavigate }) {
         setExporting('pptx');
         try {
             const safeTitle = (active.title || t('my-documents:defaultDocTitle')).replace(/\s+/g, '_');
-            await exportPPTX(active.content, `${safeTitle}.pptx`, active.toolTitle, t);
+            await exportPPTX(active.content, `${safeTitle}.pptx`, toolDisplayName(active.toolTitle, t), t);
         } finally {
             setExporting('');
         }
@@ -183,7 +189,7 @@ export default function MyDocuments({ onNavigate }) {
         setExporting('worksheet');
         try {
             const safeTitle = (active.title || t('my-documents:defaultDocTitle')).replace(/\s+/g, '_');
-            await exportWorksheet(active.content, `${safeTitle}_worksheet.pdf`, active.toolTitle, t);
+            await exportWorksheet(active.content, `${safeTitle}_worksheet.pdf`, toolDisplayName(active.toolTitle, t), t);
         } finally {
             setExporting('');
         }
@@ -280,7 +286,7 @@ export default function MyDocuments({ onNavigate }) {
                                             title={t('my-documents:reader.titleTooltip')}
                                         />
                                         <div className="docs-reader-meta">
-                                            {t('my-documents:reader.toolLabel')}: <b>{active.toolTitle}</b>{' '}
+                                            {t('my-documents:reader.toolLabel')}: <b>{toolDisplayName(active.toolTitle, t)}</b>{' '}
                                             · {t('my-documents:reader.createdLabel')}: {formatDate(active.createdAt)}
                                             {active.model
                                                 ? ` · ${t('my-documents:reader.modelLabel')}: ${active.model}`

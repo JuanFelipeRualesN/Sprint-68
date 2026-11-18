@@ -1,17 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-
 using UsersAPI.CustomClasses;
-using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models.Filters;
 using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler;
+using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models.Filters;
 using UsersAPI.UsersAPI.Domain.Models.Generals.Requests;
 using UsersAPI.UsersAPI.Domain.Models.Generals.Responses;
-using UsersAPI.UsersAPI.Services.Accounts.CustomClasses;
 using UsersAPI.UsersAPI.Services.Accounts;
+using UsersAPI.UsersAPI.Services.Accounts.CustomClasses;
+using UsersAPI.UsersAPI.Services.Emails;
 using UsersAPI.UsersAPI.Services.FeignAPIs;
 using UsersAPI.UsersAPI.Services.Relations;
-using UsersAPI.UsersAPI.Services.Emails;
 
 namespace UsersAPI.Controllers
 {
@@ -131,10 +131,11 @@ namespace UsersAPI.Controllers
         /// </summary>
         /// <param name="fromPage">Current page.</param>
         /// <param name="limit">How many items per page.</param>
+        /// <param name="isStudentHomeschool">If the user is a homeschool student. Optional.</param>
         /// <param name="userId">THe user's id. Optional.</param>
         /// <returns>Returns the users’ list.</returns>
-        [HttpGet("shared-details/{fromPage}/{limit}/{userId?}")]
-       public async Task<IActionResult> GetUserRelationsSharedDetails([FromRoute] int fromPage, [FromRoute] int limit, [FromRoute] string userId = null)
+        [HttpGet("shared-details/{fromPage}/{limit}/{isStudentHomeschool?}/{userId?}")]
+       public async Task<IActionResult> GetUserRelationsSharedDetails([FromRoute] int fromPage, [FromRoute] int limit , [FromRoute] bool? isStudentHomeschool = null, [FromRoute] string userId = null)
         {
             try
             {
@@ -161,6 +162,7 @@ namespace UsersAPI.Controllers
                           IsStaff = sessionResponseModel.IsStaff,
                           IsDirector = sessionResponseModel.IsDirector,
                           IsClientAccount = sessionResponseModel.RoleId == "1",
+                          IsStudentHomeschool = sessionResponseModel.RoleId == "3" && isStudentHomeschool == true,
                           SameSchoolRequired = false,
                           SchoolIds = schoolIds != null && schoolIds.Count > 0 ? schoolIds : null,
                       },
@@ -250,6 +252,7 @@ namespace UsersAPI.Controllers
                         IsClientAccount = sessionResponseModel.RoleId == "1",
                         IsDirector = sessionResponseModel.IsDirector,
                         IsStaff = sessionResponseModel.IsStaff,
+                        IsStudentHomeschool = sessionResponseModel.RoleId == "3" && SubscriptionDetailsHandler.CheckIStudentIsHomeschool(sessionResponseModel.Token),
                         SchoolIds = schoolIds != null && schoolIds.Count > 0 ? schoolIds : null,
                     });
 
@@ -849,6 +852,49 @@ namespace UsersAPI.Controllers
                    AcceptConnectionRequestNoAlphas(sessionResponseModel.UserId, userId);
 
             return Ok();
+        }
+
+        /// <summary>
+        /// Gets the total number of distinct students enrolled at the same school(s)
+        /// as the specified teacher, based on their profile connections.
+        /// </summary>
+        /// <returns>
+        /// <para><see cref="OkObjectResult"/> (200) with a int of total of students</c> on success.</para>
+        /// <para><see cref="UnauthorizedResult"/> (401) if the session is invalid,
+        /// the caller is not staff, or the caller is not authorized to access the
+        /// target teacher's data.</para>
+        /// is null, empty, or whitespace.</para>
+        /// <para>500 Internal Server Error if the underlying query fails.</para>
+        /// </returns>
+        [HttpGet("teacher-students-count/")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetTeacherStudentsCount()
+        {
+            UsersAPI.Domain.Models.Generals.ValidationResponseModel sessionResponseModel =
+                CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "ProfileConnections");
+
+            // If the transaction is not valid, stop the operation
+            if (!sessionResponseModel.SessionValid)
+            {
+                return Unauthorized();
+            }
+
+            int studentsCount;
+            try
+            {
+                studentsCount = await new RelatedAccountsManager(
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                    RequestHandler.GetLanguage(HttpContext)).GetTeacherStudentsCountAsync(sessionResponseModel.UserId);
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
+
+            return Ok(studentsCount);
         }
     }
 }

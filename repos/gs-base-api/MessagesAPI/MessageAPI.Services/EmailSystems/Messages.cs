@@ -155,9 +155,10 @@ namespace MessagesAPI.MessageAPI.Services.EmailSystems
         /// To get the full detail email message.
         /// </summary>
         /// <param name="userId">The recipient's id or autor's id</param>
-        /// <param name="messageId"></param>
+        /// <param name="messageId">The id of the message.</param>
+        /// <param name="isStaff">If is staff.</param>
         /// <returns></returns>
-        public static EmailMessageFullDetailModel GetMessageDetail(string userId, string messageId)
+        public static EmailMessageFullDetailModel GetMessageDetail(string userId, string messageId, bool isStaff)
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
 
@@ -184,6 +185,10 @@ namespace MessagesAPI.MessageAPI.Services.EmailSystems
                 EmailMessageModel = message != null ? message.First() : new EmailMessageModel()
             };
 
+            if (isStaff)
+            {
+                return emailFullDetail;
+            }
             // Check if user can access to the details
             if (emailFullDetail.EmailMessageRecipientModelList.Find(x => x.RecipientId == userId) != null || emailFullDetail.EmailMessageModel.AuthorId == userId)
             {

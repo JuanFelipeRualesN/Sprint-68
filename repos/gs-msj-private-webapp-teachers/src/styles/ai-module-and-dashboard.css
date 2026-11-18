@@ -3008,6 +3008,19 @@
     accent-color: var(--navy);
 }
 
+.tm-field input:disabled {
+    background: #f3f4f6;
+    color: var(--muted);
+    cursor: not-allowed;
+}
+
+.tm-field-note {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11.5px;
+}
+
 .tm-field-checkbox small {
     display: block;
     margin-top: 4px;

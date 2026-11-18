@@ -50,7 +50,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 clientLessonQuizzes.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_web_service_url"]);
                 clientLessonQuizzes.DefaultRequestHeaders.Accept.Clear();
                 clientLessonQuizzes.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                clientLessonQuizzes.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                clientLessonQuizzes.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_get_lesson_quizzes"];
                 url = url.Replace("{0}", lessonId);
@@ -88,7 +88,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_web_service_url"]);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                 client.DefaultRequestHeaders.Add("Token", token);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_quiz"];
@@ -140,7 +140,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                     LessonModelSpecificsRequestModel lessonModelSpecificsRequestModel = new LessonModelSpecificsRequestModel()
                     {
@@ -202,9 +202,9 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     client.DefaultRequestHeaders.Add("Accept-Language", langCode);
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
-                    var response = client.GetAsync(AppConfiguration.Configuration["AppSettings:athenas_web_api_get_subjects"]).Result;
+                    var response = client.GetAsync(AppConfiguration.Configuration["AppSettings:athenas_web_api_get_subjects_not_published"]).Result;
                     if (response.IsSuccessStatusCode)
                     {
                         string responseString = response.Content.ReadAsStringAsync().Result;
@@ -265,7 +265,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("Accept-Language", langCode);
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                 var response = client.GetAsync(isForStudent ? string.Concat(AppConfiguration.Configuration["AppSettings:athenas_web_api_get_students_pdf"], lessonId) : string.Concat(AppConfiguration.Configuration["AppSettings:athenas_web_api_get_pdf"], lessonId)).Result;
                 if (response.IsSuccessStatusCode)
@@ -308,7 +308,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                     StringContent stringContent = new StringContent(JsonConvert.SerializeObject(quizIdsAthenasModels), Encoding.UTF8, "application/json");
                     var response = client.PostAsync(AppConfiguration.Configuration["AppSettings:athenas_api_get_quizzes_by_list"], stringContent).Result;
                     if (response.IsSuccessStatusCode)
@@ -350,7 +350,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                     string url = AppConfiguration.Configuration["AppSettings:athenas_api_get_diagnostic_test"];
                     var stringContent = new StringContent(JsonConvert.SerializeObject(diagnosticIds), Encoding.UTF8, "application/json");
@@ -396,7 +396,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                     string url = AppConfiguration.Configuration["AppSettings:athenas_api_get_diagnostic_test_detail"];
                     // Substitute the subject code and level code
@@ -446,7 +446,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                 StringContent stringContent = new StringContent(JsonConvert.SerializeObject(learningSheetIds), Encoding.UTF8, "application/json");
                 var response = client.PostAsync(AppConfiguration.Configuration["AppSettings:athenas_api_get_learning_sheets_list"], stringContent).Result;
@@ -483,7 +483,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                     string url = AppConfiguration.Configuration["AppSettings:athenas_web_api_get_grades"];
 
@@ -527,7 +527,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                     string baseUrl = AppConfiguration.Configuration["AppSettings:athenas_web_api_get_codes"];
                     string url = isExpectationType
@@ -576,7 +576,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_web_service_url"]);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                 client.DefaultRequestHeaders.Add("Token", token);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_lessons_lesson"];
@@ -625,7 +625,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_web_service_url"]);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                 client.DefaultRequestHeaders.Add("Accept-Language", langCode);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_lesson_html"];
@@ -674,7 +674,7 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("Accept-Language", langCode);
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                 string apiEndpoint = string.Concat(
                     AppConfiguration.Configuration["AppSettings:athenas_web_api_get_students_pdf"],
@@ -701,6 +701,45 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 {
                     return null;
                 }
+            }
+        }
+
+        /// Get lessons joined with their unit info (unit name + description, with
+        /// Spanish translation fallback) for a given set of lesson ids.
+        /// Used by the teacher events calendar.
+        /// </summary>
+        /// <param name="lessonIds">The lesson ids to filter by.</param>
+        /// <param name="langCode">The user's selected language.</param>
+        /// <returns>Returns the lessons' unit details.</returns>
+        public static List<LessonWithUnitsModel> GetLessonsWithUnits(List<string> lessonIds, string langCode)
+        {
+            using (var clientLessonsWithUnits = new HttpClient())
+            {
+                clientLessonsWithUnits.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_web_service_url"]);
+                clientLessonsWithUnits.DefaultRequestHeaders.Accept.Clear();
+                clientLessonsWithUnits.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                clientLessonsWithUnits.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
+                clientLessonsWithUnits.DefaultRequestHeaders.Add("Accept-Language", langCode);
+                string url = AppConfiguration.Configuration["AppSettings:athenas_api_get_lessons_with_units"];
+
+                var content = new StringContent(
+                    JsonConvert.SerializeObject(lessonIds),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var responseLessonsWithUnits = clientLessonsWithUnits.PostAsync(url, content).Result;
+                if (responseLessonsWithUnits.IsSuccessStatusCode)
+                {
+                    string responseStringLessonsWithUnits = responseLessonsWithUnits.Content.ReadAsStringAsync().Result;
+                    var responseAPI = JsonConvert.DeserializeObject<List<LessonWithUnitsModel>>(
+                        responseStringLessonsWithUnits,
+                        new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore,
+                        });
+                    return responseAPI;
+                }
+                return new List<LessonWithUnitsModel>();
             }
         }
     }

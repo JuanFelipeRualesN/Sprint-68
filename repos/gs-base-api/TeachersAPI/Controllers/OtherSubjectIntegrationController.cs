@@ -32,13 +32,23 @@ namespace TeachersAPI.Controllers
                     var service = TeacherPlanOtherSubjectIntegrationServiceFactory.CreateService(dbConn);
                     var athenasSubjects = AthenasHandler.GetAthenasSubjects(responseSession.LangCode).ToDictionary(x => x.Id);
                     var teacherPlanOtherSubjectIntegrationByTeacherPlanId = await service.GetTeacherPlanOtherSubjectIntegrationByTeacherPlanId(teacherPlanId);
-                    teacherPlanOtherSubjectIntegrationByTeacherPlanId.ToList().ForEach(x => x.TeacherPlanOtherSubjectInegrationSubjects.ToList().ForEach(y => y.SubjectName = athenasSubjects[y.SubjectId.ToString()].Name));
+
+                    foreach (var integration in teacherPlanOtherSubjectIntegrationByTeacherPlanId)
+                    {
+                        foreach (var subject in integration.TeacherPlanOtherSubjectInegrationSubjects)
+                        {
+                            subject.SubjectName = athenasSubjects.TryGetValue(subject.SubjectId.ToString(), out var athenasSubject)
+                                ? athenasSubject.Name
+                                : string.Empty;
+                        }
+                    }
+
                     return Ok(teacherPlanOtherSubjectIntegrationByTeacherPlanId);
                 }
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return Ok(new List<TeacherPlanOtherSubjectIntegration>());
             }
         }
 

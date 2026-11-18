@@ -28,7 +28,7 @@ namespace MessagesAPI.Controllers
         private readonly static string configNotificationEmail = AppConfiguration.Configuration["AppSettings:notification_email"];
         private readonly static string configNotificationEmailBody = AppConfiguration.Configuration["AppSettings:notification_email_body"];
         private readonly static string configMessageMessageSent = AppConfiguration.Configuration["AppSettings:cm_message_successfully_sent"];
-        
+
         /// <summary>
         /// To send a message by the selected role. This will also send an email.
         /// For example, if we want to send a message for students, we chose the students role the message
@@ -306,10 +306,10 @@ namespace MessagesAPI.Controllers
                     .Distinct()
                     .ToList();
 
-                UserAdvanceResponseModel userSharedDetailsResponseModel = new UserAdvanceResponseModel();
+                var userSharedDetailsResponseModel = new List<UserAdvance>();
                 try
                 {
-                    userSharedDetailsResponseModel = GetUserDetails.GetUserFullNamesAPI(responseSession.Token, userIdsFullNameToGet);
+                    userSharedDetailsResponseModel = GetUserDetails.GetUserFullNamesSimple(responseSession.Token, userIdsFullNameToGet);
                 }
                 catch
                 {
@@ -326,7 +326,7 @@ namespace MessagesAPI.Controllers
 
                 foreach (var emailMessage in emailReadResultsResponse.EmailMessageModelList)
                 {
-                    var userFullNameModel = userSharedDetailsResponseModel?.UserInfo?.Find(x => x.UserId == emailMessage.AuthorId);
+                    var userFullNameModel = userSharedDetailsResponseModel?.Find(x => x.UserId == emailMessage.AuthorId);
 
                     messageResponseModel.EmailMessageModelList.Add(new EmailMessageModel
                     {
@@ -492,7 +492,7 @@ namespace MessagesAPI.Controllers
                     EmailMessageFullDetailModel = new MessagesAPI.MessageAPI.Domain.Models.General.EmailMessageFullDetailModel()
                 };
 
-                var emailFullMessage = Messages.GetMessageDetail(responseSession.UserId, messageId);
+                var emailFullMessage = Messages.GetMessageDetail(responseSession.UserId, messageId, responseSession.IsStaff);
 
                 if (emailFullMessage?.EmailMessageModel == null)
                 {
@@ -512,17 +512,16 @@ namespace MessagesAPI.Controllers
                 messageResponseModel.EmailMessageFullDetailModel.EmailAttachmentModelList = emailFullMessage.EmailAttachmentModelList;
 
                 // Sign each attachment URL
-                // TODO: Add the key path
                 messageResponseModel.EmailMessageFullDetailModel.EmailAttachmentModelList
-                    .ForEach(a => a.AttachmentUrl = AwsAssets.GetSignedUrlFronCloudFront(a.AttachmentUrl));
+                    .ForEach(a => a.AttachmentUrl = AzureAssets.SignAzureBlobUrl(a.AttachmentUrl));
 
-                var userSharedDetailsResponseModel = new UserAdvanceResponseModel();
+                var userSharedDetailsResponseModel = new List<UserAdvance>();
 
                 if (emailFullMessage.EmailMessageRecipientModelList?.Count > 20)
                 {
                     try
                     {
-                        userSharedDetailsResponseModel = GetUserDetails.GetUserFullNamesAPI(
+                        userSharedDetailsResponseModel = GetUserDetails.GetUserFullNamesSimple(
                             RequestHandler.GetToken(HttpContext),
                             new List<string> { emailFullMessage.EmailMessageModel.AuthorId });
 
@@ -549,7 +548,7 @@ namespace MessagesAPI.Controllers
 
                     try
                     {
-                        userSharedDetailsResponseModel = GetUserDetails.GetUserFullNamesAPI(
+                        userSharedDetailsResponseModel = GetUserDetails.GetUserFullNamesSimple(
                             RequestHandler.GetToken(HttpContext),
                             usersToCall);
 
@@ -557,7 +556,7 @@ namespace MessagesAPI.Controllers
 
                         foreach (var recipient in emailFullMessage.EmailMessageRecipientModelList)
                         {
-                            var user = userSharedDetailsResponseModel.UserInfo?.Find(x => x.UserId == recipient.RecipientId);
+                            var user = userSharedDetailsResponseModel?.Find(x => x.UserId == recipient.RecipientId);
                             if (recipient.RecipientId != responseSession.UserId)
                             {
                                 messageResponseModel.EmailMessageFullDetailModel.EmailRecipientModelList.Add(new EmailMessageRecipientModel
@@ -578,7 +577,7 @@ namespace MessagesAPI.Controllers
                 }
 
                 // Set Author Full Name
-                var author = userSharedDetailsResponseModel.UserInfo?.Find(x =>
+                var author = userSharedDetailsResponseModel?.Find(x =>
                     x.UserId == messageResponseModel.EmailMessageFullDetailModel.EmailMessageModel.AuthorId);
 
                 messageResponseModel.EmailMessageFullDetailModel.EmailMessageModel.UserFullName = author != null

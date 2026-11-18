@@ -593,7 +593,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         /// </summary>
         /// <param name="planLessonId">The plan lesson's id.</param>
         /// <param name="quizId">The id of the quiz.</param>
-        /// <param name="userId">The id of the user.</param>
+        /// <param name="userId">The id of the user (student).</param>
         /// <param name="token">Token.</param>
         /// <param name="ipAddress">The ip address.</param>
         /// <returns>Returns the plan lesson quiz response model.</returns>
@@ -685,7 +685,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                 reportPlanLessonQuiz.Note = AppConfiguration.Configuration["AppSettings:text_message_quiz_student_has_not_taken_quiz_" + langCode];
                 return reportPlanLessonQuiz; 
             }
-
+          
             reportPlanLessonQuiz.Score = planLessonQuizUserResult[0].Score;
             reportPlanLessonQuiz.ManuallyCorrectedByTeacher =
                 planLessonQuizUserResult[0].ManuallyCorrectedByTeacher == "1";
@@ -702,60 +702,57 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             }
             
             // Call the GS Web to get the user results.
-            var userQuizResponseModel = GSWebDetails.GetUserResults(token, planLessonQuizUserResult[0].UsquiUserResultId);
+            var userQuizResponseModel = GSWebDetails.GetUserResults(token, userId, planLessonQuizUserResult[0].UsquiUserResultId);
             
-            if(userQuizResponseModel == null || userQuizResponseModel.UserResponsesList == null || userQuizResponseModel.UserResponsesList.Count == 0)
+            if(userQuizResponseModel == null || userQuizResponseModel.UserQuizFullDetails == null || userQuizResponseModel.UserQuizFullDetails.QuestionQuizList.Count == 0)
             {
                 reportPlanLessonQuiz.Note = 
                     AppConfiguration.Configuration["AppSettings:text_message_student_results_not_found_" + langCode];
                 return reportPlanLessonQuiz; 
             }
 
-            reportPlanLessonQuiz.UserQuizFullDetails.TotalPercent = userQuizResponseModel.UserQuizResult.TotalPercent;
-            reportPlanLessonQuiz.UserQuizFullDetails.TotalCorrect = userQuizResponseModel.UserQuizResult.TotalCorrect;
+            reportPlanLessonQuiz.UserQuizFullDetails.TotalPercent = userQuizResponseModel.UserQuizFullDetails.TotalPercent;
+            reportPlanLessonQuiz.UserQuizFullDetails.TotalCorrect = userQuizResponseModel.UserQuizFullDetails.TotalCorrect;
+            reportPlanLessonQuiz.UserQuizFullDetails.CreatedAt = userQuizResponseModel.UserQuizFullDetails.CreatedAt;
             reportPlanLessonQuiz.UserQuizResultId = planLessonQuizUserResult[0].UsquiUserResultId;
             reportPlanLessonQuiz.UserId = userId;
             
             // Set the results 
-            foreach (var t in quizAthenas.QuizRequestModel.QuestionRequestModelList)
+            foreach (var questionAthenas in quizAthenas.QuizRequestModel.QuestionRequestModelList)
             {
-                QuestionQuiz questionQuizToAdd = new QuestionQuiz()
+                var questionQuizToAdd = new QuestionQuiz()
                 {
-                    QuestionId = t.QuizQuestionModel.Id,
-                    Question = t.QuizQuestionModel.Desc,
+                    QuestionId = questionAthenas.QuizQuestionModel.Id,
+                    Question = questionAthenas.QuizQuestionModel.Desc,
                     QuestionResponses = new List<QuestionResponse>(),
                 };
 
-                var userQuizQuestionsResponsesToFind
-                    = userQuizResponseModel.UserResponsesList.FindAll(x => x.QuestionId 
-                                                                           == t.QuizQuestionModel.Id);
+                // Now find the response of the user 
+                var questionUser =
+                        userQuizResponseModel.UserQuizFullDetails.QuestionQuizList.Find(x => x.QuestionId == questionAthenas.QuizQuestionModel.Id);
+                var correctResponseAthenas = questionAthenas.QuizQuestionResponseModelList.Find(x => x.Correct == "1");
 
-                // Now attach the responses
-                for (int j = 0; j < userQuizQuestionsResponsesToFind.Count; j++)
+                foreach (var questionResponseAthenas in questionAthenas.QuizQuestionResponseModelList)
                 {
-                    // Find the responses details on athenas object
-                    QuizQuestionResponseModel quizQuestionResponseModelToFind
-                        = t.QuizQuestionResponseModelList.Find(x => x.Id == userQuizQuestionsResponsesToFind[j].ResponseId);
-
-                    if (quizQuestionResponseModelToFind != null)
+                    var questionResponse = new QuestionResponse()
                     {
-                        // Attach the responses
-                        QuestionResponse questionResponse = new QuestionResponse
-                        {
-                            ResponseId = userQuizQuestionsResponsesToFind[j].ResponseId,
-                            Response = quizQuestionResponseModelToFind.Response,
-                            ResponseUserId = userQuizQuestionsResponsesToFind[j].Id,
-                            CorrectAnswer = userQuizQuestionsResponsesToFind[j].Correct == "1",
-                            Correct = int.Parse(userQuizQuestionsResponsesToFind[j].Correct)
-                        };
-                        questionQuizToAdd.QuestionResponses.Add(questionResponse);
+                        Correct = int.Parse(questionResponseAthenas.Correct),
+                        Id = questionResponseAthenas.Id,
+                        Response = questionResponseAthenas.Response,
+                        ResponseId = questionResponseAthenas.Id,
+                    };
 
-                        // Then add to the main question holder
-                        reportPlanLessonQuiz.UserQuizFullDetails.QuestionQuizList.Add(questionQuizToAdd);
-                    }
+                    // Find the response selected by the user 
+                    var responseUser = questionUser?.QuestionResponses.FirstOrDefault();
+                    questionResponse.UserSelectCorrectAnswer = responseUser != null ? responseUser.SelectedByUser : false;
+                    questionResponse.UserSelectedResponseText = responseUser != null && questionAthenas != null ?
+                        questionAthenas.QuizQuestionResponseModelList.Find(x => x.Id == responseUser.ResponseId)?.Response : null;
+
+                    questionQuizToAdd.QuestionResponses.Add(questionResponse);
                 }
             }
 
+            reportPlanLessonQuiz.PDFLocation = userQuizResponseModel.PDFLocation;
             return reportPlanLessonQuiz;
         }
 

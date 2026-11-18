@@ -98,5 +98,14 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         {
             return Infrastructure.Dapper.Generics.GetRoles();
         }
+
+        /// <summary>
+        /// To get the subscription status.
+        /// </summary>
+        /// <returns>Returns a list of subscription status.</returns>
+        public static List<StatusModel> GetStatus()
+        {
+            return Infrastructure.Dapper.Generics.GetStatus();
+        }
     }
 }

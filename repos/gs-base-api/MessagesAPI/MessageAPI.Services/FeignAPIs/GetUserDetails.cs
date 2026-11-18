@@ -24,52 +24,45 @@ namespace MessagesAPI.MessageAPI.Services.FeignAPIs
         private readonly static string usersApiAllowedInteractionEmails = AppConfiguration.Configuration["AppSettings:gus_endpoint_user_id_list_allowed_interaction_emails"];
         private readonly static string usersApiProfileConnections = AppConfiguration.Configuration["AppSettings:gus_endpoint_profile_connections_api"];
         private readonly static string usersApiUserEmails = AppConfiguration.Configuration["AppSettings:gus_endpoint_get_user_emails_api"];
-        
-        /// <summary>
-        /// Gets the user shared details response model.
-        /// </summary>
-        /// <param name="token">The session token.</param>
-        /// <param name="userIdsFullNameToGet">The users ids to get.</param>
-        /// <returns>Returns the user shared details.</returns>
 
-        public static UserAdvanceResponseModel GetUserFullNamesAPI(string token, List<string> userIdsFullNameToGet)
+        /// <summary>
+        /// To get the user full names without any strict validation.
+        /// </summary>
+        /// <param name="token">Token of the user making the request.</param>
+        /// <param name="userList">The list of the users to call.</param>
+        /// <returns>Returns the full names simple.</returns>
+        public static List<UserAdvance> GetUserFullNamesSimple(string token, List<string> userList)
         {
             using (var client = new HttpClient())
             {
-                client.BaseAddress = new Uri(baseAddress);
+                client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:gus_web_service_url"]);
 
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.Timeout = TimeSpan.FromSeconds(4);
                 client.DefaultRequestHeaders.Add("Token", token);
-                UserFullNamesGetJSONModel jsonPostModel = new UserFullNamesGetJSONModel
-                {
-                    UserIds = userIdsFullNameToGet,
-                };
 
-                StringContent stringContent = new StringContent(JsonConvert.SerializeObject(jsonPostModel), Encoding.UTF8, "application/json");
-                var response = client.PostAsync(usersApiFullNames, stringContent).Result;
-
+                StringContent stringContent = new StringContent(JsonConvert.SerializeObject(userList), Encoding.UTF8, "application/json");
+                var response = client.PostAsync(AppConfiguration.Configuration["AppSettings:gus_enpoint_user_full_names_general"], stringContent).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     string responseString = response.Content.ReadAsStringAsync().Result;
-                    UserAdvanceResponseModel userSharedDetailsResponseModel = JsonConvert.DeserializeObject<UserAdvanceResponseModel>(responseString,
+
+                    var modelObject = JsonConvert.DeserializeObject<List<UserAdvance>>(responseString,
                         new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore
                         });
 
-                    if (userSharedDetailsResponseModel.UserInfo == null)
+                    if (modelObject == null || modelObject.Count == 0)
                     {
-                        return new UserAdvanceResponseModel() { UserInfo = new List<UserAdvance>() };
+                        return new List<UserAdvance>();
                     }
 
-                    return userSharedDetailsResponseModel;
-
+                    return modelObject;
                 }
                 else
                 {
-                    return new UserAdvanceResponseModel();
+                    return new List<UserAdvance>();
                 }
             }
         }

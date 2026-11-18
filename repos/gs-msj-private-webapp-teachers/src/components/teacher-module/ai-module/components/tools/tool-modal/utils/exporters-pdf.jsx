@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {hasLatex, escapeHtml, markdownWithMathToHtml, addWrappedText, stripEditorMetadata,
     stripSlideNumberLabels, markdownToPlainLines, sanitizePdfText, latexToReadable,
-    stripLayoutLatex} from './general-functions-exporters';
+    stripLayoutLatex, documentHeaderTitle} from './general-functions-exporters';
 
 const NAVY  = '#27466C';
 const TEAL  = '#3DA8A8';
@@ -264,13 +264,16 @@ export async function exportMarkdownPDF(markdown, filename = 'document.pdf', tit
 
     // ---------- Title ----------
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(...COLORS.navy);
-    y = addWrappedText(doc, latexToReadable(title), marginX, y, maxWidth, 7) + 3;
-    doc.setDrawColor(...COLORS.teal);
-    doc.line(marginX, y, pageW - marginX, y);
-    y += 8;
+    const headerTitle = documentHeaderTitle(markdown, title);
+    if (headerTitle) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(...COLORS.navy);
+        y = addWrappedText(doc, latexToReadable(headerTitle), marginX, y, maxWidth, 7) + 3;
+        doc.setDrawColor(...COLORS.teal);
+        doc.line(marginX, y, pageW - marginX, y);
+        y += 8;
+    }
 
     // ---------- Body ----------
 
@@ -386,7 +389,7 @@ export async function exportMarkdownScientificPDF(markdown, filename = 'document
             .mdx tr:nth-child(even) td { background: #f3f6f9; }
         </style>
         <div class="mdx">
-            ${title ? `<h1>${escapeHtml(title)}</h1>` : ''}
+            ${documentHeaderTitle(markdown, title) ? `<h1>${escapeHtml(title)}</h1>` : ''}
             ${markdownWithMathToHtml(markdown)}
         </div>
     `;

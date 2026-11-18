@@ -55,7 +55,7 @@ namespace SubscriptionsAPI.Controllers
                 var ipAddress = IPAddressDetector.GetClientIpAddress(HttpContext); // adapt your helper to Core HttpRequest
                 var lang = RequestHandler.GetLanguage(HttpContext);                             // adapt helper if needed
 
-                ValidationResponseModel responseSession = GetUserDetails.GetUserIdRequestOnOtherAPI(
+                var responseSession = GetUserDetails.GetUserIdRequestOnOtherAPI(
                     token,
                     ipAddress,
                     "SubscriptionUserProductRead",
@@ -66,68 +66,69 @@ namespace SubscriptionsAPI.Controllers
                     return Unauthorized();
 
                 // -------- Fetch subscriptions/products --------
-                string readConnStr = AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"];
+                var readConnStr = AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"];
                 var subscriptionReadersManager = new SubscriptionReadersManager(readConnStr, lang);
 
                 // If this call stays as-is in your codebase:
-                List<SubscriptionFullResponseModel> subscriptionFullResponseModelList =
+                var subscriptionFullResponseModelList =
                     UserSubscriptions.ReadProfileSubscriptionsFullItems(responseSession.UserId, true);
 
                 var subscriptionAcademicFullResponseModelList = new List<SubscriptionAcademicFullResponseModel>();
 
-                // -------- Join related data if any subscriptions exist --------
-                if (subscriptionFullResponseModelList.Count > 0)
+                if (subscriptionFullResponseModelList.Count == 0)
                 {
-                    var subscriptionIds = new List<string>();
-                    var examTryMaxModelsToFind = new List<ExamTryMaxModel>();
-                    var subscriptionProductModelToFindList = new List<SubscriptionProductModel>();
-                    bool hasSchool = false;
+                    return Ok(subscriptionAcademicFullResponseModelList);
+                }
 
-                    foreach (var subscription in subscriptionFullResponseModelList)
+                // 1. Extract valid subscription models safely
+                var validSubscriptions = subscriptionFullResponseModelList
+                    .Where(s => s.SubscriptionModel != null)
+                    .ToList();
+
+                var subscriptionIds = validSubscriptions
+                    .Select(s => s.SubscriptionModel.Id)
+                    .ToList();
+
+                var examTryMaxModelsToFind = subscriptionIds
+                    .Select(id => new ExamTryMaxModel { SubscriptionId = id })
+                    .ToList();
+
+                // 2. Determine if school API call is required using LINQ Any()
+                bool hasSchool = validSubscriptions.Any(s => s.SubscriptionModel.Type is "S" or "T");
+
+                // 3. Flatten product search list efficiently using SelectMany
+                var subscriptionProductModelToFindList = validSubscriptions
+                    .Where(s => s.ItemResponseModelList != null)
+                    .SelectMany(s => s.ItemResponseModelList)
+                    .Select(item => new SubscriptionProductModel { ProductId = item.Id })
+                    .ToList();
+
+                // 4. Fetch External Data
+                var entitySubscriptionPeriodsList = (subscriptionIds.Count > 0 && hasSchool)
+                    ? SubscriptionsAPI.Services.FeignAPIs.SchoolsDetailsHandler.GetAcademicDetailsBySubscriptionIdList(subscriptionIds)
+                    : new List<EntityAcademicDetailFullResponseModel>();
+
+                // Convert to dictionary for O(1) lightning-fast lookups in the loop below
+                var academicDetailsMap = entitySubscriptionPeriodsList?
+                    .Where(x => x?.EntitySubscriptionModel != null)
+                    .ToDictionary(x => x.EntitySubscriptionModel.SubscriptionId) ?? new Dictionary<string, EntityAcademicDetailFullResponseModel>();
+
+                var subscriptionProductModelListResult = subscriptionProductModelToFindList.Count > 0
+                    ? new SubscriptionProductDAO().Read(readConnStr, subscriptionProductModelToFindList)
+                    : new List<SubscriptionProductModel>();
+
+                // Max allowed exam tries (if needed later)
+                var examTryMaxModelsResults = new ExamTryMaxDAO().Read(readConnStr, examTryMaxModelsToFind);
+
+                // -------- Build final response --------
+                foreach (var subscription in validSubscriptions)
+                {
+                    var subAcademic = new SubscriptionAcademicFullResponseModel
                     {
-                        subscriptionIds.Add(subscription.SubscriptionModel.Id);
-                        examTryMaxModelsToFind.Add(new ExamTryMaxModel { SubscriptionId = subscription.SubscriptionModel.Id });
-
-                        if (subscription.SubscriptionModel.Type == "S" || subscription.SubscriptionModel.Type == "T")
-                            hasSchool = true;
-
-                        foreach (var item in subscription.ItemResponseModelList)
-                        {
-                            subscriptionProductModelToFindList.Add(new SubscriptionProductModel { ProductId = item.Id });
-                        }
-                    }
-
-                    List<EntityAcademicDetailFullResponseModel> entitySubscriptionPeriodsList = new();
-                    if (subscriptionIds.Count > 0 && hasSchool)
-                    {
-                        entitySubscriptionPeriodsList =
-                            SubscriptionsAPI.Services.FeignAPIs.SchoolsDetailsHandler
-                                .GetAcademicDetailsBySubscriptionIdList(subscriptionIds);
-                    }
-
-                    List<SubscriptionProductModel> subscriptionProductModelListResult = new();
-                    if (subscriptionProductModelToFindList.Count > 0)
-                    {
-                        subscriptionProductModelListResult =
-                            new SubscriptionProductDAO().Read(readConnStr, subscriptionProductModelToFindList);
-                    }
-
-                    // Max allowed exam tries (if needed later)
-                    var examTryMaxModelsResults = new ExamTryMaxDAO().Read(readConnStr, examTryMaxModelsToFind);
-
-                    // -------- Build final response --------
-                    foreach (var subscription in subscriptionFullResponseModelList)
-                    {
-                        var subAcademic = new SubscriptionAcademicFullResponseModel
-                        {
-                            SubscriptionModel = subscription.SubscriptionModel,
-                            PlanModel = subscription.PlanModel,
-                            SubscriptionProductModelList = new List<SubscriptionProductModel>()
-                        };
-
-                        foreach (var item in subscription.ItemResponseModelList)
-                        {
-                            subAcademic.SubscriptionProductModelList.Add(new SubscriptionProductModel
+                        SubscriptionModel = subscription.SubscriptionModel,
+                        PlanModel = subscription.PlanModel,
+                        SubscriptionProductModelList = subscription.ItemResponseModelList?
+                            .Select(item => new SubscriptionProductModel
                             {
                                 Subject = item.Subject,
                                 Level = item.Level,
@@ -136,27 +137,37 @@ namespace SubscriptionsAPI.Controllers
                                 Name = item.Name,
                                 SubscriptionType = "S",
                                 Id = item.Id
-                            });
-                        }
+                            }).ToList() ?? new List<SubscriptionProductModel>()
+                    };
 
-                        if (entitySubscriptionPeriodsList?.Count > 0)
-                        {
-                            subAcademic.EntityAcademicDetailFullResponseModel =
-                                entitySubscriptionPeriodsList.Find(x => x.EntitySubscriptionModel.SubscriptionId == subscription.SubscriptionModel.Id);
-                        }
-
-                        subscriptionAcademicFullResponseModelList.Add(subAcademic);
+                    // O(1) Dictionary Lookup instead of .Find() linear scan
+                    if (academicDetailsMap.TryGetValue(subscription.SubscriptionModel.Id, out var academicDetail))
+                    {
+                        subAcademic.EntityAcademicDetailFullResponseModel = academicDetail;
                     }
 
-                    // -------- Cache asynchronously (optional) --------
-                    if (cacheOnForUserSubscriptions)
+                    subscriptionAcademicFullResponseModelList.Add(subAcademic);
+                }
+
+
+                // -------- Cache asynchronously (optional) --------
+                // -------- Cache asynchronously (Fire-and-Forget safely) --------
+                if (cacheOnForUserSubscriptions)
+                {
+                    _ = Task.Run(async () =>
                     {
                         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                        _ = Task.Run(() =>
+                        try
                         {
+                            // Note: If StoreUserRelatedSubscriptions supports Async, await it here and pass cts.Token
                             _coursesCache.StoreUserRelatedSubscriptions(token, subscriptionAcademicFullResponseModelList);
-                        }, cts.Token);
-                    }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log exception here so it doesn't crash silently or bring down the process
+                            System.Diagnostics.Debug.WriteLine($"Caching failed: {ex.Message}");
+                        }
+                    });
                 }
 
                 return Ok(subscriptionAcademicFullResponseModelList);
@@ -199,7 +210,7 @@ namespace SubscriptionsAPI.Controllers
                     AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
                     langCode);
 
-                var stripeKey = AppConfiguration.Configuration["AppSettings:subs_stripe_key"];
+                var stripeKey = AppConfiguration.Configuration["AppSettings:SubsStripeKey"];
 
                 var customerModel = subscriptionManagerCreator.CreateCustomerInStripe(
                     clientSubscriptionRegisterRequest.Email,
@@ -377,7 +388,7 @@ namespace SubscriptionsAPI.Controllers
                         requestModel.Type = "H";
                 }
 
-                var stripeKey = AppConfiguration.Configuration["AppSettings:subs_stripe_key"];
+                var stripeKey = AppConfiguration.Configuration["AppSettings:SubsStripeKey"];
 
                 var responseModel = await subsMgr.CreateUserSubscription(
                     responseSession.UserId,
@@ -692,6 +703,30 @@ namespace SubscriptionsAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// To get the client general subscriptions.
+        /// </summary>
+        /// <returns>Returns a list of general subscriptions.</returns>
+        [HttpGet("subscription/user/general")]
+        public IActionResult GetSubscriptionsStatusForClient()
+        {
+            try
+            {
+                var responseSession = GetUserDetails.GetUserIdRequestOnOtherAPI(
+                   RequestHandler.GetToken(HttpContext),
+                   IPAddressDetector.GetClientIpAddress(HttpContext),
+                   "SubscriptionUserProductRead", RequestHandler.GetLanguage(HttpContext));
+
+                return Ok(new SubscriptionReadersManager(
+                AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], RequestHandler.GetLanguage(HttpContext)).
+                GetClientGeneralSubscriptions(responseSession.UserId));
+            }
+            catch (Exception ex)
+            {
+                return Ok(new List<SubscriptionModel>());
+            }
+        }
+
         [HttpGet("user/courses")]
         public IActionResult GetSubscriptionUserCourses()
         {
@@ -738,37 +773,48 @@ namespace SubscriptionsAPI.Controllers
             return Ok(items);
         }
 
+        /// <summary>
+        /// Returns the available courses of the user.
+        /// </summary>
+        /// <returns>A list of available courses.</returns>
         [HttpGet("user/available-courses-grades")]
         public IActionResult GetUserAvailableCourses()
         {
-            var lang = RequestHandler.GetLanguage(HttpContext);
-            var token = RequestHandler.GetToken(HttpContext);
-            var ip = IPAddressDetector.GetClientIpAddress(HttpContext);
-
-            var session = GetUserDetails.GetUserIdRequestOnOtherAPI(
-                token, ip, "SubscriptionUserProductRead", lang);
-
-            if (!session.SessionValid || string.IsNullOrWhiteSpace(session.UserId))
-                return Unauthorized();
-
-            var reader = new SubscriptionReadersManager(
-                AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], lang);
-
-            // If role "1" means admin/staff, preserve original logic
-            bool includeAll = session.RoleId == "1";
-            var subscriptionProfilesItems = reader.GetAvailableItemsBySubscriptions(includeAll, session.UserId);
-
-            var subscriptionProductsToFind = new List<SubscriptionsAPI.Domain.Models.Generals.SubscriptionProductModel>();
-            foreach (var p in subscriptionProfilesItems)
+            try
             {
-                subscriptionProductsToFind.Add(new SubscriptionProductModel { ProductId = p.ItemId });
+                var lang = RequestHandler.GetLanguage(HttpContext);
+                var token = RequestHandler.GetToken(HttpContext);
+                var ip = IPAddressDetector.GetClientIpAddress(HttpContext);
+
+                var session = GetUserDetails.GetUserIdRequestOnOtherAPI(
+                    token, ip, "SubscriptionUserProductRead", lang);
+
+                if (!session.SessionValid || string.IsNullOrWhiteSpace(session.UserId))
+                    return Unauthorized();
+
+                var reader = new SubscriptionReadersManager(
+                    AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], lang);
+
+                // If role "1" means admin/staff, preserve original logic
+                bool includeAll = session.RoleId == "1";
+                var subscriptionProfilesItems = reader.GetAvailableItemsBySubscriptions(includeAll, session.UserId);
+
+                var subscriptionProductsToFind = new List<SubscriptionsAPI.Domain.Models.Generals.SubscriptionProductModel>();
+                foreach (var p in subscriptionProfilesItems)
+                {
+                    subscriptionProductsToFind.Add(new SubscriptionProductModel { ProductId = p.ItemId });
+                }
+
+                var products = new SubscriptionProductDAO().Read(
+                    AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
+                    subscriptionProductsToFind);
+
+                return Ok(products);
             }
-
-            var products = new SubscriptionProductDAO().Read(
-                AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
-                subscriptionProductsToFind);
-
-            return Ok(products);
+            catch(Exception ex)
+            {
+                return BadRequest(ex.ToString());
+            }
         }
 
         // ---------------------------------------------
@@ -1195,7 +1241,7 @@ namespace SubscriptionsAPI.Controllers
                     AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
                     lang);
 
-                var stripeKey = AppConfiguration.Configuration["AppSettings:subs_stripe_key"];
+                var stripeKey = AppConfiguration.Configuration["AppSettings:SubsStripeKey"];
 
                 var responseModel = updater.CancelSubscription(
                     subscribeCustomerRequestModel.SubscriptionId,
@@ -1514,53 +1560,55 @@ namespace SubscriptionsAPI.Controllers
                     return BadRequest(); // cannot proceed without subscription
 
                 // Capacity validation
-                if (subDetails.SubscriptionProfiles != null && subDetails.SubscriptionProfiles.Count > 0)
+                if (!isStaff)
                 {
-                    // If adding +1 exceeds capacity, run special student-only logic
-                    if (int.TryParse(subDetails.ProfilesTotalQuantity, out var capacity) &&
-                        subDetails.SubscriptionProfiles.Count + 1 > capacity)
+                    if (subDetails.SubscriptionProfiles != null && subDetails.SubscriptionProfiles.Count > 0)
                     {
-                        var messageManager = new MessageManager(
-                            AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
-                            langCode);
-
-                        // Build userRolesIds list (profile IDs)
-                        var userRolesIds = new List<string>();
-                        foreach (var profile in subDetails.SubscriptionProfiles)
-                            userRolesIds.Add(profile.ProfileId);
-
-                        var discountOnlyStudents = AppConfiguration.Configuration["AppSettings:subr_discount_only_students"]; // "1" or "0"
-                        var roleClientChild = AppConfiguration.Configuration["AppSettings:ur_role_client_child"];
-                        var errorMsgCode = AppConfiguration.Configuration["AppSettings:gwp_message_code_add_profile_error"];
-
-                        if (discountOnlyStudents == "1" && requestModel.RoleId == requestModel.StudentRoleId)
+                        // If adding +1 exceeds capacity, run special student-only logic
+                        if (int.TryParse(subDetails.ProfilesTotalQuantity, out var capacity) &&
+                            subDetails.SubscriptionProfiles.Count + 1 > capacity)
                         {
-                            // Count students currently attached
-                            var userRoles = GetUserDetails.GetUserRoles(token, ipAddress, userRolesIds);
-                            int studentTotals = 0;
+                            var messageManager = new MessageManager(
+                                AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
+                                langCode);
 
+                            // Build userRolesIds list (profile IDs)
+                            var userRolesIds = new List<string>();
                             foreach (var profile in subDetails.SubscriptionProfiles)
-                            {
-                                if (userRoles.Find(x => x.UserId == profile.ProfileId && x.RoleId == roleClientChild) != null)
-                                    studentTotals++;
-                            }
+                                userRolesIds.Add(profile.ProfileId);
 
-                            if (studentTotals >= capacity)
+                            var discountOnlyStudents = AppConfiguration.Configuration["AppSettings:subr_discount_only_students"]; // "1" or "0"
+                            var roleClientChild = AppConfiguration.Configuration["AppSettings:ur_role_client_child"];
+                            var errorMsgCode = AppConfiguration.Configuration["AppSettings:gwp_message_code_add_profile_error"];
+
+                            if (discountOnlyStudents == "1" && requestModel.RoleId == roleClientChild)
+                            {
+                                // Count students currently attached
+                                var userRoles = GetUserDetails.GetUserRoles(token, ipAddress, userRolesIds);
+                                int studentTotals = 0;
+
+                                foreach (var profile in subDetails.SubscriptionProfiles)
+                                {
+                                    if (userRoles.Find(x => x.UserId == profile.ProfileId && x.RoleId == roleClientChild) != null)
+                                        studentTotals++;
+                                }
+
+                                if (studentTotals >= capacity)
+                                {
+                                    generalResponseModel.Messages ??= new List<string>();
+                                    generalResponseModel.Messages.Add(messageManager.GetMessageDetails(errorMsgCode));
+                                    return BadRequest(generalResponseModel);
+                                }
+                            }
+                            else if (discountOnlyStudents == "0" && requestModel.RoleId != roleClientChild)
                             {
                                 generalResponseModel.Messages ??= new List<string>();
                                 generalResponseModel.Messages.Add(messageManager.GetMessageDetails(errorMsgCode));
                                 return BadRequest(generalResponseModel);
                             }
                         }
-                        else if (discountOnlyStudents == "0" && requestModel.RoleId != roleClientChild)
-                        {
-                            generalResponseModel.Messages ??= new List<string>();
-                            generalResponseModel.Messages.Add(messageManager.GetMessageDetails(errorMsgCode));
-                            return BadRequest(generalResponseModel);
-                        }
                     }
                 }
-
                 // Attach the profile
                 var manager = new SubscriptionManager(
                     AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnection"],
@@ -1715,7 +1763,7 @@ namespace SubscriptionsAPI.Controllers
                         new CustomerModel { UserId = subscribeCustomerRequestModel.UserId },
                         true, true);
 
-                    var stripeKey = AppConfiguration.Configuration["AppSettings:subs_stripe_key"];
+                    var stripeKey = AppConfiguration.Configuration["AppSettings:SubsStripeKey"];
 
                     if (existing.Count == 0)
                     {
@@ -1737,7 +1785,7 @@ namespace SubscriptionsAPI.Controllers
                     subscribeCustomerRequestModel.Quantity,
                     userAddressModel?.StateIsoCode,
                     userAddressModel?.CountryIsoCode2,
-                     AppConfiguration.Configuration["AppSettings:subs_stripe_key"],
+                     AppConfiguration.Configuration["AppSettings:SubsStripeKey"],
                     session.UserId,
                     subscribeCustomerRequestModel.CouponPlatformId,
                     subscribeCustomerRequestModel.PlatformCode,

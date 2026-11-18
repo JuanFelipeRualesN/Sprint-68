@@ -73,7 +73,7 @@ namespace TeachersAPI.Controllers
                     {
                          new MessageManager(
                 AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"],
-                responseSession.LangCode).GetMessageDetails(Environment.GetEnvironmentVariable("tm_message_plan_cannot_be_created_because_expiring_date"))
+                responseSession.LangCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:tm_message_plan_cannot_be_created_because_expiring_date"])
                     }
                 });
             }
@@ -170,8 +170,6 @@ namespace TeachersAPI.Controllers
                 }
             }
 
-
-
             teacherPlanningDetailModel.ExpiredDateResults.AddRange(responseLessons);
             teacherPlanningDetailModel.ExpiredDateResults.AddRange(responseQuizzes);
 
@@ -203,6 +201,11 @@ namespace TeachersAPI.Controllers
                 var teacherPlanOtherSubjectIntegrationService = TeacherPlanOtherSubjectIntegrationServiceFactory.CreateService(dbConn);
                 var teacherPlanPraxisReflectionService = TeacherPlanPraxisReflectionServiceFactory.CreateService(dbConn);
                 var teacherPlanStrategyService = TeacherPlanStratergyServiceFactory.CreateService(dbConn);
+                var teacherPlanDifferentiationStrategyService = TeacherPlanDifferentiationStrategyServiceFactory.CreateService(dbConn);
+                var teacherPlanObservationService = TeacherPlanObservationServiceFactory.CreateService(dbConn);
+                var teacherPlanCommonExperienceService = TeacherPlanCommonExperienceServiceFactory.CreateService(dbConn);
+                var teacherPlanActiveResponseService = TeacherPlanActiveResponseServiceFactory.CreateService(dbConn);
+
 
                 await teacherPlanAccommodationService.CopyTeacherPlanAccommodation(oldTeacherPLan, newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
                 await teacherPlanCustomLessonService.CopyTeacherPlanCustomLessons(oldTeacherPLan,
@@ -216,6 +219,10 @@ namespace TeachersAPI.Controllers
                 await teacherPlanPraxisReflectionService.CopyTeacherPlanPraxisReflection(oldTeacherPLan,
                     newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
                 await teacherPlanStrategyService.CopyTeacherPlanStrategy(oldTeacherPLan, newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
+                await teacherPlanDifferentiationStrategyService.CopyTeacherPlanDifferentiationStrategy(oldTeacherPLan, newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
+                await teacherPlanObservationService.CopyTeacherPlanObservation(oldTeacherPLan, newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
+                await teacherPlanCommonExperienceService.CopyTeacherPlanCommonExperience(oldTeacherPLan, newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
+                await teacherPlanActiveResponseService.CopyTeacherPlanActiveResponse(oldTeacherPLan, newTeacherPlan, suggestedOpenDateRange, suggestedCloseRangeDate);
             }
         }
 

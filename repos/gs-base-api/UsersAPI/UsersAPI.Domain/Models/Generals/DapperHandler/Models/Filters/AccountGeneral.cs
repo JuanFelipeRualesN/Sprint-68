@@ -30,6 +30,11 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models.Filters
         public bool IsClientAccount { get; set; }
 
         /// <summary>
+        ///  Get or sets when student homeschool account is making the request
+        /// </summary>
+        public bool IsStudentHomeschool { get; set; }
+
+        /// <summary>
         /// Gets or sets whether the same school rule required.
         /// </summary>
         public bool SameSchoolRequired { get; set; }

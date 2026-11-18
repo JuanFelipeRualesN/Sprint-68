@@ -32,7 +32,7 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
         {
             _httpClient = new HttpClient();
             _apiUrl = AppConfiguration.Configuration["AppSettings:athenas_web_service_url"];
-            _apiKey = AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"];
+            _apiKey = AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"];
 
             // Configurar cliente HTTP
             _httpClient.BaseAddress = new Uri(_apiUrl);

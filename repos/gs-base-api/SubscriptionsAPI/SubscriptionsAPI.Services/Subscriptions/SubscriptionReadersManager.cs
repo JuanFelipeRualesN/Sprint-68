@@ -335,6 +335,26 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
         }
 
         /// <summary>
+        /// To get the general subscriptions details of a client. (Use this just for clients)
+        /// </summary>
+        /// <param name="userId">The id of the user.</param>
+        /// <returns>Returns the subscription general details.</returns>
+        public List<SubscriptionModel> GetClientGeneralSubscriptions(string userId)
+        {
+            string customerPlatformId = GetCustomerPlatformId(userId);
+            if (string.IsNullOrEmpty(customerPlatformId))
+            {
+                return new List<SubscriptionModel>();
+            }
+            // First we retrieve the subscriptions of the customer
+            return new SubscriptionDAO().Read(_connectionStringRead, new SubscriptionModel
+            {
+                CustomerPlatformId = customerPlatformId
+            }, false, false);
+
+        }
+
+        /// <summary>
         /// Get the items that the user can use in their susbcriptions.
         /// </summary>
         /// <param name="isMainAccount">If is the main account, send this as true, if it's a profile (student) send it false.</param>
@@ -361,6 +381,9 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
                 {
                     ProfileId = userId
                 }, false, false);
+
+                if(subscriptionProfileModels.Count == 0) // If there is no subscriptions attached, just returned an empty list 
+                    return new List<SubscriptionProfileSelectedItemResponseModel>();
 
                 // Second, we find the product (plans) of each subscriptions 
                 // a. We find the subscriptions plans 

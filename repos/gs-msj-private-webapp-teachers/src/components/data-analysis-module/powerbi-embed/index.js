@@ -4,7 +4,7 @@ import { models } from 'powerbi-client';
 import { getPowerBIReports } from "../../../api/data-warehouse";
 import LoadingFullWindow from "../../shared-module-components/loader-windows/loader-full-window";
 
-const PowerBIEmbedComponent = ({ reportId, workspaceId, pageName, isMobile, onReportReady }) => {
+const PowerBIEmbedComponent = ({ reportId, workspaceId, pageName, isMobile }) => {
     const [embedConfig, setEmbedConfig] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     
@@ -91,7 +91,6 @@ const PowerBIEmbedComponent = ({ reportId, workspaceId, pageName, isMobile, onRe
             ])} 
             getEmbeddedComponent={(embeddedReport) => {
                 reportRef.current = embeddedReport;
-                if (onReportReady) onReportReady(embeddedReport);
             }}
         />
     </div>

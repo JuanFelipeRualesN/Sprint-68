@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Amazon;
+/* using Amazon;
 using Amazon.CloudFront;
 using Amazon.S3;
-using Amazon.S3.Model;
+using Amazon.S3.Model; */
 using CacheHandlerLibrary;
 
 namespace TeachersAPI.Utils
@@ -12,6 +12,7 @@ namespace TeachersAPI.Utils
     /// <summary>
     /// AWS Assets helper to manage files uploading.
     /// </summary>
+    /*
     public class AwsAssets
     {
         /// <summary>
@@ -121,5 +122,5 @@ namespace TeachersAPI.Utils
 
             return Path.Combine(AppContext.BaseDirectory, trimmed);
         }
-    }
+    } */
 }

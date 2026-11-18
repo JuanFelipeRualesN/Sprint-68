@@ -1,12 +1,10 @@
 ﻿using GSWebAPI.GSWebAPI.Domain.Models.General.Responses;
+using GSWebAPI.GSWebAPI.Services.Utils;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using PdfSharp.Pdf;
-using System;
-using System.Configuration; // if you're using ConfigurationManager for logo_url
-using System.IO;
-using System.Threading.Tasks;
-using TheArtOfDev.HtmlRenderer.PdfSharp;
+
+// WkHtmlToPdfDotNet (cross-platform: Windows + Linux)
+using WkHtmlToPdfDotNet;
+using WkHtmlToPdfDotNet.Contracts;
 
 namespace GSWebAPI.CustomClasses
 {
@@ -18,16 +16,91 @@ namespace GSWebAPI.CustomClasses
         /// <summary>
         /// Generates a PDF of the user responses.
         /// </summary>
-        /// <param name="profileReportsResponseModel">Profile result details.</param>
-        /// <param name="generatePdfForCloud">To generate the PDF for Cloud.</param>
-        /// <param name="httpContextAccessor">Optional: inject to build absolute URL (ASP.NET Core).</param>
-        /// <returns>Returns the URL of the file (or local path if no HTTP context).</returns>
         public static async Task<string> GeneratePDF(
             ProfileReportsResponseModel profileReportsResponseModel,
             bool generatePdfForCloud,
             IHttpContextAccessor? httpContextAccessor = null)
         {
-            // Build HTML
+            // --- 1. BUILD HTML ---
+            string htmlString = BuildHtmlContent(profileReportsResponseModel);
+
+            // --- 2. GENERATE PDF (same code for Windows & Linux) ---
+            byte[] pdfBytes = GeneratePdf_WkHtml(htmlString);
+
+            // --- 3. COMMON FILE HANDLING ---
+            using var stream = new MemoryStream(pdfBytes);
+            stream.Position = 0;
+
+            string fileName = Guid.NewGuid() + ".pdf";
+
+            if (!generatePdfForCloud)
+            {
+                // Save locally (temp folder)
+                string localReportsDirectory = Path.Combine(Path.GetTempPath(), "LocalPDFReports");
+                Directory.CreateDirectory(localReportsDirectory);
+
+                string localFilePath = Path.Combine(localReportsDirectory, fileName);
+                stream.Position = 0;
+                using (var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write))
+                {
+                    await stream.CopyToAsync(fileStream);
+                }
+
+                // Try to build a public URL if we have an HTTP context
+                var request = httpContextAccessor?.HttpContext?.Request;
+                if (request != null)
+                {
+                    string scheme = request.Scheme;
+                    string host = request.Host.Value;
+                    string url = $"{scheme}://{host}/reports/{fileName}";
+                    return url;
+                }
+
+                return localFilePath;
+            }
+            else
+            {
+                // Upload to Azure (existing implementation)
+                return await AzureAssets.UploadFileToAzureStorage(stream, fileName);
+            }
+        }
+
+        /// <summary>
+        /// Generates PDF using WkHtmlToPdfDotNet (Windows & Linux).
+        /// Requires wkhtmltopdf binary installed in the environment.
+        /// </summary>
+        private static byte[] GeneratePdf_WkHtml(string htmlString)
+        {
+            var doc = new HtmlToPdfDocument()
+            {
+                GlobalSettings = {
+                    PaperSize = PaperKind.A4,
+                    Orientation = Orientation.Portrait,
+                    ColorMode = ColorMode.Color,
+                    Margins = new MarginSettings {
+                        Top = 20,
+                        Right = 20,
+                        Bottom = 20,
+                        Left = 20
+                    },
+                    Out = null
+                },
+                Objects = {
+                    new ObjectSettings() {
+                        HtmlContent = htmlString,
+                        WebSettings = { DefaultEncoding = "utf-8" }
+                    }
+                }
+            };
+
+            return WkHtmlConverterSingleton.Instance.Convert(doc);
+        }
+
+        /// <summary>
+        /// Centralized method for building the common HTML content.
+        /// </summary>
+        private static string BuildHtmlContent(ProfileReportsResponseModel profileReportsResponseModel)
+        {
             string htmlString = @"
 <!DOCTYPE html>
 <html>
@@ -69,43 +142,59 @@ namespace GSWebAPI.CustomClasses
                 htmlString += $"<img src='{logoUrl}' alt='Logo'>";
             }
 
-            htmlString += @"
+            htmlString += $@"
             <table class='header-table'>
                 <tr class='header-row'>
                     <td class='label'>Nombre / Name:</td>
-                    <td class='value'>" + profileReportsResponseModel.StudentName + @"</td>
+                    <td class='value'>{profileReportsResponseModel.StudentName}</td>
                 </tr>
                 <tr class='header-row'>
                     <td class='label'>Prueba / Quiz:</td>
-                    <td class='value'>" + profileReportsResponseModel.UserQuizFullDetails.QuizTitle + @"</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.QuizTitle}</td>
+                </tr>
+                <tr class='header-row'>
+                    <td class='label'>Lección / Lesson:</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.LessonTitle}</td>
+                </tr>
+                <tr class='header-row'>
+                    <td class='label'>Materia / Subject:</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.Subject}</td>
+                </tr>
+                <tr class='header-row'>
+                    <td class='label'>Grado / Grade:</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.Grade}</td>
+                </tr>
+                <tr class='header-row'>
+                    <td class='label'>Fecha / Date Taken:</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.CreatedAt}</td>
                 </tr>
                 <tr class='header-row'>
                     <td class='label'>Total:</td>
-                    <td class='value'>" + profileReportsResponseModel.UserQuizFullDetails.TotalPercent + @"%</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.TotalPercent}%</td>
                 </tr>
                 <tr class='header-row'>
                     <td class='label'>Intento / Attempt:</td>
-                    <td class='value'>" + profileReportsResponseModel.UserQuizFullDetails.TryNo + @"</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.TryNo}</td>
                 </tr>
                 <tr class='header-row'>
                     <td class='label'>Nivel de pensamiento / Depth of Knowledge:</td>
-                    <td class='value'>" + profileReportsResponseModel.UserQuizFullDetails.DoK + @"</td>
+                    <td class='value'>{profileReportsResponseModel.UserQuizFullDetails.DoK}</td>
                 </tr>
             </table>
         </div>";
 
             // Instructions
-            htmlString += @"
+            htmlString += $@"
         <div class='section-content'>
             <h2 class='section-title text-center'>Instrucciones / Instructions</h2>
-            <div class='mt-10 mb-10'>" + profileReportsResponseModel.UserQuizFullDetails.Instructions + @"</div>";
+            <div class='mt-10 mb-10'>{profileReportsResponseModel.UserQuizFullDetails.Instructions}</div>";
 
             // Extra Info
             if (!string.IsNullOrWhiteSpace(profileReportsResponseModel.UserQuizFullDetails.ExtraInfo))
             {
-                htmlString += @"
+                htmlString += $@"
             <h2 class='section-title text-center'>Información extra / Extra Info</h2>
-            <div class='mt-10 mb-10'>" + profileReportsResponseModel.UserQuizFullDetails.ExtraInfo + @"</div>";
+            <div class='mt-10 mb-10'>{profileReportsResponseModel.UserQuizFullDetails.ExtraInfo}</div>";
             }
 
             // Q&A
@@ -135,64 +224,7 @@ namespace GSWebAPI.CustomClasses
 </body>
 </html>";
 
-            // PDF generation
-            var config = new PdfGenerateConfig
-            {
-                PageSize = PdfSharp.PageSize.A4,
-                MarginTop = 20,
-                MarginRight = 20,
-                MarginBottom = 20,
-                MarginLeft = 20
-            };
-
-            PdfDocument pdf = PdfGenerator.GeneratePdf(htmlString, config);
-
-            using var stream = new MemoryStream();
-            pdf.Save(stream, false);
-            stream.Position = 0;
-
-            string fileName = Guid.NewGuid() + ".pdf";
-            string contentType = "application/pdf";
-
-            if (!generatePdfForCloud)
-            {
-                // 1) Save the actual PDF bytes locally
-                string localReportsDirectory = Path.Combine(Path.GetTempPath(), "LocalPDFReports");
-                Directory.CreateDirectory(localReportsDirectory);
-
-                string localFilePath = Path.Combine(localReportsDirectory, fileName);
-                stream.Position = 0;
-                using (var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write))
-                {
-                    await stream.CopyToAsync(fileStream);
-                }
-
-                // 2) Build a public URL if we have an HTTP context; otherwise return local path
-                var request = httpContextAccessor?.HttpContext?.Request;
-                if (request != null)
-                {
-                    string scheme = request.Scheme;         // "http" or "https"
-                    string host = request.Host.Value;       // "localhost:5000"
-                                                            // Adjust the path segment ("reports") to match your static-file mapping if needed
-                    string url = $"{scheme}://{host}/reports/{fileName}";
-                    return url;
-                }
-
-                return localFilePath;
-            }
-            else
-            {
-                /* TODO: Substitue this for Azure Blob Storage 
-                // Upload to S3/CloudFront
-                string fullFilePath = $"{AwsAssets.FolderPath}{fileName}";
-                stream.Position = 0;
-                await AwsAssets.WritingObjectToS3BucketAsync(fullFilePath, stream, contentType);
-
-                string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(fullFilePath);
-
-                return signedUrl;*/
-                return nameof(NotImplementedException);
-            }
+            return htmlString;
         }
     }
 }

@@ -18,9 +18,10 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
         /// To get the user results from GS Web.
         /// </summary>
         /// <param name="token">The user's token (the user's making the request.)</param>
+        /// <param name="profileId">The student's id.</param>
         /// <param name="usquiResultId">The usqui result id.</param>
         /// <returns>Returns the user quiz response model.</returns>
-        public static UserQuizResponseModel GetUserResults(string token, string usquiResultId)
+        public static Domain.Models.FeignAPI.ProfileReportsResponseModel GetUserResults(string token, string profileId, string usquiResultId)
         {
 
             using (var client = new HttpClient())
@@ -33,14 +34,19 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 // Get the gs web usqui result from web config
                 var usquiResultUrl = AppConfiguration.Configuration["AppSettings:gs_endpoint_usqui_result"];
                 usquiResultUrl = usquiResultUrl.Replace("{userQuizResultId}", usquiResultId);
-                // replace the usqui result id
+                usquiResultUrl = usquiResultUrl.Replace("{profileId}", profileId);
+                // Add query param pdfRequired=false safely
+                if (usquiResultUrl.Contains("?"))
+                    usquiResultUrl += "&pdfRequired=false";
+                else
+                    usquiResultUrl += "?pdfRequired=false";
 
                 var response = client.GetAsync(usquiResultUrl).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     string responseString = response.Content.ReadAsStringAsync().Result;
 
-                    var results = JsonConvert.DeserializeObject<UserQuizResponseModel>(responseString,
+                    var results = JsonConvert.DeserializeObject<Domain.Models.FeignAPI.ProfileReportsResponseModel>(responseString,
                         new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore
@@ -50,7 +56,8 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 }
                 else
                 {
-                    return new UserQuizResponseModel();
+                    Console.WriteLine("Response from GSWeb", response);
+                    return new Domain.Models.FeignAPI.ProfileReportsResponseModel();
                 }
             }
         }

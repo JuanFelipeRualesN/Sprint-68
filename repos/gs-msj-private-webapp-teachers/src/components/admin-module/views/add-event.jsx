@@ -230,11 +230,18 @@ const AddEvent = React.forwardRef(({ event, toggle }, ref) => {
     };
 
     const handleSubmit = async () => {
+        // The shared DatePicker displays today when it receives no date, but only
+        // notifies the parent after the user picks a different day. Mirror what is
+        // on screen so an untouched "today" is not treated as an empty date.
+        const todayDate = dayjs().format('YYYY-MM-DD');
+        const effectiveStartDate = startDate || todayDate;
+        const effectiveEndDate = endDate || (endHour ? todayDate : '');
+
         const titleOk = title.trim().length >= 3;
-        const startDateOk = startDate.length > 0;
+        const startDateOk = effectiveStartDate.length > 0;
         const startHourOk = startHour.length > 0;
-        const endHourOk = endDate.length === 0 || endHour.length > 0;
-        const startDateTime = startDateOk && startHourOk ? buildIsoDateTime(startDate, startHour) : '';
+        const endHourOk = effectiveEndDate.length === 0 || endHour.length > 0;
+        const startDateTime = startDateOk && startHourOk ? buildIsoDateTime(effectiveStartDate, startHour) : '';
         // New events only — editing an already-past event (e.g. to add attachments) must stay allowed.
         const startNotPastOk = isEdit || !startDateTime || !dayjs(startDateTime).isBefore(dayjs());
         const timeZoneOk = Boolean(selectedTimeZone?.value);
@@ -252,8 +259,8 @@ const AddEvent = React.forwardRef(({ event, toggle }, ref) => {
                 Title: title,
                 Description: description,
                 Location: location,
-                StartDate: buildIsoDateTime(startDate, startHour),
-                EndDate: buildIsoDateTime(endDate, endHour),
+                StartDate: startDateTime,
+                EndDate: buildIsoDateTime(effectiveEndDate, endHour),
                 TimeZoneCode: selectedTimeZone?.value || '',
             },
             EventAttachmentModelList: eventAttachmentList,

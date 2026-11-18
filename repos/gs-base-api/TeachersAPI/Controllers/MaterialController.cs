@@ -29,7 +29,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanMaterialServiceFactory.CreateService(dbConn);
-                    var materialTypes = await service.GetMaterialTypes();
+                    var materialTypes = await service.GetMaterialTypeTranslations(responseSession.LangCode);
                     return Ok(materialTypes);
                 }
             }
@@ -77,7 +77,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanMaterialServiceFactory.CreateService(dbConn);
-                    var teacherPlanMaterialByTeacherPlanId = await service.GetTeacherPlanAMaterialByTeacherPlanId(teacherPlanId);
+                    var teacherPlanMaterialByTeacherPlanId = await service.GetTeacherPlanAMaterialByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanMaterialByTeacherPlanId);
                 }
             }

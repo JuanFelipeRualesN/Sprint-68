@@ -25,11 +25,6 @@ namespace UsersAPI.Controllers
     [Route("usersapi/register")]
     public class RegisterController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        public RegisterController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
 
         /// <summary>
         /// Registers a free account as teachers (that want to implement Genial to their school. Not valid for teachers from schools that has Genial Skills Web) and parents.
@@ -51,15 +46,15 @@ namespace UsersAPI.Controllers
                 // Validate if the school identifier exists for the school.
                 if (!string.IsNullOrWhiteSpace(requestModel.SchoolId) && !string.IsNullOrWhiteSpace(requestModel.SchoolUserIdentifier))
                 {
-                    if (!new UserSchoolManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode).
+                    if (!new UserSchoolManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode).
                         CheckIfIdentifierAvailable(requestModel.SchoolUserIdentifier,
-                        _configuration["global_school_identifier"] == "1" ? null : requestModel.SchoolId))
+                        AppConfiguration.Configuration["AppSettings:global_school_identifier"] == "1" ? null : requestModel.SchoolId))
                     {
                         generalResponseModel.Messages = new List<string>(){
                         new MessageManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
-                            langCode).GetMessageDetails(_configuration["gus_user_record_exists"])
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                            langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_user_record_exists"])
                         };
                         return BadRequest(generalResponseModel);
                     }
@@ -71,7 +66,7 @@ namespace UsersAPI.Controllers
                 // Set a limit of the roles that can be subscribed for free.
                 // This is very important to avoid hackers send a role that they should not.
                 // DO NOT modified unless you know what you are doing.
-                string[] allowedSubscribersForFreeArray = _configuration["ur_roles_can_subscribe_for_free"].Split(',');
+                string[] allowedSubscribersForFreeArray = AppConfiguration.Configuration["AppSettings:ur_roles_can_subscribe_for_free"].Split(',');
                 if (!allowedSubscribersForFreeArray.Contains(requestModel.RoleId))
                 {
                     return BadRequest(generalResponseModel);
@@ -90,7 +85,7 @@ namespace UsersAPI.Controllers
                 // Validate email
                 var response = new UsersAPI.Domain.Models.Accounts.ResponseModel();
                 response = new UsersAPI.Services.Accounts.CustomClasses.ValidationManager(
-                   _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode).ValidateEmail(requestModel.Email, true);
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode).ValidateEmail(requestModel.Email, true);
                 if (!response.Valid)
                 {
                     valid = false;
@@ -101,7 +96,7 @@ namespace UsersAPI.Controllers
                 {
                     // Get the message of the errors
                     validTransaction = false;
-                    generalResponseModel.Messages.AddRange(new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode).GetMessageDetails(errorCodes));
+                    generalResponseModel.Messages.AddRange(new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode).GetMessageDetails(errorCodes));
                 }
 
                 errorCodes = new List<string>();
@@ -118,8 +113,8 @@ namespace UsersAPI.Controllers
                 };
 
                 AddressManager addressManager = new AddressManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
                 responseAddressModel = addressManager.ValidateAddress(userAddressModel, false, false, false, false, true);
                 if (!responseAddressModel.Valid)
                 {
@@ -128,7 +123,7 @@ namespace UsersAPI.Controllers
                 }
 
                 var messageManagerWS = new UsersAPI.Services.Generals.MessageManager(
-                    _configuration["GenialSkillsUsersAPIDBConnection"], langCode);
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                 // Validate name(we would use only one name.It is sufficient)
                 responseUserDetails = UsersAPI.Services.PersonalDetails.CustomClasses.ValidationManager.ValidateName(requestModel.FirstName);
@@ -138,7 +133,7 @@ namespace UsersAPI.Controllers
                     errorCodes = responseUserDetails.ErrorCodes;
                     MessageManager messageManagerPersonalDetails =
                         new MessageManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                             langCode);
                     generalResponseModel.Messages.AddRange(messageManagerPersonalDetails.GetMessageDetails(responseUserDetails.ErrorCodes));
                 }
@@ -150,7 +145,7 @@ namespace UsersAPI.Controllers
                     errorCodes = responseUserDetails.ErrorCodes;
                     MessageManager messageManagerPersonalDetails =
                         new MessageManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                             langCode);
                     generalResponseModel.Messages.AddRange(messageManagerPersonalDetails.GetMessageDetails(responseUserDetails.ErrorCodes));
                 }
@@ -166,8 +161,8 @@ namespace UsersAPI.Controllers
                 // A. Register User
                 // TODO: Refactor this.
                 UserModifyManager userModifyManager = new UserModifyManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     langCode);
                 var responseUser =
                     userModifyManager.RegisterUserFullProccessWithoutValidation(
@@ -204,8 +199,8 @@ namespace UsersAPI.Controllers
                     {
                         // Connect user
                         var profilesConnectionsRequestsManager = new ProfilesConnectionsRequestsManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"));
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"]);
 
                         List<UsersAPI.Domain.Models.Relations.ProfileConnectionInvitationByEmailModel> profileConnectionInvitationByEmailModelList =
                         profilesConnectionsRequestsManager.GetProfileInvitationByEmailModelList(new List<UsersAPI.Domain.Models.Relations.ProfileConnectionInvitationByEmailModel>()
@@ -221,14 +216,14 @@ namespace UsersAPI.Controllers
                         {
                             // Connect the user
                             RelatedAccountsManager profilesConnectionManager = new RelatedAccountsManager(
-                             _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                             _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                             AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                             AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                              langCode);
 
                             var responseConnectUsers = profilesConnectionManager.ConnectUsers(
                                responseUser.UserId,
                                profileConnectionInvitationByEmailModelList[0].UserCodeToConnectWith,
-                               _configuration["urel_restricted_connections"] == "1",
+                               AppConfiguration.Configuration["AppSettings:urel_restricted_connections"] == "1",
                                true,
                                 responseUser.UserId
                                );
@@ -251,8 +246,8 @@ namespace UsersAPI.Controllers
                         Task.Factory.StartNew(() =>
                         {
                             new UserSchoolManager(
-                                _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                                _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode).RelateUserToSchool(
+                                AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                                AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode).RelateUserToSchool(
                                 responseUser.UserId, requestModel.SchoolId, false, responseUser.UserId, requestModel.SchoolUserIdentifier);
                         });
                     }
@@ -312,16 +307,16 @@ namespace UsersAPI.Controllers
                 }
 
                 // If the user making the request is an Admin ORE, evaluate which roles the user cannot register.
-                if(sessionResponseModel.IsStaff && sessionResponseModel.RoleId == _configuration["ur_role_admin_ore"])
+                if(sessionResponseModel.IsStaff && sessionResponseModel.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                 {
                     // Check if user cannot registered the other 
-                    string[] nonAllowedRolesForORE = _configuration["ur_roles_not_allowed_to_register_for_ore_admin"].Split(',');
+                    string[] nonAllowedRolesForORE = AppConfiguration.Configuration["AppSettings:ur_roles_not_allowed_to_register_for_ore_admin"].Split(',');
                     if(nonAllowedRolesForORE.Contains(requestModel.RoleId))
                     {
                         generalResponseModel.Messages = new List<string>()
                         {
-                            new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
-                            RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(_configuration["ur_roles_this_role_cannot_be_registered"])
+                            new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                            RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(AppConfiguration.Configuration["AppSettings:ur_roles_this_role_cannot_be_registered"])
                         };
                         // School identifier already exists.
                         return BadRequest(generalResponseModel);
@@ -329,25 +324,25 @@ namespace UsersAPI.Controllers
                 }
 
                 // Check if role can be added in this area. 
-                string[] allowedRoles = _configuration["ur_roles_that_can_be_register_without_subscriptions"].Split(',');
+                string[] allowedRoles = AppConfiguration.Configuration["AppSettings:ur_roles_that_can_be_register_without_subscriptions"].Split(',');
                 if (!allowedRoles.Contains(requestModel.RoleId))
                 {
                     generalResponseModel.Messages = new List<string>()
                         {
-                            new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
-                            RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(_configuration["gus_user_record_exists"])
+                            new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                            RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_user_record_exists"])
                         };
                     // School identifier already exists.
                     return BadRequest(generalResponseModel);
                 }
 
                 // Validate if admin is ore and ore id was sent 
-                if (requestModel.RoleId == _configuration["ur_role_admin_ore"] && string.IsNullOrWhiteSpace(requestModel.OreId))
+                if (requestModel.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"] && string.IsNullOrWhiteSpace(requestModel.OreId))
                 {
                     generalResponseModel.Messages = new List<string>()
                     {
-                         new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
-                           RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(_configuration["upd_message_code_ore_required"])
+                         new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                           RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(AppConfiguration.Configuration["AppSettings:upd_message_code_ore_required"])
                     };
                     // ORE is required 
                     return BadRequest(generalResponseModel);
@@ -359,15 +354,15 @@ namespace UsersAPI.Controllers
                 {
                     requestModel.SchoolExternalIdentifier = requestModel.SchoolExternalIdentifier.Trim();
                     if (!new UserSchoolManager(
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), RequestHandler.GetLanguage(HttpContext)).
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], RequestHandler.GetLanguage(HttpContext)).
                         CheckIfIdentifierAvailable(requestModel.SchoolExternalIdentifier,
-                        _configuration["global_school_identifier"] == "1" ? null : requestModel.SchoolId))
+                        AppConfiguration.Configuration["AppSettings:global_school_identifier"] == "1" ? null : requestModel.SchoolId))
                     {
                         generalResponseModel.Messages = new List<string>()
                         {
-                            new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
-                            RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(_configuration["gus_user_record_exists"])
+                            new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                            RequestHandler.GetLanguage(HttpContext)).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_user_record_exists"])
                         };
                         // School identifier already exists.
                         return BadRequest(generalResponseModel);
@@ -389,8 +384,8 @@ namespace UsersAPI.Controllers
                 // TODO: Refactor Register overall
                 UsersAPI.Domain.Models.Accounts.ResponseModel responseModel = new UsersAPI.Domain.Models.Accounts.ResponseModel();
                 UserModifyManager userModifyManager = new UserModifyManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
 
                 responseModel = userModifyManager.RegisterUserFullProccess(
@@ -412,8 +407,8 @@ namespace UsersAPI.Controllers
                     requestModel.ZipCode,
                     requestModel.CountryIso,
                     requestModel.Gender,
-                    _configuration["upd_parent_dob_required"] == "1",
-                    _configuration["upd_parent_gender_required"] == "1",
+                    AppConfiguration.Configuration["AppSettings:upd_parent_dob_required"] == "1",
+                    AppConfiguration.Configuration["AppSettings:upd_parent_gender_required"] == "1",
                     requestModel.StateIso ?? requestModel.State,
                     sessionResponseModel.UserId);
 
@@ -423,7 +418,7 @@ namespace UsersAPI.Controllers
                 if (generalResponseModel.TransactionValid)
                 {
                     // If the subscriptions is handled by stripe, register the user in Stripe
-                    if (requestModel.RoleId == _configuration["ur_role_client"])
+                    if (requestModel.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_client"])
                     {
                         // Register the user in Stripe, and set the customer in Subscription API.
                         SubscriptionDetailsHandler.CreateCustomer(sessionResponseModel.IpAddress, sessionResponseModel.LangCode, requestModel.Email, responseModel.UserId, stripeRequired);
@@ -431,18 +426,21 @@ namespace UsersAPI.Controllers
                     }
                     generalResponseModel.UserId = responseModel.UserId;
 
-                    if (requestModel.RoleId == _configuration["ur_role_admin_ore"])
+                    if (requestModel.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                     {
                         // Relate user admin to ore.
                         Users.RelateUserAdminToOreId(generalResponseModel.UserId, requestModel.OreId, sessionResponseModel.UserId);
                     }
-
+                    Console.WriteLine("School ID: " + (requestModel.SchoolId));
+                    Console.WriteLine("School SchoolExternalIdentifier: " + (requestModel.SchoolExternalIdentifier));
+ 
                     if (!string.IsNullOrWhiteSpace(requestModel.SchoolId) && !string.IsNullOrWhiteSpace(requestModel.SchoolExternalIdentifier))
                     {
+                        Console.WriteLine("School relation entered...");
                         // Insert the school and identifier. 
                         new UserSchoolManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), 
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], 
                             RequestHandler.GetLanguage(HttpContext)).
                             RelateUserToSchool(responseModel.UserId, requestModel.SchoolId, true, sessionResponseModel.UserId, requestModel.SchoolExternalIdentifier);
                     }
@@ -482,7 +480,7 @@ namespace UsersAPI.Controllers
 
           
                 // Do the validations
-                var messageManagerPersonalDetails = new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"), sessionResponseModel.LangCode);
+                var messageManagerPersonalDetails = new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"], sessionResponseModel.LangCode);
                 var responsePersonalDetails = new UsersAPI.Domain.Models.PersonalDetails.ResponseModel
                 {
                     Valid = true,
@@ -522,8 +520,8 @@ namespace UsersAPI.Controllers
                 }
 
                 var userPersonalDetailsManager =
-                    new UserPersonalDetailsManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), sessionResponseModel.LangCode);
+                    new UserPersonalDetailsManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], sessionResponseModel.LangCode);
 
                 if(!string.IsNullOrWhiteSpace(requestModel.Phone))
                 {
@@ -552,8 +550,8 @@ namespace UsersAPI.Controllers
 
                 // Update the Address
                 var addressManager = new AddressManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), sessionResponseModel.LangCode);
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], sessionResponseModel.LangCode);
 
                 var userAddressModel = new UserAddressModel();
                 userAddressModel = addressManager.GetUserAddress(new List<UserAddressModel>()
@@ -628,8 +626,8 @@ namespace UsersAPI.Controllers
                 }
 
                 var passwordAccountManager = new PasswordAccountManager(
-                         _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                         AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                         sessionResponseModel.LangCode);
 
                 var responseUpdate = passwordAccountManager.UpdatePasswordWithoutEntryOld(
@@ -670,7 +668,7 @@ namespace UsersAPI.Controllers
                 string ipAddress = IPAddressDetector.GetClientIpAddress(HttpContext);
                 string langCode = RequestHandler.GetLanguage(HttpContext);
 
-                var messageManager = new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                var messageManager = new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                 // Validate coupon
                 if (!string.IsNullOrWhiteSpace(requestModel.CouponPlatformId))
@@ -684,7 +682,7 @@ namespace UsersAPI.Controllers
                 }
 
                 bool validTransaction = true;
-                var validations = new UsersAPI.Services.Accounts.CustomClasses.ValidationManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                var validations = new UsersAPI.Services.Accounts.CustomClasses.ValidationManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                 List<string> errorCodes = new List<string>();
 
@@ -702,7 +700,7 @@ namespace UsersAPI.Controllers
                 {
                     validTransaction = false;
                     errorCodes.AddRange(response.ErrorCodes);
-                    generalResponseModel.Messages.AddRange(new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode).GetMessageDetails(errorCodes));
+                    generalResponseModel.Messages.AddRange(new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode).GetMessageDetails(errorCodes));
 
                 }
 
@@ -728,8 +726,8 @@ namespace UsersAPI.Controllers
                 };
 
                 var addressManager = new AddressManager(
-                   _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                   _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                 var addressValidation = addressManager.ValidateAddress(userAddressModel, false, false, false, false, true);
                 if (!addressValidation.Valid)
@@ -743,7 +741,7 @@ namespace UsersAPI.Controllers
                     validTransaction = false;
 
                     // Add the error about that stripe token cannot be empty
-                    generalResponseModel.Messages.Add(messageManager.GetMessageDetails(_configuration["gus_message_code_invalid_payment_format"]));
+                    generalResponseModel.Messages.Add(messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_message_code_invalid_payment_format"]));
                 }
 
                 // Validate name(we would use only one name.It is sufficient)
@@ -770,8 +768,8 @@ namespace UsersAPI.Controllers
                 // Else: Continue:
                 // A. Register User
                 var userModifyManager = new UserModifyManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                   _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                 var responseUser =
                     userModifyManager.RegisterUserFullProccessWithoutValidation(
@@ -779,7 +777,7 @@ namespace UsersAPI.Controllers
                     requestModel.Password,
                     ipAddress,
                     requestModel.Email,
-                    _configuration["ur_role_client"],
+                    AppConfiguration.Configuration["AppSettings:ur_role_client"],
                     requestModel.FirstName,
                     requestModel.LastName,
                     null,
@@ -824,7 +822,7 @@ namespace UsersAPI.Controllers
 
                     subscriptionResponseModel.Messages.Add(
                         messageManager.GetMessageDetails(
-                        _configuration["gus_message_code_invalid_payment_format"]));
+                        AppConfiguration.Configuration["AppSettings:gus_message_code_invalid_payment_format"]));
                     subscriptionResponseModel.Messages.Add(
                         JsonConvert.SerializeObject(requestModel));
 
@@ -834,8 +832,8 @@ namespace UsersAPI.Controllers
 
 
                 // Auto connect the user after the registration
-                var loginManager = new LoginManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                   _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                var loginManager = new LoginManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
                var responseLoginModel = new LoginResponseModel();
 
                 // Generate the session token

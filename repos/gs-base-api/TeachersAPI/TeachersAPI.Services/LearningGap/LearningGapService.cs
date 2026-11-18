@@ -113,9 +113,9 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
 
             // Prepare the learning gap assigned lessons to find. 
             var learningGapAssignedLessonsToFind = new List<LearningGapAssignedLessonModel>();
-            if(activeAcademicYears != null)
+            if (activeAcademicYears != null)
             {
-                foreach(var academicYear in activeAcademicYears)
+                foreach (var academicYear in activeAcademicYears)
                 {
                     learningGapAssignedLessonsToFind.Add(new LearningGapAssignedLessonModel()
                     {
@@ -2131,6 +2131,7 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
         {
             // Check the active academic years for the student.
             var academicYears = this.GetStudentActiveAcademicYears(token, studentId);
+            limitDate = FormatLimitDateToMySQLDate(limitDate);
 
             // If there are no active academic years, return an error.
             if (academicYears == null || academicYears.Count == 0)
@@ -2244,6 +2245,8 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
                 }
             }
 
+            learningGapAssignedLessonModel.LimitDate = FormatLimitDateToMySQLDate(learningGapAssignedLessonModel.LimitDate);
+
             // Update the lesson.
             var learningGapAssignedLessonDAO = new LearningGapAssignedLessonDAO();
 
@@ -2306,6 +2309,10 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
             {
                 return validateDates;
             }
+
+            // Set the dates to MySQL
+            initialDiagnosticTestDate = FormatLimitDateToMySQLDate(initialDiagnosticTestDate);
+            finalDiagnosticTestDate = FormatLimitDateToMySQLDate(finalDiagnosticTestDate);
 
             // Lower case the subject code.
             subjectCode = subjectCode.ToLower();
@@ -2720,7 +2727,7 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
             // Create an instance of LearningGapTeacherNotifications
             var learningGapTeacherNotifications = new LearningGapTeacherNotifications(_connectionStringRead);
             var notification = learningGapTeacherNotifications.GetNotificationByLessonOrDiagnosticId(assignedLessonId, diagnosticTestId);
-            
+
             if (notification != null)
             {
                 var learningGapTeacherNotificationsWrite = new LearningGapTeacherNotifications(_connectionStringWrite);
@@ -2908,7 +2915,29 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
 
             return subjects;
         }
-    }
 
-    #endregion teacher
+
+        #endregion teacher
+
+        /// <summary>
+        /// To format limit date to MySQL Date.
+        /// </summary>
+        /// <param name="limitDate">Limit date.</param>
+        /// <returns>Returns the limit date formatted to be compatible to MySQL date.</returns>
+        private static string FormatLimitDateToMySQLDate(string limitDate)
+        {
+            try
+            {
+                DateTime dateValue = DateTime.Parse(limitDate, null, System.Globalization.DateTimeStyles.RoundtripKind);
+
+                // Convert to MySQL-compatible string (local or UTC)
+                limitDate = dateValue.ToString("yyyy-MM-dd HH:mm:ss");
+                return limitDate;
+            }
+            catch (Exception)
+            {
+                return limitDate;
+            }
+        }
+    }
 }

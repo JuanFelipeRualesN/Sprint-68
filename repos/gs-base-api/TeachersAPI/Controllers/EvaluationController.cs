@@ -32,7 +32,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanEvaluationServiceFactory.CreateService(dbConn);
-                    var evaluationTypes = await service.GetEvaluationTypes();
+                    var evaluationTypes = await service.GetEvaluationTypeTranslations(responseSession.LangCode);
                     return Ok(evaluationTypes);
                 }
             }
@@ -80,7 +80,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanEvaluationServiceFactory.CreateService(dbConn);
-                    var teacherPlanEvaluationByTeacherPlanId = await service.GetTeacherPlanAEvaluationByTeacherPlanId(teacherPlanId);
+                    var teacherPlanEvaluationByTeacherPlanId = await service.GetTeacherPlanAEvaluationByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanEvaluationByTeacherPlanId);
                 }
             }

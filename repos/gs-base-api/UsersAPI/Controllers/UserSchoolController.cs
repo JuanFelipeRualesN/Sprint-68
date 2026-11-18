@@ -1,8 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-
 using UsersAPI.CustomClasses;
 using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models.Filters;
 using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler;
@@ -21,12 +17,6 @@ namespace UsersAPI.Controllers
     [Route("usersapi/schools")]
     public class UsersSchoolController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        public UsersSchoolController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         /// <summary>
         /// To just get the users' schools ids.
         /// </summary>
@@ -67,7 +57,7 @@ namespace UsersAPI.Controllers
         {
             // First, we must check if the user has permission for it
             /* Token validation in Users API */
-            UsersAPI.Domain.Models.Generals.ValidationResponseModel sessionResponseModel = ValidateGenericCall.ValidateFullCall(HttpContext, "UserSchoolsRead");
+            var sessionResponseModel = ValidateGenericCall.ValidateFullCall(HttpContext, "UserSchoolsRead");
             // If the transaction is not valid, stop the operation
             if (!sessionResponseModel.SessionValid)
             {
@@ -90,7 +80,7 @@ namespace UsersAPI.Controllers
                 return Unauthorized();
             }
 
-            List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel> userSchoolModelListResult = Users.SearchUserSchools(userId);
+            var userSchoolModelListResult = Users.SearchUserSchools(userId);
 
             // Now relate the user schools with school info.
             if (userSchoolModelListResult.Count == 0)
@@ -99,19 +89,19 @@ namespace UsersAPI.Controllers
             }
 
             // Get the schools details 
-            List<string> entityIds = new List<string>();
-            foreach (UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel userSchool in userSchoolModelListResult)
+            var entityIds = new List<string>();
+            foreach (var userSchool in userSchoolModelListResult)
             {
                 entityIds.Add(userSchool.SchoolId);
             }
 
-            List<EntityGeneralDetailsResponseModel> entityGeneralDetails = new  SchoolDetailsHandler().GetEntityGeneralDetails(entityIds);
+            var entityGeneralDetails = new SchoolDetailsHandler().GetEntityGeneralDetails(entityIds);
 
             // Set the return object.
-            List<UserSchoolDetailResponseModel> userSchoolsDetails = new List<UserSchoolDetailResponseModel>();
-            foreach (UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel userSchoolModel in userSchoolModelListResult)
+            var userSchoolsDetails = new List<UserSchoolDetailResponseModel>();
+            foreach (var userSchoolModel in userSchoolModelListResult)
             {
-                UsersAPI.Domain.Models.Generals.Responses.APIs.EntityGeneralDetailsResponseModel entityGeneralDetailModel = entityGeneralDetails.Find(x => x.EntityId == userSchoolModel.SchoolId);
+                var entityGeneralDetailModel = entityGeneralDetails.Find(x => x.EntityId == userSchoolModel.SchoolId);
 
                 userSchoolsDetails.Add(new UserSchoolDetailResponseModel()
                 {
@@ -168,7 +158,43 @@ namespace UsersAPI.Controllers
         }
 
         /// <summary>
-        /// To get the user making the request school's info, whether confirmed or not. 
+        /// To get the user making the request school's ids.
+        /// </summary>
+        /// <returns>Returns a list with the user's school ids.</returns>
+        [HttpGet("info/by_token/user_schools/school_ids")]
+        public async Task<IActionResult> GetUserSchoolsIdsByToken()
+        {
+            // First, we must check if the user has permission for it
+            /* Token validation in Users API */
+            UsersAPI.Domain.Models.Generals.ValidationResponseModel responseSession = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UserSchoolsRead");
+            // If the transaction is not valid, stop the operation
+            if (!responseSession.SessionValid)
+            {
+                return Unauthorized();
+            }
+            /* End of Token Validation in Users API */
+
+            List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel> userSchoolModelListResult = new
+                UserSchoolManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], RequestHandler.GetLanguage(HttpContext))
+                .GetUserSchools(new List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel>() { new UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel() { UserId = responseSession.UserId } });
+
+            if (userSchoolModelListResult.Count == 0)
+            {
+                return Ok(new List<string>());
+            }
+
+            // Return just the school ids
+            List<string> userSchoolIds = userSchoolModelListResult
+                .Select(x => x.SchoolId)
+                .Distinct()
+                .ToList();
+
+            return Ok(userSchoolIds);
+        }
+
+        /// <summary>
+        /// To get the user making the request school's info, whether confirmed or not.
         /// </summary>
         /// <returns>Returns a list with user school details’ response model.</returns>
         [HttpGet("info/by_token/user_schools/")]
@@ -579,7 +605,7 @@ namespace UsersAPI.Controllers
         public async Task<IActionResult> CheckIfUserSameSchool(string userIdToCheck)
         {
             // First, we must check if the user has permission for it
-            UsersAPI.Domain.Models.Generals.ValidationResponseModel responseSession = ValidateGenericCall.ValidateFullCall(HttpContext, "UserSchoolsRead", CustomClasses.IPAddressDetector.GetClientIpAddress(HttpContext));
+            var responseSession = ValidateGenericCall.ValidateFullCall(HttpContext, "UserSchoolsRead", CustomClasses.IPAddressDetector.GetClientIpAddress(HttpContext));
             // If the transaction is not valid, stop the operation
             if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
             {

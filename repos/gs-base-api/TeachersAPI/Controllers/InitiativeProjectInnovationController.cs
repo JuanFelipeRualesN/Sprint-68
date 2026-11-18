@@ -29,7 +29,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanInitiativeProjectInnovationServiceFactory.CreateService(dbConn);
-                    var initiativeProjectInnovationTypes = await service.GetInitiativeProjectInnovationTypes();
+                    var initiativeProjectInnovationTypes = await service.GetInitiativeProjectInnovationTypeTranslations(responseSession.LangCode);
                     return Ok(initiativeProjectInnovationTypes);
                 }
             }
@@ -77,7 +77,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanInitiativeProjectInnovationServiceFactory.CreateService(dbConn);
-                    var teacherPlanInitiativeProjectInnovationByTeacherPlanId = await service.GetTeacherPlanInitiativeProjectInnovationByTeacherPlanId(teacherPlanId);
+                    var teacherPlanInitiativeProjectInnovationByTeacherPlanId = await service.GetTeacherPlanInitiativeProjectInnovationByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanInitiativeProjectInnovationByTeacherPlanId);
                 }
             }

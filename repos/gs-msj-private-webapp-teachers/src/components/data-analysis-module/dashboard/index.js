@@ -6,14 +6,12 @@ import PowerBIEmbedComponent from "../powerbi-embed";
 import { reportConfig, componentRegistry } from "../../../reportConfig";
 import SessionManager from "../../../custom-classes/session-manager";
 import {FaArrowLeft, FaChevronDown, FaChevronRight, FaBars} from "react-icons/all";
-import AssistantPanel from "../assistant-panel";
-import { ASSISTANT_AVAILABLE, ASSISTANT_ROLES } from "../assistant-panel/config";
 
 import './style.css';
 import './sidebar.css';
 import './report-view.css';
 
-const Dashboard = ({ activeLanguage, translate }) => {
+const Dashboard = () => {
   const sessionDetails = SessionManager.getSessionDetails();
 
   const userMenu = useMemo(() => {
@@ -44,21 +42,6 @@ const Dashboard = ({ activeLanguage, translate }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Asistente de datos junto al informe (REQ-3741): informe de Power BI embebido y estado del panel.
-  const [pbiReport, setPbiReport] = useState(null);
-  const [assistantOpen, setAssistantOpen] = useState(false);
-  // Fase 1: por defecto solo admin y admin-ore (ASSISTANT_ROLES; el servicio aplicará además el alcance por rol del lado del servidor).
-  const showAssistant = ASSISTANT_AVAILABLE
-    && isRoleAllowed(ASSISTANT_ROLES, sessionDetails.Roles);
-  const etiqueta = (clave) => {
-    try {
-      const texto = translate(clave);
-      return typeof texto === "string" && !texto.startsWith("Missing translationId") ? texto : "";
-    } catch (_) {
-      return "";
-    }
-  };
-
   const handleNavClick = (category, page) => {
     setActiveCategory(category);
     setActivePage(page);
@@ -87,10 +70,6 @@ const Dashboard = ({ activeLanguage, translate }) => {
     }
   }, [userMenu, activeCategory]);
 
-  useEffect(() => {
-    if (activePage && activePage.type === 'component') setPbiReport(null);   // páginas de descarga: sin informe embebido
-  }, [activePage]);
-
   const renderContent = () => {
     if (!activeCategory || !activePage) return null;
 
@@ -108,7 +87,6 @@ const Dashboard = ({ activeLanguage, translate }) => {
         reportId={activeCategory.reportId}
         pageName={activePage.pageName}
         isMobile={isMobile}
-        onReportReady={setPbiReport}
       />
     );
   };
@@ -117,7 +95,7 @@ const Dashboard = ({ activeLanguage, translate }) => {
 
     return (
       <div>
-        <div className={`pbi-dashboard-layout${showAssistant && assistantOpen ? ' assistant-open' : ''}`}>
+        <div className="pbi-dashboard-layout">
           {isMobileMenuOpen && (
             <div 
               className="dash-mobile-overlay" 
@@ -177,15 +155,6 @@ const Dashboard = ({ activeLanguage, translate }) => {
             {renderContent()}
         </div>
       </div>
-          {showAssistant && (
-            <AssistantPanel
-              report={pbiReport}
-              contextoReporte={etiqueta(`data-analysis.${activeCategory?.category}`)}
-              contextoPagina={etiqueta(`data-analysis.${activePage?.label}`)}
-              idioma={activeLanguage && activeLanguage.code}
-              onToggle={setAssistantOpen}
-            />
-          )}
         </div>
     </div>
   );

@@ -184,10 +184,10 @@ namespace UsersAPI.Controllers
                         LimitRows = generalRequestModel != null ? generalRequestModel.Limiter : 50,
                     }));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Return error about invalid json
-                return BadRequest();
+                return BadRequest(ex.ToString());
             }
         }
 
@@ -351,7 +351,7 @@ namespace UsersAPI.Controllers
         {
             try
             {
-                UsersAPI.Domain.Models.Generals.ValidationResponseModel sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UsersAdvanceRead");
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UsersAdvanceRead");
                 // If the transaction is not valid, stop the operation
                 if (!sessionResponseModel.SessionValid)
                 {
@@ -371,7 +371,7 @@ namespace UsersAPI.Controllers
                 }
 
                 // Get the main user of the subscription
-                SubscriptionResponseModel subscriptionUserResponseModel =
+                var subscriptionUserResponseModel =
                 SubscriptionDetailsHandler.GetSubscriptionDetails(sessionResponseModel.Token, sessionResponseModel.IpAddress, generalRequestModel.SubscriptionId, sessionResponseModel.LangCode);
                 if (subscriptionUserResponseModel == null || subscriptionUserResponseModel.Subscriptions == null || subscriptionUserResponseModel.Subscriptions.Count == 0)
                 {

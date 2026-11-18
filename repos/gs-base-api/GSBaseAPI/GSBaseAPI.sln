@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.6.33829.357
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11806.211
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GSBaseAPI", "GSBaseAPI.csproj", "{6A103A02-56F2-451D-AD56-D1A871C2D41D}"
 EndProject
@@ -22,6 +22,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeachersAPI", "..\TeachersAPI\TeachersAPI.csproj", "{7965FE74-EE41-4908-A5DA-404CDA02A939}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAnalysisAPI", "..\DataAnalysisAPI\DataAnalysisAPI.csproj", "{AD4C36E6-9012-4B85-A5FC-3364C461510B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadingAPI", "..\ReadingAIAPI\ReadingAPI.csproj", "{1A4606CB-43C8-BD5D-CCEE-D7B5B61CC094}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfConverterProvider", "..\PdfConverterProvider\PdfConverterProvider.csproj", "{00B4F49F-9B34-48CF-BA77-A14447E319E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIServicesAPI", "..\AIServicesAPI\AIServicesAPI.csproj", "{A79D1763-89D2-273C-50E4-9A04418F7CC9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +75,18 @@ Global
 		{AD4C36E6-9012-4B85-A5FC-3364C461510B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD4C36E6-9012-4B85-A5FC-3364C461510B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD4C36E6-9012-4B85-A5FC-3364C461510B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A4606CB-43C8-BD5D-CCEE-D7B5B61CC094}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A4606CB-43C8-BD5D-CCEE-D7B5B61CC094}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A4606CB-43C8-BD5D-CCEE-D7B5B61CC094}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A4606CB-43C8-BD5D-CCEE-D7B5B61CC094}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00B4F49F-9B34-48CF-BA77-A14447E319E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00B4F49F-9B34-48CF-BA77-A14447E319E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00B4F49F-9B34-48CF-BA77-A14447E319E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00B4F49F-9B34-48CF-BA77-A14447E319E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A79D1763-89D2-273C-50E4-9A04418F7CC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A79D1763-89D2-273C-50E4-9A04418F7CC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A79D1763-89D2-273C-50E4-9A04418F7CC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A79D1763-89D2-273C-50E4-9A04418F7CC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

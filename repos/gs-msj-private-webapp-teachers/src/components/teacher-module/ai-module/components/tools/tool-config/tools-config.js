@@ -94,12 +94,8 @@ const ASSESSMENT_TYPE_OPTIONS = [
     'formative', 'summative', 'performance-based', 'exit-ticket', 'short-quiz',
 ];
 
-const ASSESSMENT_FORMAT_OPTIONS = [
-    'multiple-choice', 'short-answer', 'open-essay', 'performance-task', 'mixed',
-];
-
 const ELL_LEVEL_OPTIONS = [
-    'entering', 'emerging', 'developing', 'expanding', 'bridging',
+    'emerging', 'developing', 'expanding', 'bridging',
 ];
 
 const DOK_OPTIONS = [
@@ -173,6 +169,25 @@ const DEMONSTRATION_FORM_OPTIONS = [
 const QUESTION_TYPE_OPTIONS = [
     'questions-open', 'questions-multiple-choice', 'questions-short-answer', 'questions-true-false', 'questions-mixed',
 ];
+
+const CLOSED_QUESTION_TYPES = ['questions-multiple-choice', 'questions-short-answer', 'questions-true-false'];
+
+// Assignment conversion prompt of the tools with DOK levels and question types: it adds the
+// rules for DOK 4 tasks and closed types.
+const DOK_ASSIGNMENT_CONVERSION = 'conversionSystemDok';
+
+// DOK 4 builds open tasks, so the question type field is disabled there
+const QUESTION_TYPE_DOK4_DISABLED = { field: 'dok', equals: 'dok-4', noteKey: 'ui.questionTypeDok4' };
+
+// DOK 4 builds 1 to 3 tasks whatever the count, so the count field is disabled there
+const TASK_COUNT_DOK4_DISABLED = { field: 'dok', equals: 'dok-4', noteKey: 'ui.assessmentCountDok4' };
+
+// Warning shown under the question type when a closed type is chosen with "All DOK levels", because its extended thinking item
+// is always an open task. typeField is the form field holding the type
+const allLevelsWarning = (typeField) => ({
+    all: [{ field: typeField, in: CLOSED_QUESTION_TYPES }, { field: 'dok', equals: 'dok-all' }],
+    noteKey: 'ui.questionTypeAllLevelsWarning',
+});
 
 const COMPREHENSION_SKILL_OPTIONS = [
     'skill-main-idea', 'skill-sequence', 'skill-cause-effect', 'skill-compare-contrast',
@@ -404,17 +419,30 @@ const getLevelsSectionsList = (dok, t) => {
 
 // assessment-creator section list for the selected DOK. Fills {{count}} (max 5 for
 // exit tickets) and {{cases}} (DOK 3 groups about 3 items per case).
+// DOK 3 with a closed question type uses a list whose items keep that type and never ask to justify
 const getAssessmentSectionsList = (f, t) => {
-    const key = DOK_OPTIONS.includes(f.dok) ? f.dok : 'none';
+    const level = DOK_OPTIONS.includes(f.dok) ? f.dok : 'none';
+    const key = level === 'dok-3' && CLOSED_QUESTION_TYPES.includes(f.questionType) ? 'dok-3-closed' : level;
     const count = Number(f.count) || 10;
     const itemCount = f.type === 'exit-ticket' ? Math.min(count, 5) : count;
     const cases = Math.ceil(itemCount / 3);
     return t(`tools-config:assessmentSectionsList.${key}`, { cases, count: itemCount, interpolation: { escapeValue: false } });
 }
 
+// Exam level block (math-exam, and assessment-creator) when selecting "All DOK levels"
+const getItemsDokBlock = (dok, t, questionType) => {
+    const block = getDokInstructions(dok, t, 'items');
+    if (!CLOSED_QUESTION_TYPES.includes(questionType)) return block;
+
+    const closed = (key) => t(`tools-config:dokItemsClosedType.${key}`, { interpolation: { escapeValue: false } });
+    if (dok === 'dok-3') return closed('dok-3');
+    if (dok === 'dok-all') return block + closed('dok-all');
+    return block;
+}
+
 // assessment-creator DOK text.
-const getAssessmentDokBlock = (dok, t) => {
-    if (dok === 'dok-all') return getDokInstructions(dok, t, 'items');
+const getAssessmentDokBlock = (dok, t, questionType) => {
+    if (dok === 'dok-all') return getItemsDokBlock(dok, t, questionType);
     if (!DOK_OPTIONS.includes(dok)) return '';
     const level = dok.replace('dok-', 'DOK ');
     return `\n\n${t('tools-config:fields.dok')}: ${level} — ${t(`tools-config:options.${dok}`)}`;
@@ -428,6 +456,19 @@ const getMathExamSectionsList = (f, t) => {
         count: f.count || 10,
         interpolation: { escapeValue: false },
     });
+}
+
+// dok-questions level block. With a closed question type the level never asks to explain or justify, so the questions keep the chosen type. 
+// DOK 2 puts the reasoning in the question and DOK 3 builds the questions on a case
+const getDokQuestionsBlock = (f, t, count) => {
+    const level = DOK_OPTIONS.includes(f.dok) ? f.dok : 'dok-all';
+    const block = getDokInstructions(level, t, 'questions', { count });
+    if (!CLOSED_QUESTION_TYPES.includes(f.questionType)) return block;
+
+    const closed = (key) => t(`tools-config:dokQuestionsClosedType.${key}`, { count, interpolation: { escapeValue: false } });
+    if (level === 'dok-2' || level === 'dok-3') return closed(level);
+    if (level === 'dok-all') return block + closed('dok-all');
+    return block;
 }
 
 // Chooses which dokQuestionsClosing text ends the prompt: 'dok-4' or 'dok-all' for
@@ -508,7 +549,7 @@ const getQuestionFocusLine = (type, t) => {
     });
 }
 
-// dok-questions and comprehension-questions question type line
+// dok-questions, assessment-creator and comprehension-questions question type line
 const getQuestionTypeLine = (type, t) => {
     if (!QUESTION_TYPE_OPTIONS.includes(type)) return '';
     return t('tools-config:questionTypeLine', {
@@ -573,19 +614,30 @@ const getChoiceBoardDokItem = (dok, t) => {
     return '\n' + t(`tools-config:choiceBoardDok.${dok}`, { interpolation: { escapeValue: false } });
 }
 
+// With a closed question type the comprehension blocks keep their literal / inferential / critical nature but every
+// question has one correct answer. DOK 4 makes open tasks
+const isComprehensionClosed = (f) => f.dok !== 'dok-4' && CLOSED_QUESTION_TYPES.includes(f.questionType);
+
 // comprehension-questions thinking level
-const getComprehensionDokLine = (dok, t) => {
-    if (!DOK_OPTIONS.includes(dok)) return '';
-    return t(`tools-config:comprehensionDok.${dok}`, { interpolation: { escapeValue: false } });
+const getComprehensionDokLine = (f, t) => {
+    if (!DOK_OPTIONS.includes(f.dok)) return '';
+    const ns = f.dok === 'dok-3' && isComprehensionClosed(f) ? 'comprehensionDokClosed' : 'comprehensionDok';
+    return t(`tools-config:${ns}.${f.dok}`, { interpolation: { escapeValue: false } });
 }
 
-// comprehension-questions block list. Each line comes from the level (with DOK 4, every item is an extended task)
+// comprehension-questions block list. Each line comes from the level (with DOK 4, every item is an extended task).
+// With a closed type comprehensionBlocksClosed only holds the blocks that change, the others use the normal one
 const getComprehensionBlocks = (f, t) => {
     const level = DOK_OPTIONS.includes(f.dok) ? f.dok : 'none';
     const amounts = { literal: f.literalCount || 4, inferential: f.inferentialCount || 3, critical: f.criticalCount || 2 };
+    const closed = isComprehensionClosed(f);
 
     return COMPREHENSION_BLOCKS
-        .map(block => t(`tools-config:comprehensionBlocks.${level}.${block}`, { amount: amounts[block], interpolation: { escapeValue: false } }))
+        .map(block => {
+            const vars = { amount: amounts[block], interpolation: { escapeValue: false } };
+            const normal = t(`tools-config:comprehensionBlocks.${level}.${block}`, vars);
+            return closed ? t(`tools-config:comprehensionBlocksClosed.${level}.${block}`, { ...vars, defaultValue: normal }) : normal;
+        })
         .join('\n');
 }
 
@@ -922,13 +974,14 @@ export const TOOLS = {
             { name: 'subject',   labelKey: 'fields.subject',   type: 'select',   optionsSource: 'subjects', required: false },
             { name: 'grade',     labelKey: 'fields.grade',          type: 'select',   optionsSource: 'levels', default: null },
             { name: 'dok',       labelKey: 'fields.dok',       type: 'select',   optionKeys: DOK_OPTIONS, required: true },
-            { name: 'questionCount', labelKey: 'fields.questionCount', type: 'number', default: 10 },
-            { name: 'questionType',  labelKey: 'fields.questionType',  type: 'select', optionKeys: QUESTION_TYPE_OPTIONS },
+            { name: 'questionCount', labelKey: 'fields.questionCount', type: 'number', default: 10, disabledIf: { field: 'dok', equals: 'dok-4', noteKey: 'ui.questionCountDok4' } },
+            { name: 'questionType',  labelKey: 'fields.questionType',  type: 'select', optionKeys: QUESTION_TYPE_OPTIONS, disabledIf: QUESTION_TYPE_DOK4_DISABLED, warnIf: allLevelsWarning('questionType') },
             { name: 'standards', type: 'standards', subjectField: 'subject', gradeField: 'grade' },
             { name: 'createAssignment', labelKey: 'fields.createAssignment', type: 'checkbox', default: false },
             { name: 'expectations', type: 'standards', codeType: 'expectations', standardsField: 'standards', subjectField: 'subject', gradeField: 'grade' }
         ],
         assignmentSourceField: 'topic',
+        assignmentConversionKey: DOK_ASSIGNMENT_CONVERSION,
         buildSystem: (t) => getSystemTeacher(t) + getNoImageInstructions(t) + t('tools-config:system.dokQuestionsFormat', { interpolation: { escapeValue: false } }),
         buildPrompt: (f, t) => {
             const typed = Math.round(Number(f.questionCount));
@@ -938,7 +991,7 @@ export const TOOLS = {
                 grade: f.grade,
                 topic: f.topic,
                 objectiveLine: getObjectiveLine(f.learningObjective, t),
-                dokBlock: getDokInstructions(f.dok, t, 'questions', { count }),
+                dokBlock: getDokQuestionsBlock(f, t, count),
                 questionTypeLine: f.dok !== 'dok-4' ? getQuestionTypeLine(f.questionType, t) : '',
                 closingLine: getDokQuestionsClosing(f.dok, t),
                 interpolation: { escapeValue: false },
@@ -956,8 +1009,8 @@ export const TOOLS = {
             { name: 'grade',     labelKey: 'fields.grade',  type: 'select', optionsSource: 'levels', default: null },
             { name: 'topic',     labelKey: 'fields.topic',  type: 'text',   placeholderKey: 'placeholders.math-exam.topic', required: true },
             { name: 'learningObjective', labelKey: 'fields.learningObjective', type: 'text', placeholderKey: 'placeholders.math-exam.learningObjective' },
-            { name: 'count',     labelKey: 'fields.count',  type: 'number', default: 10 },
-            { name: 'type',      labelKey: 'fields.questionType', type: 'select', optionKeys: QUESTION_TYPE_OPTIONS, default: 'questions-mixed' },
+            { name: 'count',     labelKey: 'fields.count',  type: 'number', default: 10, disabledIf: TASK_COUNT_DOK4_DISABLED },
+            { name: 'type',      labelKey: 'fields.questionType', type: 'select', optionKeys: QUESTION_TYPE_OPTIONS, default: 'questions-mixed', disabledIf: QUESTION_TYPE_DOK4_DISABLED, warnIf: allLevelsWarning('type') },
             { name: 'complexity', labelKey: 'fields.complexity', type: 'select', optionKeys: COMPLEXITY_OPTIONS },
             { name: 'dok',       labelKey: 'fields.dok',       type: 'select',   optionKeys: DOK_OPTIONS },
             { name: 'standards', type: 'standards', subject: 'mat-sp', gradeField: 'grade' },
@@ -965,12 +1018,14 @@ export const TOOLS = {
             { name: 'expectations', type: 'standards', codeType: 'expectations', standardsField: 'standards', subject: 'mat-sp', gradeField: 'grade' },
         ],
         generatesImages: true,
+        assignmentConversionKey: DOK_ASSIGNMENT_CONVERSION,
         buildSystem: (t) => getSystemTeacher(t) + getImageInstructions(t) + t('tools-config:system.mathExam', { interpolation: { escapeValue: false } }),
         buildPrompt: (f, t) => t('tools-config:prompts.math-exam', {
             grade: f.grade,
             topic: f.topic,
-            count: f.count || 10,
-            type:  t(`tools-config:options.${getMathExamQuestionType(f)}`),
+            // DOK 4 makes 1 to 3 open performance tasks, count and type are disabled in the form and their values are ignored
+            count: f.dok === 'dok-4' ? 3 : (f.count || 10),
+            type:  t(`tools-config:options.${f.dok === 'dok-4' ? 'questions-open' : getMathExamQuestionType(f)}`),
             formatNote: getMathExamFormatNote(f, t),
             objectiveLine: getObjectiveLine(f.learningObjective, t),
             complexityLine: COMPLEXITY_OPTIONS.includes(f.complexity)
@@ -981,7 +1036,7 @@ export const TOOLS = {
             })
                 : '',
             sectionsList: getMathExamSectionsList(f, t),
-            dokBlock: getDokInstructions(f.dok, t, 'items'),
+            dokBlock: getItemsDokBlock(f.dok, t, f.type),
             interpolation: { escapeValue: false },
         }),
     },
@@ -998,14 +1053,15 @@ export const TOOLS = {
             { name: 'topic',     labelKey: 'fields.topicUnit',type: 'text',   placeholderKey: 'placeholders.assessment-creator.topic', required: true },
             { name: 'learningObjective', labelKey: 'fields.learningObjective', type: 'text', placeholderKey: 'placeholders.assessment-creator.learningObjective' },
             { name: 'type',      labelKey: 'fields.type',     type: 'select', optionKeys: ASSESSMENT_TYPE_OPTIONS, defaultKey: 'options.formative', required: true },
-            { name: 'count',     labelKey: 'fields.count',    type: 'number', default: 10 },
-            { name: 'format',    labelKey: 'fields.format',   type: 'select', optionKeys: ASSESSMENT_FORMAT_OPTIONS, defaultKey: 'options.mixed' },
+            { name: 'count',     labelKey: 'fields.count',    type: 'number', default: 10, disabledIf: TASK_COUNT_DOK4_DISABLED },
+            { name: 'questionType', labelKey: 'fields.questionType', type: 'select', optionKeys: QUESTION_TYPE_OPTIONS, default: 'questions-mixed', disabledIf: QUESTION_TYPE_DOK4_DISABLED, warnIf: allLevelsWarning('questionType') },
             { name: 'dok',       labelKey: 'fields.dok',       type: 'select',   optionKeys: DOK_OPTIONS },
             { name: 'standards', type: 'standards', subjectField: 'subject', gradeField: 'grade' },
             { name: 'createAssignment', labelKey: 'fields.createAssignment', type: 'checkbox', default: false },
             { name: 'expectations', type: 'standards', codeType: 'expectations', standardsField: 'standards', subjectField: 'subject', gradeField: 'grade' },
         ],
         // Base system prompt, the DOK rules are added only when a level is selected.
+        assignmentConversionKey: DOK_ASSIGNMENT_CONVERSION,
         buildSystem: (t, f = {}) => {
             const text = (key) => t(`tools-config:${key}`, { interpolation: { escapeValue: false } });
             const base = getSystemTeacher(t) + getNoImageInstructions(t) + text('system.assessmentCreator');
@@ -1020,10 +1076,11 @@ export const TOOLS = {
             topic:   f.topic,
             type:    t(`tools-config:options.${f.type}`),
             count:   f.count || 10,
-            format:  t(`tools-config:options.${f.format}`),
+            // DOK 4 asks for performance tasks instead of questions, so the question type doesn't apply
+            questionTypeLine: f.dok !== 'dok-4' ? getQuestionTypeLine(f.questionType, t) : '',
             objectiveLine: getObjectiveLine(f.learningObjective, t),
             sectionsList: getAssessmentSectionsList(f, t),
-            dokBlock: getAssessmentDokBlock(f.dok, t),
+            dokBlock: getAssessmentDokBlock(f.dok, t, f.questionType),
             interpolation: { escapeValue: false },
         }),
     },
@@ -1162,13 +1219,16 @@ export const TOOLS = {
             { name: 'criticalCount',    labelKey: 'fields.criticalCount',    type: 'number',   default: 2 },
             { name: 'skill',      labelKey: 'fields.comprehensionSkill',      type: 'select', optionKeys: COMPREHENSION_SKILL_OPTIONS },
             { name: 'skillOther', labelKey: 'fields.comprehensionSkillOther', type: 'text',   placeholderKey: 'placeholders.comprehension-questions.skillOther', showIf: { field: 'skill', equals: 'skill-other' } },
-            { name: 'questionType', labelKey: 'fields.questionType', type: 'select', optionKeys: QUESTION_TYPE_OPTIONS },
+            { name: 'questionType', labelKey: 'fields.questionType', type: 'select', optionKeys: QUESTION_TYPE_OPTIONS, disabledIf: QUESTION_TYPE_DOK4_DISABLED, warnIf: allLevelsWarning('questionType') },
             { name: 'dok',        labelKey: 'fields.dok',        type: 'select', optionKeys: DOK_OPTIONS },
             { name: 'standards', type: 'standards', subjectField: 'subject', gradeField: 'grade' },
             { name: 'createAssignment', labelKey: 'fields.createAssignment', type: 'checkbox', default: false },
             { name: 'expectations', type: 'standards', codeType: 'expectations', standardsField: 'standards', subjectField: 'subject', gradeField: 'grade' },
         ],
         assignmentSourceField: 'text',
+        // The questions are about this text, so the assignment always shows it as the teacher wrote it
+        assignmentSourceIsReading: true,
+        assignmentConversionKey: DOK_ASSIGNMENT_CONVERSION,
         buildSystem: (t) => getSystemTeacher(t) + getNoImageInstructions(t),
         buildPrompt: (f, t) => t('tools-config:prompts.comprehension-questions', {
             grade:            f.grade,
@@ -1176,7 +1236,7 @@ export const TOOLS = {
             blocksList:       getComprehensionBlocks(f, t),
             comprehensionSkillLine: getComprehensionSkillLine(f.skill, t, f.skillOther, f.dok),
             questionTypeLine: f.dok !== 'dok-4' ? getQuestionTypeLine(f.questionType, t) : '',
-            comprehensionDokLine: getComprehensionDokLine(f.dok, t),
+            comprehensionDokLine: getComprehensionDokLine(f, t),
             keyLine: t(`tools-config:defaults.${f.dok === 'dok-4' ? 'comprehensionKeyLineTasks' : 'comprehensionKeyLine'}`, { interpolation: { escapeValue: false } }),
             interpolation: { escapeValue: false },
         }),
@@ -1225,6 +1285,7 @@ export const TOOLS = {
             { name: 'question', labelKey: 'fields.question', type: 'textarea', placeholderKey: 'placeholders.math-assistant.question', required: true, rows: 5 },
             { name: 'createAssignment', labelKey: 'fields.createAssignment', type: 'checkbox', default: false },
         ],
+        assignmentConversionKey: DOK_ASSIGNMENT_CONVERSION,
         buildSystem: (t, f = {}) => getSystemTeacher(t) + getNoImageInstructions(t) + t('tools-config:system.mathAssistant') + getMathAssistantDokLine(f.dok, t),
         buildPrompt: (f) => f.question,
     },

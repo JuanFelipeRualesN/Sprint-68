@@ -8,6 +8,7 @@ using GSWebAPI.AccessLogs.Services;
 using GSWebAPI.GSWebAPI.Domain.Models.General.Responses.APIs;
 using GSWebAPI.GSWebAPI.Services.FeignAPIs;
 using GSWebAPI.AccessLogs.Infrastructure;
+using GSWebAPI.AccessLogs.Infrastructure.Interfaces;
 
 namespace GSWebAPI.Controllers.AccessLogs
 {
@@ -51,7 +52,7 @@ namespace GSWebAPI.Controllers.AccessLogs
                 var (connectionString, queueName) = ResolveServiceBus(_config, eventLogsModel.ProjectEnvironment);
 
                 // Queue background processing (no System.Web queue in Core)
-                _backgroundQueue.Queue(async ct =>
+                var queued = _backgroundQueue.TryQueue(async ct =>
                 {
                     try
                     {
@@ -64,6 +65,12 @@ namespace GSWebAPI.Controllers.AccessLogs
                         _log.LogError(ex, "Error while logging the access event in background. Event: {@Event}", eventLogsModel);
                     }
                 });
+
+                if (!queued)
+                {
+                    // No bloqueas el request y no revientas memoria si hay pico
+                    return StatusCode(503, new { message = "Server busy. Please retry." });
+                }
 
                 Response.Headers["Connection"] = "keep-alive";
                 return Accepted(new { message = "Event received for processing." });
@@ -85,7 +92,7 @@ namespace GSWebAPI.Controllers.AccessLogs
 
                 var (connectionString, queueName) = ResolveServiceBus(_config, eventLogsModel.ProjectEnvironment);
 
-                _backgroundQueue.Queue(async ct =>
+                var queued = _backgroundQueue.TryQueue(async ct =>
                 {
                     try
                     {
@@ -98,6 +105,12 @@ namespace GSWebAPI.Controllers.AccessLogs
                         _log.LogError(ex, "Error while logging the plan event in background. Event: {@Event}", eventLogsModel);
                     }
                 });
+
+                if (!queued)
+                {
+                    // No bloqueas el request y no revientas memoria si hay pico
+                    return StatusCode(503, new { message = "Server busy. Please retry." });
+                }
 
                 Response.Headers["Connection"] = "keep-alive";
                 return Accepted(new { message = "Event received for processing." });
@@ -166,10 +179,5 @@ namespace GSWebAPI.Controllers.AccessLogs
 
             return (connectionString, queueName);
         }
-    }
-
-    public interface IBackgroundTaskQueue
-    {
-        void Queue(Func<CancellationToken, Task> workItem);
     }
 }

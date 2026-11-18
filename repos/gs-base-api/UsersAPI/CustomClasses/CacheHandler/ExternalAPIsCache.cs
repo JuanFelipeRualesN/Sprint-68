@@ -40,7 +40,7 @@ namespace UsersAPI.CustomClasses.CacheHandler
             _config = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        private bool CacheOn => _config["AppSettings:cache_on_off"] != "0";
+        private bool CacheOn => AppConfiguration.Configuration["AppSettings:cache_on_off"] != "0";
 
         private static DistributedCacheEntryOptions ExpireInHours(int hours) =>
             new DistributedCacheEntryOptions

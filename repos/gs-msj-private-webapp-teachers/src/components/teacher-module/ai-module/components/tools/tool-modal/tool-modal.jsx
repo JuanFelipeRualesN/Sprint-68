@@ -272,8 +272,11 @@ function ToolModal({ tool, onClose, embedded = false, initialValues = null, onSw
 
     // showIf condition: { field, equals } for one value, { field, notEmpty: true } for a list with items
     const meetsShowIf = (showIf, vals) => {
+        if (showIf.all) return showIf.all.every(condition => meetsShowIf(condition, vals));
         const target = vals[showIf.field];
         if (showIf.notEmpty) return Array.isArray(target) ? target.length > 0 : !!target;
+        if (showIf.in) return showIf.in.includes(target);
+        if (showIf.notIn) return !showIf.notIn.includes(target);
         return target === showIf.equals;
     };
 
@@ -493,7 +496,14 @@ function ToolModal({ tool, onClose, embedded = false, initialValues = null, onSw
             // Left out when it is an Athenas lesson, because that text is the teacher's lesson plan (activities, objectives, descriptions etc), not something for the student to read.
             const fieldText = tool.assignmentSourceField ? values[tool.assignmentSourceField] : '';
             const sourceText = hasAthenasLesson(fieldText) ? '' : fieldText;
-            const created = await createAssignment({ output: content, sourceText, t });
+            // When the text is the reading itself, it goes to the assignment as is instead of the AI's copy
+            const created = await createAssignment({
+                output: content,
+                sourceText,
+                sourceIsReading: !!tool.assignmentSourceIsReading,
+                conversionKey: tool.assignmentConversionKey,
+                t,
+            });
             if (run === assignmentRun.current) setAssignment({ status: 'done', ...created });
         } catch (e) {
             if (run === assignmentRun.current) setAssignment({ status: 'error', code: e.code });
@@ -641,18 +651,20 @@ function ToolModal({ tool, onClose, embedded = false, initialValues = null, onSw
     // Export handlers
     // -----------------------------------------------------------------------
 
-    const safeTitle = tool.title.replace(/\s+/g, '_');
+    // Name in the webapp language
+    const toolName  = t(`ai-tools:tools.${tool.key}.name`, { defaultValue: tool.title });
+    const safeTitle = toolName.replace(/\s+/g, '_');
 
     async function handleExportPDF() {
         setExporting('pdf');
-        try { await exportMarkdownPDF(normalizeBase64Images(output), `${safeTitle}.pdf`, tool.title, t); }
+        try { await exportMarkdownPDF(normalizeBase64Images(output), `${safeTitle}.pdf`, toolName, t); }
         finally { setExporting(''); }
     }
 
     const handleExportWord = async () => {
         setExporting('word');
         try {
-            await exportWord(normalizeBase64Images(output), `${safeTitle}.docx`, t(`ai-tools:tools.${tool.key}.name`), t);
+            await exportWord(normalizeBase64Images(output), `${safeTitle}.docx`, toolName, t);
         } finally {
             setExporting('');
         }
@@ -661,13 +673,13 @@ function ToolModal({ tool, onClose, embedded = false, initialValues = null, onSw
     async function handleExportPPTX() {
         setExporting('pptx');
         const source = normalizeBase64Images(presentationMarkdown || output);
-        try { await exportPPTX(source, `${safeTitle}.pptx`, tool.title, t); }
+        try { await exportPPTX(source, `${safeTitle}.pptx`, toolName, t); }
         finally { setExporting(''); }
     }
 
     async function handleExportWorksheet() {
         setExporting('worksheet');
-        try { await exportWorksheet(normalizeBase64Images(output), `${safeTitle}_worksheet.pdf`, tool.title, t); }
+        try { await exportWorksheet(normalizeBase64Images(output), `${safeTitle}_worksheet.pdf`, toolName, t); }
         finally { setExporting(''); }
     }
 
@@ -999,27 +1011,46 @@ function ToolModal({ tool, onClose, embedded = false, initialValues = null, onSw
                                                 const isDynamic = !!field.optionsSource;
                                                 const opts = resolveOptions(field);
                                                 const busy = isDynamic && optionsLoading;
+                                                const off = field.disabledIf && meetsShowIf(field.disabledIf, values);
+                                                const warn = !off && field.warnIf && meetsShowIf(field.warnIf, values);
                                                 return (
-                                                    <SearchableSelect
-                                                        value={values[field.name]}
-                                                        options={opts}
-                                                        disabled={busy}
-                                                        onChange={(v) => setField(field.name, v)}
-                                                        placeholder={busy ? t('form.loading') : t('form.choose')}
-                                                        ariaLabel={field.label}
-                                                        noResultsText={t('common.noResults')}
-                                                        clearLabel={t('common.clear')}
-                                                    />
+                                                    <>
+                                                        <SearchableSelect
+                                                            value={values[field.name]}
+                                                            options={opts}
+                                                            disabled={busy || off}
+                                                            onChange={(v) => setField(field.name, v)}
+                                                            placeholder={busy ? t('form.loading') : t('form.choose')}
+                                                            ariaLabel={field.label}
+                                                            noResultsText={t('common.noResults')}
+                                                            clearLabel={t('common.clear')}
+                                                        />
+                                                        {off && field.disabledIf.noteKey && (
+                                                            <small className="tm-field-note">{t('tools-config:' + field.disabledIf.noteKey)}</small>
+                                                        )}
+                                                        {warn && (
+                                                            <small className="tm-field-note">{t('tools-config:' + field.warnIf.noteKey)}</small>
+                                                        )}
+                                                    </>
                                                 );
                                             })()
-                                        ) : (
-                                            <input
-                                                type={field.type || 'text'}
-                                                placeholder={field.placeholderKey ? t(`tools-config:${field.placeholderKey}`) : undefined}
-                                                value={values[field.name]}
-                                                onChange={(e) => setField(field.name, e.target.value)}
-                                            />
-                                        )}
+                                        ) : (() => {
+                                            const off = field.disabledIf && meetsShowIf(field.disabledIf, values);
+                                            return (
+                                                <>
+                                                    <input
+                                                        type={field.type || 'text'}
+                                                        placeholder={field.placeholderKey ? t(`tools-config:${field.placeholderKey}`) : undefined}
+                                                        value={values[field.name]}
+                                                        disabled={off}
+                                                        onChange={(e) => setField(field.name, e.target.value)}
+                                                    />
+                                                    {off && field.disabledIf.noteKey && (
+                                                        <small className="tm-field-note">{t('tools-config:' + field.disabledIf.noteKey)}</small>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 );
                             })}

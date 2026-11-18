@@ -146,36 +146,34 @@ namespace UsersAPI.UsersAPI.Services.FeignAPIs
                 }
             }*/
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:school_api_base_url"]);
+
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:sch_platform_id"]);
+
+            var stringContent = new StringContent(JsonConvert.SerializeObject(entityIds), Encoding.UTF8, "application/json");
+            var response = client.PostAsync(AppConfiguration.Configuration["AppSettings:schools_get_school_details"], stringContent).Result;
+            if (response.IsSuccessStatusCode)
             {
-                client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:school_api_base_url"]);
 
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:sch_platform_id"]);
+                string responseString = response.Content.ReadAsStringAsync().Result;
 
-                StringContent stringContent = new StringContent(JsonConvert.SerializeObject(entityIds), Encoding.UTF8, "application/json");
-                var response = client.PostAsync(AppConfiguration.Configuration["AppSettings:schools_get_school_details"], stringContent).Result;
-                if (response.IsSuccessStatusCode)
-                {
+                var modelObject = JsonConvert.DeserializeObject<List<Domain.Models.Generals.Responses.APIs.EntityGeneralDetailsResponseModel>>(responseString,
+                    new JsonSerializerSettings
+                    {
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
 
-                    string responseString = response.Content.ReadAsStringAsync().Result;
+                // Add them to the cache
+                // TODO: Return cache: _externalAPIsCache.SetEntityGeneralDetails(modelObject);
 
-                    List<Domain.Models.Generals.Responses.APIs.EntityGeneralDetailsResponseModel> modelObject = JsonConvert.DeserializeObject<List<Domain.Models.Generals.Responses.APIs.EntityGeneralDetailsResponseModel>>(responseString,
-                        new JsonSerializerSettings
-                        {
-                            NullValueHandling = NullValueHandling.Ignore
-                        });
-
-                    // Add them to the cache
-                    // TODO: Return cache: _externalAPIsCache.SetEntityGeneralDetails(modelObject);
-
-                    return modelObject;
-                }
-                else
-                {
-                    return new List<Domain.Models.Generals.Responses.APIs.EntityGeneralDetailsResponseModel>();
-                }
+                return modelObject;
+            }
+            else
+            {
+                return new List<Domain.Models.Generals.Responses.APIs.EntityGeneralDetailsResponseModel>();
             }
         }
     }

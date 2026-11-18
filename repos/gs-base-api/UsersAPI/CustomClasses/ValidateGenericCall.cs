@@ -71,7 +71,7 @@ namespace UsersAPI.CustomClasses
             // Validate JWT token. 
 
             var tokenJwtValidation = new TokenManager(
-               secretKey: AppConfiguration.Configuration["AppSettings:secret_key"],
+               secretKey: AppConfiguration.Configuration["AppSettings:SecretKey"],
                issuer: AppConfiguration.Configuration["AppSettings:issuer"], 
                durationValidInHours: int.Parse(AppConfiguration.Configuration["AppSettings:token_duration_in_hours"])).
                ValidateToken(token);

@@ -6,6 +6,8 @@ using Dapper;
 using SchoolsAPI.SchoolsAPI.Domain.Models.Schools;
 using SchoolsAPI.SchoolsAPI.Domain.Models.Generals.Dapper;
 using SchoolsAPI.CustomClasses;
+using AcademicYearPeriodResponseModel =
+    SchoolsAPI.SchoolsAPI.Domain.Models.Schools.Response.AcademicYearPeriodResponseModel;
 
 namespace SchoolsAPI.SchoolsAPI.Infrastructure.Repositories.DapperHandler
 {
@@ -547,6 +549,52 @@ namespace SchoolsAPI.SchoolsAPI.Infrastructure.Repositories.DapperHandler
             var listToReturn = connection.Query<AcademicDetailsFullModel>(query, parameters).ToList();
             connection.Close();
             return listToReturn;
+        }
+
+        /// <summary>
+        /// To get the academic periods that include today's date, for the given entities.
+        /// </summary>
+        /// <remarks>
+        /// The entity is read from sch_entity_academic_details.entity_id directly. Do not
+        /// route this through sch_entity_subscriptions: that path relies on
+        /// entity_academic_details.entity_subscription_id, which the schema marks as kept
+        /// only for backwards compatibility and which is null on all but a handful of rows
+        /// dating from 2022 - joining on it drops every current record.
+        /// </remarks>
+        /// <param name="entityIds">The list of entity ids.</param>
+        /// <returns>Returns a list of current academic periods.</returns>
+        public static List<AcademicYearPeriodResponseModel> GetCurrentAcademicPeriods(List<int> entityIds)
+        {
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+            var parameters = new DynamicParameters();
+            string query =
+                @"SELECT pe.period_from, pe.period_to, pe.period_number,
+                         ac.full_term_start_date, ac.full_term_end_date
+                  FROM sch_academic_periods pe
+                  INNER JOIN sch_entity_academic_details ac
+                      ON ac.id = pe.entity_academic_detail_id
+                  WHERE ac.entity_id IN @entityIds
+                    AND CURDATE() BETWEEN pe.period_from AND pe.period_to;";
+            parameters.Add("entityIds", entityIds);
+
+            var currentAcademicPeriodModels = new List<AcademicYearPeriodResponseModel>();
+            var connection = new MySqlConnection
+            {
+                ConnectionString = Settings.CONNECTION_STRING_READ
+            };
+            connection.Open();
+            try
+            {
+                currentAcademicPeriodModels = connection.Query<AcademicYearPeriodResponseModel>(query, parameters).ToList();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                connection.Close();
+            }
+            return currentAcademicPeriodModels;
         }
     }
 }

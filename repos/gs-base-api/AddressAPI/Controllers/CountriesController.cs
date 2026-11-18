@@ -16,15 +16,10 @@ namespace AddressAPI.Controllers
     [Route("addressapi/addresses/countries")]
     public class CountriesController : ControllerBase
     {
-        private readonly IConfiguration _config = AppConfiguration.Configuration;
-
-
-        // Helpers -------------------------------------------------------------
-
         private string ResolveLangFromHeader()
         {
             // default from config
-            var fallback = _config["AppSettings:default_language_code"];
+            var fallback = AppConfiguration.Configuration["AppSettings:default_language_code"];
 
             if (Request?.Headers.TryGetValue("Accept-Language", out var values) == true)
             {
@@ -38,9 +33,9 @@ namespace AddressAPI.Controllers
 
         private AddressService CreateAddressManager(string? langCode)
         {
-            var writeConn = _config.GetConnectionString("AddressDBConnection");
-            var readConn = _config.GetConnectionString("AddressDBConnectionReader");
-            var defaultLang = _config["AppSettings:default_language_code"];
+            var writeConn = AppConfiguration.Configuration["ConnectionStrings:AddressDBConnection"];
+            var readConn = AppConfiguration.Configuration["ConnectionStrings:AddressDBConnectionReader"];
+            var defaultLang = AppConfiguration.Configuration["AppSettings:default_language_code"];
             var lang = string.IsNullOrWhiteSpace(langCode) ? defaultLang : langCode;
 
             return new AddressService(writeConn, readConn, lang);

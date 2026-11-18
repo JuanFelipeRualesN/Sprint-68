@@ -29,28 +29,34 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="sie">Optional: The sie (user record) details.</param>
         /// <param name="schoolIds">Optional: The id of the schools to filter.</param>
         /// <param name="userIds">Optional: The users' ids to filter.</param>
+        /// <param name="status">Optional: The users' status to filter.</param>
         /// <param name="oreId">Optional: (Required if ORE user): The ore to filter.</param>
         /// <param name="fromPage">Optional: From Page.</param>
         /// <param name="limiter">Optional: How many items per page.</param>
         /// <returns>Returns a list of user schools (the user details, and school details).</returns>
         public static ResponseModel<UserSchoolModel> GetUsers(int userIdRequester, bool isDirector, bool isStaff, string sie = null, List<int> roleIds = null,
-            List<int> schoolIds = null, List<int> userIds = null, int? oreId = null, int? fromPage = null, int? limiter = null)
+            List<int> schoolIds = null, List<int> userIds = null, string status = null, int? oreId = null, int? fromPage = null, int? limiter = null)
         {
             var users = PrepareUsersInformation(userIdRequester, isDirector, isStaff, sie,
-                roleIds, schoolIds, userIds, oreId);
+                roleIds, schoolIds, userIds, status, oreId);
 
-            int total = users.Count;
+            List<UserSchoolModel> distinctUsers = users
+                .GroupBy(user => user.UserId)
+                .Select(g => g.First())
+                .ToList();
+
+            int total = distinctUsers.Count;
 
             // Skip by pagination 
-            if (users.Count > 0)
+            if (distinctUsers.Count > 0)
             {
-                users = users.Skip(fromPage.Value * limiter.Value).Take(limiter.Value).ToList();
+                distinctUsers = distinctUsers.Skip(fromPage.Value).Take(limiter.Value).ToList();
             }
 
             return new ResponseModel<UserSchoolModel>()
             {
                 Count = total,
-                Results = users
+                Results = distinctUsers
             };
         }
 
@@ -64,21 +70,28 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="sie">Optional: The sie (user record) details.</param>
         /// <param name="schoolIds">Optional: The id of the schools to filter.</param>
         /// <param name="userIds">Optional: The users' ids to filter.</param>
+        /// <param name="status">Optional: The users' status to filter.</param>
         /// <param name="oreId">Optional: (Required if ORE user): The ore to filter.</param>
         /// <param name="languageCode">Optional: The language code to use.</param>
         /// <returns>Returns the users document.</returns>
         public static async Task<FileResponseModel> GetUsersDocument(int userIdRequester, bool isDirector, bool isStaff, string sie = null, List<int> roleIds = null,
-        List<int> schoolIds = null, List<int> userIds = null, int? oreId = null, string languageCode = "es")
+        List<int> schoolIds = null, List<int> userIds = null, string status = null, int? oreId = null, string languageCode = "es")
         {
-            var usersData = PrepareUsersInformation(userIdRequester, isDirector, isStaff, sie,
-                roleIds, schoolIds, userIds, oreId);
+            // User data with subscription details
+            var usersSubData = PrepareUsersInformation(userIdRequester, isDirector, isStaff, sie,
+                roleIds, schoolIds, userIds, status, oreId);
 
-            if(usersData.Count == 0)
+            List<UserSchoolModel> usersData = usersSubData
+                .GroupBy(user => user.UserId)
+                .Select(g => g.First())
+                .ToList();
+
+            if (usersData.Count == 0 || usersSubData.Count == 0)
             {
                 return new FileResponseModel() { Message = "No data found." };
             }
 
-            if(usersData.Count > 50000)
+            if(usersData.Count > 100000 || usersSubData.Count > 100000)
             {
               // Send message according to language. 
               return new FileResponseModel() { Message = AppConfiguration.Configuration["AppSettings:message_data_too_large_" + languageCode] };
@@ -88,7 +101,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             // Create a worksheet for user data
             // Create a new workbook
             IWorkbook workbook = new XSSFWorkbook();
-            ISheet usersSheet = workbook.CreateSheet("Users");
+            ISheet usersSheet = workbook.CreateSheet("Unique Users");
 
             // Create White font for header
             IFont boldFontWhite = workbook.CreateFont();
@@ -111,7 +124,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             // Create headers for user data
             IRow dataRowHeader = usersSheet.CreateRow(0);
             string[] headerUsers = { "User Id", "Username", "Email", "First Name", "Last Name",
-            "Role", "School Id", "SIE (User record)", "School name", "City", "Ore (Region)", "State", "Country", 
+            "Role", "School Id", "SIE (User record)", "School name", "City", "Ore (Region)", "State", "Country",
             "School Identifier"};
             for (int i = 0; i < headerUsers.Length; i++)
             {
@@ -122,7 +135,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             if (usersData.Count > 0)
             {
                 int dataRowNo = 0;
-                for (int i = 1; i <= usersData.Count; i++) // Example data for 10 users
+                for (int i = 1; i <= usersData.Count; i++)
                 {
                     IRow userDataRow = usersSheet.CreateRow(i);
                     userDataRow.CreateCell(0).SetCellValue(usersData[dataRowNo].UserId);
@@ -151,13 +164,61 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
                 usersSheet.SetAutoFilter(tableRangeDetails);
             }
 
+            // Create a workshee for User data with subscription details
+            ISheet usersSubSheet = workbook.CreateSheet("Users with Subscriptions");
+
+            IRow usersSubRowHeader = usersSubSheet.CreateRow(0);
+            string[] headerUsersSub = { "User Id", "Username", "Email", "First Name", "Last Name",
+            "Role", "School Id", "SIE (User record)", "School name", "City", "Ore (Region)", "State", "Country",
+            "School Identifier", "Subscription Status", "Subscription Id", "Cancellation Date", "Plan Name" };
+            for (int i = 0; i < headerUsersSub.Length; i++)
+            {
+                usersSubRowHeader.CreateCell(i).SetCellValue(headerUsersSub[i]);
+                usersSubRowHeader.Cells[i].CellStyle = headerStyleCustom;
+            }
+
+            if (usersSubData.Count > 0)
+            {
+                int dataRowNo = 0;
+                for (int i = 1; i <= usersSubData.Count; i++)
+                {
+                    IRow userDataRow = usersSubSheet.CreateRow(i);
+                    userDataRow.CreateCell(0).SetCellValue(usersSubData[dataRowNo].UserId);
+                    userDataRow.CreateCell(1).SetCellValue(usersSubData[dataRowNo].Username);
+                    userDataRow.CreateCell(2).SetCellValue(usersSubData[dataRowNo].Email);
+                    userDataRow.CreateCell(3).SetCellValue(usersSubData[dataRowNo].FirstName);
+                    userDataRow.CreateCell(4).SetCellValue(usersSubData[dataRowNo].LastName);
+                    userDataRow.CreateCell(5).SetCellValue(usersSubData[dataRowNo].Role);
+                    userDataRow.CreateCell(6).SetCellValue(usersSubData[dataRowNo].SchoolId.ToString());
+                    userDataRow.CreateCell(7).SetCellValue(usersSubData[dataRowNo].Sie);
+                    userDataRow.CreateCell(8).SetCellValue(usersSubData[dataRowNo].SchoolName);
+                    userDataRow.CreateCell(9).SetCellValue(usersSubData[dataRowNo].City);
+                    userDataRow.CreateCell(10).SetCellValue(usersSubData[dataRowNo].Ore);
+                    userDataRow.CreateCell(11).SetCellValue(usersSubData[dataRowNo].StateIsoCode);
+                    userDataRow.CreateCell(12).SetCellValue(usersSubData[dataRowNo].Country);
+                    userDataRow.CreateCell(13).SetCellValue(usersSubData[dataRowNo].SchoolIdentifier);
+                    userDataRow.CreateCell(14).SetCellValue(usersSubData[dataRowNo].SubscriptionStatus);
+                    userDataRow.CreateCell(15).SetCellValue(usersSubData[dataRowNo].SubscriptionId);
+                    userDataRow.CreateCell(16).SetCellValue(usersSubData[dataRowNo].CancellationDate != null ? usersSubData[dataRowNo].CancellationDate.Value.ToString("yyyy-MM-dd") : "");
+                    userDataRow.CreateCell(17).SetCellValue(usersSubData[dataRowNo].PlanName);
+                    if (dataRowNo % 2 == 0)
+                    {
+                        userDataRow.RowStyle = rowStyleDetails;
+                    }
+                    dataRowNo++;
+                }
+
+                // Table 
+                CellRangeAddress tableRangeDetails = new CellRangeAddress(0, dataRowNo - 1, 0, headerUsersSub.Length - 1);
+                usersSubSheet.SetAutoFilter(tableRangeDetails);
+            }
+
             // Get the full path to the file
             return new FileResponseModel() { File = await ExcelGenerator.GenerateExcel(workbook, "Users" + System.Guid.NewGuid().ToString() + DateTime.Now.ToString("yyyyMMddHHmmss")) };
         }
 
         /// <summary>
-        /// To prepare the general details to be applied in the other methods of this class. 
-        /// The things prepared are the ORE schools if apply, the relations if apply, etc.
+        /// To prepare the general details to be applied in the other methods of this class for the users with subscription details.
         /// </summary>
         /// <param name="userIdRequester">The user id that is making the request.</param>
         /// <param name="isDirector">true if the user making the request is director, else false.</param>
@@ -166,26 +227,39 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="sie">Optional: The sie (user record) details.</param>
         /// <param name="schoolIds">Optional: The id of the schools to filter.</param>
         /// <param name="userIds">Optional: The users' ids to filter.</param>
+        /// <param name="status">Optional: The users' status to filter.</param>
         /// <param name="oreId">Optional: (Required if ORE user): The ore to filter.</param>
         /// <param name="fromPage">Optional: From Page.</param>
         /// <param name="limiter">Optional: How many items per page.</param>
         /// <returns>Returns a list of user schools (the user details, and school details).</returns>
         private static List<UserSchoolModel> PrepareUsersInformation(
-            int userIdRequester, bool isDirector, bool isStaff, string sie = null, List<int> roleIds = null, 
-            List<int> schoolIds = null, List<int> userIds = null, int? oreId = null, int? fromPage = null, int? limiter = null)
+            int userIdRequester, bool isDirector, bool isStaff, string sie = null, List<int> roleIds = null,
+            List<int> schoolIds = null, List<int> userIds = null, string status = null, int? oreId = null, int? fromPage = null, int? limiter = null)
         {
             // If Ore is not null, call the schools first, so filter by schools. 
-            List<int> schoolIdsFinale = new List<int>();
+            var schoolIdsFinale = new List<int>();
 
-            // If ore is not null, it should return the schools of the ore. 
-            if (oreId != null)
+            if (isStaff)
             {
-                schoolIdsFinale = AutoFilters.GetOreSchoolIds(oreId.Value, schoolIds);
-                if(schoolIdsFinale == null || schoolIdsFinale.Count == 0)
+                // If ore is not null, it should return the schools of the ore. 
+                if (oreId != null)
                 {
-                    return new List<UserSchoolModel>(); 
+                    schoolIdsFinale = AutoFilters.GetOreSchoolIds(oreId.Value, schoolIds);
+                    if (schoolIdsFinale == null || schoolIdsFinale.Count == 0)
+                    {
+                        return new List<UserSchoolModel>();
+                    }
+                }
+                else
+                {
+                    if (schoolIds != null)
+                    {
+                        schoolIdsFinale.AddRange(schoolIds);
+                    }
                 }
             }
+
+           
 
             // If director, get the user ids that can be handle 
             if (isDirector)
@@ -209,8 +283,8 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
                 }
             }
 
-            List<UserSchoolModel> usersData = Infrastructure.Dapper.Users.GetUsers(sie, roleIds, 
-                schoolIdsFinale != null && schoolIdsFinale.Count() > 0 ? schoolIdsFinale : null, userIds);
+            List<UserSchoolModel> usersData = Infrastructure.Dapper.Users.GetUsers(sie, roleIds,
+                schoolIdsFinale != null && schoolIdsFinale.Count() > 0 ? schoolIdsFinale : null, userIds, status);
 
             // Sort by datetime 
             usersData = usersData.OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ToList();
@@ -218,7 +292,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             // Limit 
             if (fromPage != null && limiter != null)
             {
-                usersData = usersData.Skip(fromPage.Value * limiter.Value).Take(limiter.Value).ToList();
+                usersData = usersData.Skip(fromPage.Value).Take(limiter.Value).ToList();
             }
 
             return usersData;
