@@ -13,6 +13,13 @@ Wiki `msj-and-private.wiki`, página «PowerBI Data Analysis Dashboard Setup and
 | Descargas Excel | Componentes `REPORT_USER / CONNECTIONS / ACADEMICS / STUDENT_ACTIVITIES_TEACHER` → DataAnalysisAPI (SQL directo a tablas, no a vistas) | `DataAnalysisAPI/*Infrastructure/Dapper` |
 | Asistente | Panel junto al tablero → `EyaInsightsApi /asistente/preguntar` | `assistant-panel/` |
 
+## 1a. Qué se embebe realmente en producción MSJ (`.env.msj` + linaje del área de trabajo MSJ)
+- Área de trabajo `a4c05dbb…`. Las categorías Conexiones y Administrativo usan el informe `a52c6997…` = **MSJ_Utilization**, sobre **Reports_Semantic_Model** (MySQL `gs_data_analysis` prod + Excel de SharePoint, por la puerta de enlace `gw-pbi-hub-vpn-001`, con refresco diario).
+- **Solo la categoría Administrativo muestra Power BI, y solo al admin**, con 3 páginas: Reporte de Conexión, Conexiones acumuladas y Uso de docentes (`vw_teacher_activities`).
+- Usuarios y Académico **no tienen informe configurado** (IDs vacíos), y Conexiones no tiene página: para admin-ORE, director y docente la sección es **solo descargas de Excel** (DataAnalysisAPI, que filtra por ORE en el backend).
+- Por eso la página «Reporte Académico» de Power BI no se ve en la plataforma, y el problema de RLS de admin-ORE (§1b) hoy no afecta a ningún usuario.
+- «EyA Propuesto» (modelo e informe a partir de Excel: Access Logs, Connections, Average, Users, Escuelas_EA_Visitadas) es una propuesta y la plataforma no lo usa.
+
 ## 1b. Alcance de los datos (RLS): confirmado en wiki y código
 - Si la sesión tiene `OreId` (admin-ORE): rol RLS **`Admin_ORE_Filter`**, regla `[ore] = USERNAME()`. Solo ve su ORE.
 - Si no lo tiene (admin, director, docente, employee): rol **`ViewAll`**. Ve **todos** los datos. El menú limita qué páginas ve cada rol, pero no filtra filas: un director no queda limitado a su escuela.
