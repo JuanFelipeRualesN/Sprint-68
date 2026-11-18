@@ -193,7 +193,7 @@ Orden: **A1 ∥ A2 ∥ A5 → A3 ∥ A4 → A6** (A7 opcional, tras A3). Un PR p
 Pendiente del usuario en Azure: (a) URL de UsersAPI por ambiente; (b) dominios del front por ambiente; (c) habilitar la identidad administrada del App Service y asignarle el rol «Azure AI User» en el proyecto de Foundry; (d) revisar que UsersAPI sea alcanzable desde el App Service.
 
 ### 7.3 Supuestos que quedan explícitos en el código
-1. **`OreId` de UsersAPI = `gs_data_analysis.school.ore_id`** (`ConsultasMySql.FA`). Si no coincidieran, un admin-ore vería otras escuelas o ninguna. Verificar con un admin-ore real antes de abrir el acceso.
+1. **`OreId` de UsersAPI = `gs_data_analysis.school.ore_id`** (`ConsultasMySql.FA`). Si no coincidieran, un admin-ore vería otras escuelas o ninguna. Verificar con un admin-ore real antes de abrir el acceso. Dato a favor (revisado en el código): en UsersAPI `upd_user_ore` se inserta y actualiza por `user_id` (`Users.cs` ~L1001 y ~L1024), o sea un ORE por usuario; no demuestra que ese id sea el de `school.ore_id`.
 2. **`UserId` de UsersAPI = `gs_data_analysis.user.user_id`** para ubicar la escuela de un director (`ConsultasMySql.EscuelaDeUsuario`). Si no coincide, el director recibe 403 (falla cerrada) o, en el peor caso, la escuela de otro usuario: verificar con un director real.
 3. **Nombre de ORE ↔ `ore_id` 1:1** para `uso-docentes`: la vista `vw_teacher_activities` trae solo nombres, así que se exige que la escuela del alcance coincida en nombre de escuela **y** de ORE (el criterio más restrictivo). Si hay dos escuelas con el mismo nombre en el mismo ORE, ambas cuentan.
 4. `get_user_by_token` responde 401 también cuando el rol no tiene el permiso: eso se ve como 401 (no 403). El 403 es por rol no autorizado en esta API.

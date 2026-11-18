@@ -55,7 +55,7 @@ public class ConsultasMySql : IConsultasUso
 
     /// <summary>
     /// Filtro de alcance sobre la escuela (alias <paramref name="sc"/>), SIEMPRE en SQL. Con alcance, un usuario sin escuela queda fuera
-    /// (la comparación con NULL no se cumple). ORE por <c>school.ore_id</c> = OreId de UsersAPI (SUPUESTO sin verificar: ver DISENO_AUTH.md pregunta 8).
+    /// (la comparación con NULL no se cumple). ORE por <c>school.ore_id</c> = OreId de UsersAPI (SUPUESTO sin verificar contra la base real: ver DISENO_AUTH.md §7.3. Dato a favor: en UsersAPI la tabla upd_user_ore se inserta/actualiza por user_id, es decir UN ORE por usuario — gs-base-api/UsersAPI/UsersAPI.Infrastructure/DapperHandler/Users.cs ~L1001 y ~L1024 —; eso no prueba que ese ore_id sea el de school.ore_id).
     /// </summary>
     string FA(string sc)
     {
