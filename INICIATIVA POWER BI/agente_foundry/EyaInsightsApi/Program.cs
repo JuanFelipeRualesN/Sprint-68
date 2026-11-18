@@ -147,34 +147,40 @@ app.MapGet("/buscar-escuela", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
 app.MapGet("/conexiones-por-escuela", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
 {
     var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var escuela = P.Escuela(r, c);
+    var escuela = P.Escuela(r, c); var (minC, maxC) = P.RangoConexiones(r);
     var todasLas = c.ConexionesPorEscuela(d, h, desc, 1000);     // todas las escuelas: permite totales, participación y empates exactos
     int total = todasLas.Sum(f => f.Conexiones);
     var todas = escuela is null ? todasLas : todasLas.Where(f => f.Nombre == escuela).ToList();   // con filtro, solo esa escuela (el % sigue siendo sobre el total)
+    var conFiltroN = minC > 0 || maxC < int.MaxValue;
+    if (conFiltroN) todas = todas.Where(f => f.Conexiones >= minC && f.Conexiones <= maxC).ToList();
     var filas = todas.Take(limite).Select(f => f with
     {
         PorcentajeDelTotal = P.Pct(f.Conexiones, total),
         ConexionesPorUsuario = f.UsuariosConectados == 0 ? null : Math.Round((double)f.Conexiones / f.UsuariosConectados, 1)
     }).ToList();
     return new Respuesta("conexiones_por_escuela", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
-        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), P.Empates(todas, limite, f => f.Conexiones, completa: true)),
+        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", min_conexiones = conFiltroN ? minC : (int?)null, max_conexiones = conFiltroN && maxC < int.MaxValue ? maxC : (int?)null, cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
+        P.Unir(P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), conFiltroN ? "Filtro por número de conexiones: una conexión = un día con ingreso (no ingresos dentro del mismo día); «una sola vez» = min_conexiones 1 y max_conexiones 1 dentro del período pedido." : null),
+            P.Empates(todas, limite, f => f.Conexiones, completa: true)),
         new { total_conexiones = total, escuelas_consideradas = todasLas.Count, escuelas_con_conexiones = todasLas.Count(f => f.Conexiones > 0),
-              escuelas_sin_conexiones = todasLas.Count(f => f.Conexiones == 0) });
+              escuelas_sin_conexiones = todasLas.Count(f => f.Conexiones == 0), escuelas_que_cumplen_el_filtro = conFiltroN ? todas.Count : (int?)null });
 }));
 
 app.MapGet("/conexiones-por-maestro", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
 {
     var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var escuela = P.Escuela(r, c);
-    var todos = c.ConexionesPorMaestro(d, h, desc, 5000, escuela);   // todos los maestros: totales, participación y empates exactos
-    int total = todos.Sum(f => f.Conexiones);
+    var escuela = P.Escuela(r, c); var (minC, maxC) = P.RangoConexiones(r);
+    var todosLos = c.ConexionesPorMaestro(d, h, desc, 5000, escuela);   // todos los maestros: totales, participación y empates exactos
+    int total = todosLos.Sum(f => f.Conexiones);
+    var conFiltroN = minC > 0 || maxC < int.MaxValue;
+    var todos = conFiltroN ? todosLos.Where(f => f.Conexiones >= minC && f.Conexiones <= maxC).ToList() : todosLos;
     var filas = todos.Take(limite).Select(f => f with { PorcentajeDelTotal = P.Pct(f.Conexiones, total) }).ToList();
     return new Respuesta("conexiones_por_maestro", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
-        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), P.Empates(todos, limite, f => f.Conexiones, completa: true)),
-        new { total_conexiones_maestros = total, maestros_considerados = todos.Count, maestros_con_conexiones = todos.Count(f => f.Conexiones > 0),
-              maestros_sin_conexiones = todos.Count(f => f.Conexiones == 0) });
+        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", min_conexiones = conFiltroN ? minC : (int?)null, max_conexiones = conFiltroN && maxC < int.MaxValue ? maxC : (int?)null, cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
+        P.Unir(P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), conFiltroN ? "Filtro por número de conexiones: una conexión = un día con ingreso; «una sola vez» = min_conexiones 1 y max_conexiones 1 dentro del período pedido." : null),
+            P.Empates(todos, limite, f => f.Conexiones, completa: true)),
+        new { total_conexiones_maestros = total, maestros_considerados = todosLos.Count, maestros_con_conexiones = todosLos.Count(f => f.Conexiones > 0),
+              maestros_sin_conexiones = todosLos.Count(f => f.Conexiones == 0), maestros_que_cumplen_el_filtro = conFiltroN ? todos.Count : (int?)null });
 }));
 
 app.MapGet("/comparar-areas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
@@ -287,6 +293,43 @@ app.MapGet("/uso-docentes", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
               maestros_sin_conexiones = total.Maestros - total.ConConexiones });
 }));
 
+app.MapGet("/patrones-conexion", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
+{
+    var (d, h) = P.Rango(r);
+    var agrupar = r.Query["agrupar"].FirstOrDefault() ?? "dia_semana";
+    if (agrupar is not ("dia_semana" or "rol")) throw new ErrorConsulta("'agrupar' debe ser 'dia_semana' o 'rol'.");
+    var escuela = P.Escuela(r, c);
+    var todas = c.PatronConexiones(d, h, agrupar, escuela);
+    int total = todas.Sum(f => f.Conexiones);
+    var filas = todas.Select(f => f with { PorcentajeDelTotal = P.Pct(f.Conexiones, total) }).ToList();
+    var mayor = todas.OrderByDescending(f => f.Conexiones).FirstOrDefault(); var menor = todas.OrderBy(f => f.Conexiones).FirstOrDefault();
+    var empateMayor = mayor is not null && todas.Count(f => f.Conexiones == mayor.Conexiones) > 1;
+    return new Respuesta("patrones_conexion", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
+        new { agrupar, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
+        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones),
+            agrupar == "dia_semana" ? "Siempre salen los 7 días (lunes a domingo, en ese orden); el día se lee en la hora local indicada. El total por día depende de cuántos lunes, martes… tenga el período pedido: con períodos cortos la comparación no es justa."
+                                    : "Rol de la cuenta de cada usuario (sin el rol client); ordenado de más a menos conexiones."),
+        new { total_conexiones = total, mas_conexiones = mayor?.Nombre, conexiones_del_mayor = mayor?.Conexiones, hay_empate_en_el_mayor = empateMayor,
+              menos_conexiones = menor?.Nombre, conexiones_del_menor = menor?.Conexiones });
+}));
+
+app.MapGet("/participacion-escuelas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
+{
+    var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
+    var escuela = P.Escuela(r, c);
+    var todasLas = c.ParticipacionEscuelas(d, h);
+    var todas = (desc ? todasLas.OrderBy(f => f.PorcentajeParticipacion is null).ThenByDescending(f => f.PorcentajeParticipacion)
+                      : todasLas.OrderBy(f => f.PorcentajeParticipacion is null).ThenBy(f => f.PorcentajeParticipacion)).ToList();   // estable: empates por nombre; sin activos al final
+    if (escuela is not null) todas = todas.Where(f => f.Nombre == escuela).ToList();
+    int act = todasLas.Sum(f => f.UsuariosActivos), con = todasLas.Sum(f => f.UsuariosConectados);
+    return new Respuesta("participacion_escuelas", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
+        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, todas.Take(limite).ToList(),
+        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), P.Unir(c.NotaParticipacion,
+            todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} escuelas; el 'resumen' trae el total de todas. Los empates se ordenan alfabéticamente, así que la lista no es exhaustiva si el último valor se repite." : null)),
+        new { escuelas_consideradas = todasLas.Count, total_usuarios_activos = act, total_usuarios_conectados = con, porcentaje_participacion_global = P.Pct(con, act),
+              escuelas_sin_conectados = todasLas.Count(f => f.UsuariosConectados == 0), escuelas_con_100_o_mas = todasLas.Count(f => f.PorcentajeParticipacion >= 100) });
+}));
+
 app.Run();
 
 static IResult Ejecutar(Func<Respuesta> consulta)
@@ -356,6 +399,21 @@ static class P
         var (d, h) = (Fecha(r, desde), Fecha(r, hasta));
         if (d > h) throw new ErrorConsulta($"'{desde}' no puede ser posterior a '{hasta}'.");
         return (d, h);
+    }
+
+    /// <summary>min_conexiones / max_conexiones (opcionales): filtran por el número de conexiones (días con ingreso) de cada fila. «Una sola vez» = 1 y 1.</summary>
+    public static (int min, int max) RangoConexiones(HttpRequest r)
+    {
+        int Entero(string nombre, int defecto)
+        {
+            var t = r.Query[nombre].FirstOrDefault();
+            if (string.IsNullOrEmpty(t)) return defecto;
+            if (!int.TryParse(t, out var v) || v < 0) throw new ErrorConsulta($"'{nombre}' debe ser un número entero de 0 en adelante.");
+            return v;
+        }
+        var (mn, mx) = (Entero("min_conexiones", 0), Entero("max_conexiones", int.MaxValue));
+        if (mn > mx) throw new ErrorConsulta("'min_conexiones' no puede ser mayor que 'max_conexiones'.");
+        return (mn, mx);
     }
 
     public static (bool desc, int limite) OrdenLimite(HttpRequest r)

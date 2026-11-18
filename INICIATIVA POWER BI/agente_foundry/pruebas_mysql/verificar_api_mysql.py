@@ -254,6 +254,51 @@ def esperado_docentes(fecha=None, periodo_desde=None, escuela=None):
     return filas, fila("TOTAL", "", "", todos)
 
 
+def esperado_patron_dia(desde, hasta, escuela=None):
+    """Conexiones y usuarios distintos por día de la semana (lunes..domingo) en el día LOCAL; siempre 7 filas."""
+    a, b = rango(desde, hasta)
+    cnt, usr = [0] * 7, [set() for _ in range(7)]
+    for u, h in CONEX:
+        if a <= h < b and cuenta_conexion(u) and ESC_DE[u] is not None and (escuela is None or NOM_ESC.get(ESC_DE[u]) == escuela):
+            w = (h + dt.timedelta(minutes=OFF)).weekday()
+            cnt[w] += 1; usr[w].add(u)
+    nombres = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+    return [dict(nombre=n, conexiones=cnt[i], usuarios_conectados=len(usr[i])) for i, n in enumerate(nombres)]
+
+
+def esperado_patron_rol(desde, hasta, escuela=None):
+    a, b = rango(desde, hasta)
+    nom = dict(dp.ROLES)
+    cnt, usr = {}, {}
+    for u, h in CONEX:
+        if a <= h < b and cuenta_conexion(u) and ESC_DE[u] is not None and (escuela is None or NOM_ESC.get(ESC_DE[u]) == escuela):
+            r = nom[ROL[u]]
+            cnt[r] = cnt.get(r, 0) + 1; usr.setdefault(r, set()).add(u)
+    return [dict(nombre=r, conexiones=n, usuarios_conectados=len(usr[r])) for r, n in sorted(cnt.items(), key=lambda kv: (-kv[1], kv[0]))]
+
+
+def esperado_participacion(desde, hasta):
+    """activos = suscripción 'active' (sin revisar cancelación), rol ≠ client, con escuela; conectados = distintos con conexión en el período."""
+    a, b = rango(desde, hasta)
+    activos = {u for u, st in dp.suscripciones(USUARIOS) if st == "active"}
+    dom = lambda u: not (EXCL and CON_DOMINIO and EMAIL[u].endswith("@" + dp.DOMINIO_INTERNO))
+    filas = []
+    for s, nombre in dp.ESCUELAS:
+        if EXCL and s in ESC_EXCL:
+            continue
+        act = sum(1 for u in ROL if ESC_DE[u] == s and ROL[u] != 1 and u in activos and dom(u))
+        con = len({u for u, h in CONEX if a <= h < b and ESC_DE[u] == s and ROL[u] != 1 and dom(u)})
+        if act > 0 or con > 0:
+            filas.append(dict(nombre=nombre, usuarios_activos=act, usuarios_conectados=con,
+                              porcentaje_participacion=round(100.0 * con / act, 1) if act else None))
+    return filas
+
+
+def ordenar_participacion(filas, desc):
+    return sorted(filas, key=lambda f: (f["porcentaje_participacion"] is None,
+                                        -(f["porcentaje_participacion"] or 0) if desc else (f["porcentaje_participacion"] or 0), kn(f["nombre"])))
+
+
 print(f"API {BASE}  offset={OFF} min")
 print("\n[salud / frescura]")
 _, s = api("/salud")
@@ -341,6 +386,66 @@ _, r = api("/uso-docentes")
 igual("sin fecha usa hoy (período vigente)", "fecha" in r["periodo"], True)
 st, _ = api("/uso-docentes", fecha="2026-02-30")
 igual("fecha inválida → 400", st, 400)
+
+print("\n[filtros «una sola vez» / «más de una conexión»]")
+for desde, hasta, mn, mx in [("2026-01-01", "2026-11-10", 1, 1), ("2026-09-01", "2026-09-30", 2, None), ("2026-01-01", "2026-01-31", 0, 0),
+                                 ("2026-10-01", "2026-10-07", 1, 1), ("2026-10-20", "2026-10-22", 1, 1), ("2026-11-09", "2026-11-12", 2, None),
+                                 ("2026-01-11", "2026-01-11", 1, 1), ("2026-01-18", "2026-01-18", 1, 1)]:
+    q = dict(desde=desde, hasta=hasta, orden="asc", limite=50, min_conexiones=mn)
+    if mx is not None: q["max_conexiones"] = mx
+    _, r = api("/conexiones-por-maestro", **q)
+    esp = [f for f in esperado_maestros(desde, hasta, False, 5000) if f["conexiones"] >= mn and (mx is None or f["conexiones"] <= mx)][:50]
+    igual(f"maestros {desde}..{hasta} min={mn} max={mx}", r["resultados"], esp)
+    igual(f"  resumen maestros_que_cumplen_el_filtro", r["resumen"]["maestros_que_cumplen_el_filtro"],
+          len([f for f in esperado_maestros(desde, hasta, False, 5000) if f["conexiones"] >= mn and (mx is None or f["conexiones"] <= mx)]))
+    q["limite"] = 50
+    _, r = api("/conexiones-por-escuela", **q)
+    esp = [f for f in esperado_escuelas(desde, hasta, False, 50) if f["conexiones"] >= mn and (mx is None or f["conexiones"] <= mx)]
+    igual(f"escuelas {desde}..{hasta} min={mn} max={mx}", r["resultados"], esp)
+# Guardas: que el filtro «una sola vez» NO se esté probando solo con resultados vacíos
+_, r = api("/conexiones-por-maestro", desde="2026-10-01", hasta="2026-10-07", min_conexiones=1, max_conexiones=1, limite=50)
+igual("hay maestros con una sola conexión (prueba no vacía)", len(r["resultados"]) > 0 and all(f["conexiones"] == 1 for f in r["resultados"]), True)
+_hay = False                                  # algún día de enero (cualquiera de las dos zonas horarias) tiene escuelas con exactamente 1 conexión
+for _d in range(11, 19):
+    _, r = api("/conexiones-por-escuela", desde=f"2026-01-{_d:02d}", hasta=f"2026-01-{_d:02d}", min_conexiones=1, max_conexiones=1, limite=50)
+    assert all(f["conexiones"] == 1 for f in r["resultados"])
+    _hay = _hay or len(r["resultados"]) > 0
+igual("hay escuelas con una sola conexión (prueba no vacía)", _hay, True)
+_, r = api("/conexiones-por-maestro", desde="2026-01-01", hasta="2026-11-10", limite=3)
+igual("sin filtro no aparece el campo maestros_que_cumplen_el_filtro", "maestros_que_cumplen_el_filtro" in r["resumen"], False)
+st, _ = api("/conexiones-por-maestro", desde="2026-01-01", hasta="2026-11-10", min_conexiones=5, max_conexiones=2)
+igual("min mayor que max → 400", st, 400)
+st, _ = api("/conexiones-por-escuela", desde="2026-01-01", hasta="2026-11-10", min_conexiones="x")
+igual("min no numérico → 400", st, 400)
+
+print("\n[patrones_conexion]")
+for desde, hasta, ag, esc in [("2026-01-01", "2026-11-12", "dia_semana", None), ("2026-09-01", "2026-09-30", "dia_semana", None), ("2026-01-01", "2026-11-12", "dia_semana", "Escuela Prueba B"),
+                              ("2026-01-01", "2026-11-12", "rol", None), ("2026-08-01", "2026-10-31", "rol", "Escuela Prueba C")]:
+    q = dict(desde=desde, hasta=hasta, agrupar=ag)
+    if esc: q["escuela"] = esc
+    _, r = api("/patrones-conexion", **q)
+    esp = (esperado_patron_dia if ag == "dia_semana" else esperado_patron_rol)(desde, hasta, esc)
+    igual(f"{ag} {desde}..{hasta} esc={esc}", r["resultados"], esp)
+    igual(f"  resumen total {ag} esc={esc}", r["resumen"]["total_conexiones"], sum(f["conexiones"] for f in esp))
+_, r = api("/patrones-conexion", desde="2026-01-01", hasta="2026-11-12")
+mx_ = max(f["conexiones"] for f in r["resultados"])
+igual("resumen: día con más conexiones y empate", (r["resumen"]["conexiones_del_mayor"], r["resumen"]["hay_empate_en_el_mayor"]),
+      (mx_, sum(1 for f in r["resultados"] if f["conexiones"] == mx_) > 1))
+igual("el rol client nunca aparece", "client" in [f["nombre"] for f in api("/patrones-conexion", desde="2026-01-01", hasta="2026-11-12", agrupar="rol")[1]["resultados"]], False)
+st, _ = api("/patrones-conexion", desde="2026-01-01", hasta="2026-11-12", agrupar="hora")
+igual("agrupar=hora (no existe) → 400", st, 400)
+
+print("\n[participacion_escuelas]")
+for desde, hasta, desc, lim in [("2026-01-01", "2026-11-12", True, 50), ("2026-09-01", "2026-09-30", False, 50), ("2026-07-01", "2026-12-31", True, 3)]:
+    _, r = api("/participacion-escuelas", desde=desde, hasta=hasta, orden="desc" if desc else "asc", limite=lim)
+    todas = ordenar_participacion(esperado_participacion(desde, hasta), desc)
+    igual(f"{desde}..{hasta} {'desc' if desc else 'asc'} lim {lim}", r["resultados"], todas[:lim])
+    igual(f"  resumen global", (r["resumen"]["total_usuarios_activos"], r["resumen"]["total_usuarios_conectados"], r["resumen"]["escuelas_consideradas"]),
+          (sum(f["usuarios_activos"] for f in todas), sum(f["usuarios_conectados"] for f in todas), len(todas)))
+_, r = api("/participacion-escuelas", desde="2026-01-01", hasta="2026-11-12", escuela="Escuela Prueba B")
+igual("con escuela solo sale esa", [f["nombre"] for f in r["resultados"]], ["Escuela Prueba B"])
+_, r = api("/participacion-escuelas", desde="2026-01-01", hasta="2026-11-12", limite=2)
+igual("limite 2 → aviso HAY MÁS FILAS", "HAY MÁS FILAS" in r.get("nota", ""), True)
 
 print("\n[buscar_escuela y entradas hostiles]")
 _, r = api("/buscar-escuela", texto="prueba b")

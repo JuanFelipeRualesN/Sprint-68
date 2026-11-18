@@ -435,4 +435,53 @@ public class ConsultasMySql : IConsultasUso
         "Cada escuela tiene su propio calendario: se usa, por escuela, el período académico que contiene la fecha pedida (o el que empieza en periodo_desde). " +
         "con_conexiones = se conectó dentro de ese período; con_planes / planes_con_datos = creó planes instruccionales en el período / con quizzes o lecciones; " +
         "con_grupos = creó grupos en el año académico; con_asignaciones = ha creado alguna asignación (histórico). Datos al momento de la consulta (Power BI muestra la foto de su refresco diario). " + NotaExclusion;
+
+    // ── Patrones de conexión (día de la semana / rol) ───────────────────────────────────
+    static readonly string[] DiasSemana = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+
+    public List<FilaPatron> PatronConexiones(DateOnly desde, DateOnly hasta, string agrupar, string? escuela)
+    {
+        var clave = agrupar == "rol" ? "COALESCE(us.role, '(sin rol)')" : $"WEEKDAY(DATE_ADD(dt.connected_date, INTERVAL {_offsetMin} MINUTE))";
+        var sql = $@"SELECT {clave} AS k, COUNT(*) AS conexiones, COUNT(DISTINCT dt.user_id) AS usuarios
+            FROM connected_date dt
+            JOIN user us ON us.user_id = dt.user_id AND us.role_id <> {RolCliente}
+            LEFT JOIN school sh ON sh.school_id = us.school_id
+            WHERE dt.connected_date >= @a AND dt.connected_date < @b AND us.school_id IS NOT NULL
+              AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
+            GROUP BY k";
+        var filas = Leer(sql, p =>
+        {
+            p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta));
+            p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); ParamsExcl(p);
+        }, r => (K: Convert.ToString(r.GetValue(0), CultureInfo.InvariantCulture)!, N: Entero(r, 1), U: Entero(r, 2)));
+        if (agrupar == "rol")
+            return filas.OrderByDescending(f => f.N).ThenBy(f => f.K, StringComparer.Ordinal).Select(f => new FilaPatron(f.K, f.N, f.U)).ToList();
+        return DiasSemana.Select((nombre, i) =>
+        {
+            var f = filas.FirstOrDefault(x => x.K == i.ToString(CultureInfo.InvariantCulture));
+            return new FilaPatron(nombre, f.N, f.U);
+        }).ToList();
+    }
+
+    // ── Participación por escuela ───────────────────────────────────────────────────────
+    // activos = suscripción 'active' (misma definición que la tarjeta «Activos»); conectados = usuarios distintos con alguna conexión
+    // en el período (con o sin suscripción activa, como la tarjeta de Power BI). Escuelas = las que tienen activos o conectados.
+    public List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta)
+    {
+        var sql = $@"SELECT sh.school_name,
+            (SELECT COUNT(DISTINCT us.user_id) FROM user us JOIN subscription_profile_history sph ON sph.user_id = us.user_id
+              WHERE us.school_id = sh.school_id AND sph.status = 'active' AND us.role_id <> {RolCliente} {FD("us")}) AS activos,
+            (SELECT COUNT(DISTINCT dt.user_id) FROM connected_date dt JOIN user us ON us.user_id = dt.user_id AND us.role_id <> {RolCliente}
+              WHERE us.school_id = sh.school_id AND dt.connected_date >= @a AND dt.connected_date < @b {FD("us")}) AS conectados
+            FROM school sh WHERE 1 = 1 {FE("sh")}
+            HAVING activos > 0 OR conectados > 0
+            ORDER BY sh.school_name";
+        return Leer(sql, p => { p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta)); ParamsExcl(p); },
+            r => { int a = Entero(r, 1), c = Entero(r, 2); return new FilaParticipacion(r.GetString(0), a, c, a == 0 ? null : Math.Round(100.0 * c / a, 1)); });
+    }
+
+    public string? NotaParticipacion =>
+        "participacion = usuarios conectados en el período / usuarios con suscripción activa de la escuela (gráfico «% de usuarios conectados por escuela» de Power BI). " +
+        "usuarios_activos = suscripción 'active' sin revisar la fecha de cancelación; usuarios_conectados cuenta a quien se conectó en el período tenga o no suscripción activa, " +
+        "así que el porcentaje puede pasar de 100 %. Solo usuarios con escuela, sin el rol client. Solo escuelas con usuarios activos o con conexiones en el período. " + NotaExclusion;
 }

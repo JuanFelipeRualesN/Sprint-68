@@ -101,3 +101,11 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 - `/conexiones-acumuladas` (2026-07-01 → 2026-11-18, trimestre): **131 conexiones · 95 usuarios conectados · 7.277 activos · 1,31 %** = tarjetas de «Reporte de Conexión» y «% de Conexiones y usuarios». Por trimestre: T3 23 / T4 108. Conectados alguna vez: 949 (13,04 %). ✅
 - `/uso-docentes?periodo_desde=2026-09-12`: Escuela del Deporte **18 maestros · 8 con asignaciones · 7 con grupos · 0 con planes · 0 con planes con datos** = página de uso de maestros. ✅ (con_conexiones = 1 coincide con el oráculo SQL 12.)
 - La API avisó que sus datos llegan al 17-nov; no cambió las cifras.
+
+## 10. Fase 1 del ticket (18-nov): consultas nuevas en la API
+- `conexiones-por-maestro` y `conexiones-por-escuela` aceptan `min_conexiones` / `max_conexiones` (una conexión = un día con ingreso): «una sola vez» = 1 y 1; «más de una» = min 2. El `resumen` agrega `maestros_que_cumplen_el_filtro` / `escuelas_que_cumplen_el_filtro`.
+- `GET /patrones-conexion?agrupar=dia_semana|rol`: siempre 7 días (lunes a domingo, día local) o roles sin client. No hay patrón por hora: la base guarda un registro por usuario y día.
+- `GET /participacion-escuelas`: usuarios activos, conectados y % de participación por escuela (gráfico «% de usuarios conectados por escuela»). El % puede pasar de 100 % (se cuentan conectados sin suscripción activa).
+- Verificación: 116/116 en los tres modos con MySQL 8.0.46 y datos sintéticos; guardas que impiden probar el filtro «una sola vez» solo con resultados vacíos.
+- `preguntas_fase1.txt`: 24 formulaciones para el agente de Foundry (necesita las credenciales de Azure; no se corrió desde la nube).
+- Pendiente con la base real: comparar `/participacion-escuelas?desde=2026-07-01&hasta=2026-11-18` con el gráfico del tablero (The School of San Juan 21, Esc. Especializada 161, Esc. del Deporte 254, The United School 13 / 17 %, Leap STEAM 2 / 14 %…; esas etiquetas son el segmento mostrado de cada barra, hay que mirar conectados vs. no conectados).

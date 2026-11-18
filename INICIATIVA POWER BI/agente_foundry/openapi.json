@@ -49,7 +49,7 @@
       "get": {
         "operationId": "conexiones_por_escuela",
         "summary": "Conexiones por escuela en un período",
-        "description": "Devuelve el total de conexiones de cada escuela entre dos fechas, ordenado por conexiones. Incluye las escuelas con cero conexiones. Úsala para las escuelas con más o con menos actividad: orden desc para las de mayor actividad, orden asc para las de menor. Cada fila trae porcentaje_del_total (qué % de todas las conexiones aporta la escuela) y conexiones_por_usuario; la respuesta trae 'resumen' con total_conexiones y cuántas escuelas tuvieron o no conexiones (escuelas_con_conexiones, escuelas_sin_conexiones): úsalos, no los calcules. Con el parámetro escuela (nombre exacto, obtenido con buscar_escuela) devuelve solo esa escuela, pero su porcentaje_del_total sigue siendo sobre todas las escuelas.",
+        "description": "Devuelve el total de conexiones de cada escuela entre dos fechas, ordenado por conexiones. Incluye las escuelas con cero conexiones. Úsala para las escuelas con más o con menos actividad: orden desc para las de mayor actividad, orden asc para las de menor. Cada fila trae porcentaje_del_total (qué % de todas las conexiones aporta la escuela) y conexiones_por_usuario; la respuesta trae 'resumen' con total_conexiones y cuántas escuelas tuvieron o no conexiones (escuelas_con_conexiones, escuelas_sin_conexiones): úsalos, no los calcules. Con el parámetro escuela (nombre exacto, obtenido con buscar_escuela) devuelve solo esa escuela, pero su porcentaje_del_total sigue siendo sobre todas las escuelas. Con min_conexiones y max_conexiones lista solo las escuelas con ese número de conexiones (p. ej. «escuelas conectadas una sola vez»: 1 y 1; «más de una conexión»: min 2). El resumen trae cuántas escuelas cumplen el filtro.",
         "parameters": [
           {
             "$ref": "#/components/parameters/desde"
@@ -65,6 +65,26 @@
           },
           {
             "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "name": "min_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con AL MENOS este número de conexiones en el período (una conexión = un día con ingreso). Ej.: 2 para «más de una conexión».",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "max_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con COMO MÁXIMO este número de conexiones en el período. Para «una sola vez» usa min_conexiones=1 y max_conexiones=1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -81,7 +101,7 @@
       "get": {
         "operationId": "conexiones_por_maestro",
         "summary": "Conexiones por maestro en un período",
-        "description": "Devuelve el total de conexiones de cada maestro entre dos fechas, ordenado por conexiones, con su escuela. Puede filtrarse por una escuela. Úsala para los maestros con más o con menos conexiones: orden desc o asc. Cada fila trae porcentaje_del_total; la respuesta trae 'resumen' con total_conexiones_maestros y cuántos maestros tuvieron o no conexiones (maestros_con_conexiones, maestros_sin_conexiones): úsalos, no los calcules.",
+        "description": "Devuelve el total de conexiones de cada maestro entre dos fechas, ordenado por conexiones, con su escuela. Puede filtrarse por una escuela. Úsala para los maestros con más o con menos conexiones: orden desc o asc. Cada fila trae porcentaje_del_total; la respuesta trae 'resumen' con total_conexiones_maestros y cuántos maestros tuvieron o no conexiones (maestros_con_conexiones, maestros_sin_conexiones): úsalos, no los calcules. Con min_conexiones y max_conexiones lista solo los maestros con ese número de conexiones (p. ej. «maestros que se conectaron una sola vez»: 1 y 1). El resumen trae cuántos maestros cumplen el filtro.",
         "parameters": [
           {
             "$ref": "#/components/parameters/desde"
@@ -97,6 +117,26 @@
           },
           {
             "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "name": "min_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con AL MENOS este número de conexiones en el período (una conexión = un día con ingreso). Ej.: 2 para «más de una conexión».",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "max_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con COMO MÁXIMO este número de conexiones en el período. Para «una sola vez» usa min_conexiones=1 y max_conexiones=1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -408,6 +448,78 @@
           },
           {
             "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/patrones-conexion": {
+      "get": {
+        "operationId": "patrones_conexion",
+        "summary": "Patrones de conexión por día de la semana o por rol",
+        "description": "Devuelve las conexiones agrupadas por día de la semana (siempre los 7 días, lunes a domingo) o por rol (teacher, student, director…), con usuarios_conectados y porcentaje_del_total. El 'resumen' trae el día o rol con más y con menos conexiones y si hay empate: úsalo, no lo calcules. Úsala para «qué día se conectan más» o «qué rol se conecta más». NO hay datos por hora (la base guarda un registro por usuario y día).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "name": "agrupar",
+            "in": "query",
+            "required": false,
+            "description": "Eje del patrón. Por defecto dia_semana.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dia_semana",
+                "rol"
+              ],
+              "default": "dia_semana"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/participacion-escuelas": {
+      "get": {
+        "operationId": "participacion_escuelas",
+        "summary": "Participación (% de usuarios activos que se conectaron) por escuela",
+        "description": "Por escuela: usuarios_activos (con suscripción activa), usuarios_conectados en el período y porcentaje_participacion (conectados / activos), ordenado por ese porcentaje. Es el gráfico «% de usuarios conectados por escuela» de Power BI. El 'resumen' trae el total de usuarios activos y conectados y el porcentaje global. Úsala para comparar la PARTICIPACIÓN entre escuelas (no solo el número de conexiones, que depende del tamaño de la escuela). Nota: el porcentaje puede pasar de 100 % porque se cuentan conectados sin suscripción activa.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
           }
         ],
         "responses": {

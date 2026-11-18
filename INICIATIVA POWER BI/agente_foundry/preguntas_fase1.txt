@@ -1,0 +1,48 @@
+# Fase 1 (REQ-3741): distintas formas de preguntar lo mismo. Una pregunta por línea; las que empiezan con # se ignoran.
+# Uso:  EYA_BASE_URL=http://127.0.0.1:5099 python3 probar_agente_local.py --preguntas preguntas_fase1.txt
+# Cada bloque debe llamar a la MISMA consulta con los MISMOS parámetros (entre paréntesis); la cifra esperada sale de la API/SQL, no del modelo.
+
+# (conexiones_por_maestro · min_conexiones=1 · max_conexiones=1 · período 2026-01-01 → hoy)
+¿Qué maestros se han conectado una sola vez en lo corrido de 2026?
+Dame los docentes que solo han entrado a la plataforma una vez este año.
+Lista de maestros con una única conexión en 2026.
+¿Quiénes son los profesores que se conectaron solo un día en lo que va de 2026?
+# (igual, pero «desde siempre»: período 2022-01-01 → hoy, y debe decirlo)
+¿Qué maestros se han conectado una sola vez en total, desde siempre?
+
+# (conexiones_por_escuela · min_conexiones=2 · período 2026-01-01 → hoy)
+¿Qué escuelas han registrado más de una conexión en lo corrido de 2026?
+Escuelas con 2 o más conexiones este año.
+¿Cuáles escuelas se han conectado más de una vez en 2026?
+# (conexiones_por_escuela · min_conexiones=1 · max_conexiones=1 · 2026-01-01 → hoy)
+¿Qué escuelas se han conectado una sola vez en 2026?
+Dime las escuelas con una única conexión este año.
+
+# (patrones_conexion · agrupar=dia_semana · 2026-01-01 → hoy; debe decir que el día depende de cuántos lunes, martes… tiene el período)
+¿Qué día de la semana se conecta más la gente en 2026?
+¿En qué día hay más conexiones, lunes a domingo, en lo corrido del año?
+# (patrones_conexion · agrupar=rol)
+¿Qué rol se conecta más a la plataforma este año: maestros, estudiantes o directores?
+# (patrones_conexion · agrupar=dia_semana + escuela exacta tras buscar_escuela)
+¿Qué día se conectan más en la escuela Vimenti en 2026?
+
+# (participacion_escuelas · desc · 2026-07-01 → hoy; debe citar el % tal cual y avisar si pasa de 100 %)
+¿Qué escuelas tienen mayor participación entre el 1 de julio y hoy?
+Compara la participación de las escuelas desde julio: ¿qué porcentaje de sus usuarios se ha conectado?
+Ranking de escuelas por porcentaje de usuarios conectados desde el 1 de julio de 2026.
+
+# (tendencia_conexiones · granularidad=mes · 2026-01-01 → hoy)
+¿Cómo han evolucionado las conexiones mes a mes en 2026?
+¿Hay una tendencia de baja en las conexiones este año?
+# (conexiones_acumuladas · mes · 2026-01-01 → hoy)
+¿Cuántos usuarios distintos se han conectado en lo corrido de 2026 y cuántos son nuevos cada mes?
+
+# --- Lo que NO está disponible: debe decirlo sin cifras ni aproximaciones ---
+# (no hay región)
+¿Qué regiones tienen mayor participación?
+# (no hay talleres)
+¿Qué escuelas se han conectado una sola vez y a las que se les ofreció un taller?
+# (no hay hora)
+¿A qué hora del día se conectan más los maestros?
+# (no se piden cifras de estudiantes individuales)
+¿Cuántas veces se conectó el estudiante Juan Pérez?

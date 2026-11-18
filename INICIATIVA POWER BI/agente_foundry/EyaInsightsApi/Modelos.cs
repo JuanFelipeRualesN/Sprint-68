@@ -8,6 +8,10 @@ public record FilaComparacion(string Nombre, int PruebasCompletadasA, int Prueba
 public record FilaTendencia(string Periodo, int Conexiones, int? DiferenciaConPeriodoAnterior = null, double? VariacionPct = null);
 public record FilaComparacionEscuela(string Nombre, int ConexionesA, int ConexionesB, int Diferencia, double? VariacionPct);
 public record FilaCatalogoEscuela(string Nombre);
+/// <summary>Conexiones agrupadas por un patrón (día de la semana o rol).</summary>
+public record FilaPatron(string Nombre, int Conexiones, int UsuariosConectados, double? PorcentajeDelTotal = null);
+/// <summary>Participación de una escuela: usuarios conectados en el período / usuarios con suscripción activa (gráfico «% de usuarios conectados por escuela» de Power BI).</summary>
+public record FilaParticipacion(string Nombre, int UsuariosActivos, int UsuariosConectados, double? PorcentajeParticipacion);
 /// <summary>Conexiones acumuladas (página «Conexiones acumuladas» de Power BI). usuarios_nuevos = usuarios cuya PRIMERA conexión del rango cae en este período.</summary>
 public record FilaAcumulada(string Periodo, int Conexiones, int ConexionesAcumuladas, int UsuariosNuevos, int UsuariosAcumulados);
 /// <summary>Usuarios con suscripción activa (tarjeta «Activos» / «Total de usuarios matrícula» de Power BI) y cuántos se conectaron alguna vez.</summary>
@@ -75,4 +79,9 @@ public interface IConsultasUso
     /// Devuelve las filas por escuela y una fila de total (maestros distintos en todo el resultado).</summary>
     (List<FilaUsoDocentes> Filas, FilaUsoDocentes Total) UsoDocentes(DateOnly? fecha, DateOnly? periodoDesde, string? escuela);
     string? NotaDocentes { get; }
+    /// <summary>agrupar: «dia_semana» (siempre 7 filas, lunes a domingo) o «rol» (sin el rol client).</summary>
+    List<FilaPatron> PatronConexiones(DateOnly desde, DateOnly hasta, string agrupar, string? escuela);
+    /// <summary>Todas las escuelas con usuarios activos o con conexiones en el período, ordenadas por nombre.</summary>
+    List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta);
+    string? NotaParticipacion { get; }
 }

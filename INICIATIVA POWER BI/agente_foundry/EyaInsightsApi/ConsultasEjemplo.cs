@@ -156,4 +156,25 @@ public class ConsultasEjemplo : IConsultasUso
     }
 
     public string? NotaDocentes => "Datos de ejemplo: maestros y actividades inventados.";
+
+    public List<FilaPatron> PatronConexiones(DateOnly desde, DateOnly hasta, string agrupar, string? escuela)
+    {
+        var sel = _conexiones.Where(c => c.Dia >= desde && c.Dia <= hasta && (escuela is null || c.Escuela == escuela)).ToList();
+        if (agrupar == "rol") return sel.Count == 0 ? [] : [new("teacher", sel.Sum(c => c.Cantidad), sel.Select(c => c.Maestro).Distinct().Count())];
+        string[] dias = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+        return dias.Select((n, i) =>
+        {
+            var g = sel.Where(c => ((int)c.Dia.DayOfWeek + 6) % 7 == i).ToList();
+            return new FilaPatron(n, g.Sum(c => c.Cantidad), g.Select(c => c.Maestro).Distinct().Count());
+        }).ToList();
+    }
+
+    public string? NotaParticipacion => "Datos de ejemplo: usuarios activos inventados (4 por maestro).";
+    public List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta) =>
+        EscuelasActivas.Select(e =>
+        {
+            int activos = Maestros.Count(m => m.Escuela == e) * 4;
+            int con = _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => c.Maestro).Distinct().Count();
+            return new FilaParticipacion(e, activos, con, activos == 0 ? null : Math.Round(100.0 * con / activos, 1));
+        }).ToList();
 }
