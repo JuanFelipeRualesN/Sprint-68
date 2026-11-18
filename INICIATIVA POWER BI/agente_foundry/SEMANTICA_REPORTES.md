@@ -36,8 +36,18 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 ## 2b. Vistas del modelo (DDL en la wiki)
 `vw_connections_report`, `vw_not_connected` (usuarios con suscripción activa y `cancellation_date >= NOW()` sin ninguna conexión histórica), `vw_teacher_activities` (cruza `gs_users_db_prod`, `gs_teachers_web_db_prod`, `gs_subscription_api_db_prod` y `gs_schools_api_db_prod`, período académico vigente), `vw_total_users_with_connection_details` (conectados / total con suscripción activa → %), `vw_users_report`, `vw_users_details_report`, `vw_academics_average`, `vw_academics_details`. Todas excluyen `ore LIKE '%DEMOSTRACION%'`. Las dos de suscripción dependen de `NOW()`, así que su resultado cambia con el día en que se consultan.
 
+## 2c. Cambios de `main` (16-nov-2026) que no están en la copia local
+- `PowerBIController.cs` + `PowerBI.cs`: endpoint del embed con RLS (§1b).
+- **Filtro de suscripción** en las descargas (`status=active|inactive`):
+  - Usuarios: **activo** = `subscription_profile_history.status = 'active'` y `cancellation_date >= NOW()`; el resto es inactivo.
+  - Conexiones: usan `connected_date.subscription_status` (el estado que tenía el usuario el día que se conectó).
+  - Es la misma definición que la tarjeta «usuarios con matrícula activa» (7.199) de Power BI y que `vw_not_connected`.
+- Paginación de resultados académicos: `Skip(fromPage)` en lugar de `Skip(fromPage * limiter)` (offset en filas, no en páginas).
+- La copia local tiene `assistant-panel/` (trabajo de REQ-3741), que no está en `main`.
+
 ## 3. Glosario (definición operativa = la del tablero)
 - **Conexión**: fila de `connected_date` (1 por usuario y día) de un usuario con escuela, rol ≠ client, fuera de ORE DEMOSTRACION. Día en hora de Puerto Rico (UTC-4).
+- **Usuario con matrícula activa**: suscripción `active` con `cancellation_date >= NOW()`. Cambia cada día.
 - **Usuario conectado**: correo distinto con al menos una conexión en el período.
 - **Escuela conectada**: escuela distinta con al menos una conexión. **Universo de escuelas**: 47 (lista mantenida en `Escuelas_EA_Visitadas.xlsx`; la API la aproxima: escuelas con estudiantes o con conexiones).
 - **Prueba asignada**: fila de `vw_academics_details` (`result_generic` de estudiantes). **Completada**: `quiz_taken_date` no nulo.
