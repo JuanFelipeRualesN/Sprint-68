@@ -2,26 +2,32 @@ using System.Text.Json.Nodes;
 
 /// <summary>
 /// Especificación de gráfica (JSON) derivada de forma determinista del resultado de una consulta (tabla D9 del plan de la Fase 4).
-/// No calcula nada nuevo: <c>valores</c> copia tal cual los números de <c>resultados</c> (los null quedan null). Dibuja el cliente.
+/// No calcula nada nuevo: <c>data</c> copia tal cual los números de <c>resultados</c> (los null quedan null). Dibuja el cliente.
+/// Formato para Recharts: <c>data</c> = arreglo de objetos planos <c>{categoria, serie1, serie2…}</c>; <c>eje_x.clave</c> y cada <c>series[].clave</c>
+/// son las claves de esos objetos; <c>tipo</c> = "line" | "bar" (el front admite también "pie", esta API no lo genera); <c>layout</c> (solo bar) =
+/// "horizontal" (columnas) | "vertical" (barras horizontales), igual que el prop <c>layout</c> de BarChart.
 /// </summary>
 static class Graficas
 {
     record Serie(string Clave, string Nombre);
-    record Molde(string Tipo, string Unidad, string TituloY, Serie[] Series);
+    record Molde(string Tipo, string? Layout, string Unidad, string TituloY, Serie[] Series);
+
+    /// <summary>Clave del eje X dentro de cada objeto de <c>data</c>.</summary>
+    const string ClaveX = "categoria";
 
     static readonly Dictionary<string, Molde> Moldes = new()
     {
-        ["tendencia_conexiones"] = new("lineas", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
-        ["conexiones_acumuladas"] = new("lineas", "conexiones", "Acumulado", [new("conexiones_acumuladas", "Conexiones acumuladas"), new("usuarios_acumulados", "Usuarios acumulados")]),
-        ["patrones_conexion"] = new("barras", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
-        ["conexiones_por_escuela"] = new("barras_horizontales", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
-        ["conexiones_por_maestro"] = new("barras_horizontales", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
-        ["participacion_escuelas"] = new("barras_horizontales", "%", "% de participación", [new("porcentaje_participacion", "% de participación")]),
-        ["uso_por_area"] = new("barras_agrupadas", "pruebas", "Pruebas", [new("pruebas_asignadas", "Pruebas asignadas"), new("pruebas_completadas", "Pruebas completadas")]),
-        ["comparar_areas"] = new("barras_agrupadas", "pruebas", "Pruebas completadas", [new("pruebas_completadas_a", "Período A"), new("pruebas_completadas_b", "Período B")]),
-        ["comparar_escuelas"] = new("barras_agrupadas", "conexiones", "Conexiones", [new("conexiones_a", "Período A"), new("conexiones_b", "Período B")]),
-        ["promedio_full_quiz"] = new("barras_horizontales", "%", "Promedio % Full Quiz", [new("promedio_solo_realizadas", "Promedio (solo realizadas)")]),
-        ["uso_docentes"] = new("barras_agrupadas", "maestros", "Maestros", [new("maestros", "Maestros"), new("con_conexiones", "Con conexiones"), new("con_asignaciones", "Con asignaciones")]),
+        ["tendencia_conexiones"] = new("line", null, "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
+        ["conexiones_acumuladas"] = new("line", null, "conexiones", "Acumulado", [new("conexiones_acumuladas", "Conexiones acumuladas"), new("usuarios_acumulados", "Usuarios acumulados")]),
+        ["patrones_conexion"] = new("bar", "horizontal", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
+        ["conexiones_por_escuela"] = new("bar", "vertical", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
+        ["conexiones_por_maestro"] = new("bar", "vertical", "conexiones", "Conexiones", [new("conexiones", "Conexiones")]),
+        ["participacion_escuelas"] = new("bar", "vertical", "%", "% de participación", [new("porcentaje_participacion", "% de participación")]),
+        ["uso_por_area"] = new("bar", "horizontal", "pruebas", "Pruebas", [new("pruebas_asignadas", "Pruebas asignadas"), new("pruebas_completadas", "Pruebas completadas")]),
+        ["comparar_areas"] = new("bar", "horizontal", "pruebas", "Pruebas completadas", [new("pruebas_completadas_a", "Período A"), new("pruebas_completadas_b", "Período B")]),
+        ["comparar_escuelas"] = new("bar", "horizontal", "conexiones", "Conexiones", [new("conexiones_a", "Período A"), new("conexiones_b", "Período B")]),
+        ["promedio_full_quiz"] = new("bar", "vertical", "%", "Promedio % Full Quiz", [new("promedio_solo_realizadas", "Promedio (solo realizadas)")]),
+        ["uso_docentes"] = new("bar", "horizontal", "maestros", "Maestros", [new("maestros", "Maestros"), new("con_conexiones", "Con conexiones"), new("con_asignaciones", "Con asignaciones")]),
     };
 
     /// <summary>Especificación de la gráfica, o null si la consulta no es graficable (buscar_escuela) o tiene menos de 2 filas.</summary>
@@ -33,29 +39,31 @@ static class Graficas
         if (filas is null || filas.Count < 2) return null;
         var filtros = respuesta["filtros"];
 
-        var categorias = new JsonArray();
         var etiquetas = filas.Select(f => Categoria(consulta, f!)).ToList();
         // uso_docentes puede repetir una escuela en varios períodos académicos: se distingue con el período.
         if (consulta == "uso_docentes" && etiquetas.Distinct().Count() != etiquetas.Count)
             etiquetas = filas.Select(f => $"{Columnas.Texto(f!["escuela"])} ({Columnas.Texto(f["periodo_desde"])})").ToList();
-        foreach (var e in etiquetas) categorias.Add(e);
 
+        var data = new JsonArray();                                   // objetos planos para Recharts; null se conserva como null
+        for (var i = 0; i < filas.Count; i++)
+        {
+            var punto = new JsonObject { [ClaveX] = etiquetas[i] };
+            foreach (var s in molde.Series) punto[s.Clave] = filas[i]![s.Clave]?.DeepClone();
+            data.Add(punto);
+        }
         var series = new JsonArray();
         foreach (var s in molde.Series)
-        {
-            var valores = new JsonArray();
-            foreach (var f in filas) valores.Add(f![s.Clave]?.DeepClone());          // null se conserva como null
-            series.Add(new JsonObject { ["clave"] = s.Clave, ["nombre"] = NombreSerie(consulta, s, respuesta), ["valores"] = valores });
-        }
+            series.Add(new JsonObject { ["clave"] = s.Clave, ["nombre"] = NombreSerie(consulta, s, respuesta) });
 
         var spec = new JsonObject
         {
             ["consulta"] = consulta,
             ["tipo"] = molde.Tipo,
             ["titulo"] = Titulo(consulta, filtros),
-            ["eje_x"] = new JsonObject { ["titulo"] = TituloX(consulta, filtros), ["categorias"] = categorias },
+            ["eje_x"] = new JsonObject { ["clave"] = ClaveX, ["titulo"] = TituloX(consulta, filtros) },
             ["eje_y"] = new JsonObject { ["titulo"] = molde.TituloY, ["unidad"] = molde.Unidad },
             ["series"] = series,
+            ["data"] = data,
             ["periodo"] = respuesta["periodo"]?.DeepClone(),
             ["filtros"] = filtros?.DeepClone(),
             ["datos_hasta"] = respuesta["datos_hasta"]?.DeepClone(),
@@ -63,6 +71,7 @@ static class Graficas
             ["filas"] = filas.Count,
             ["hay_mas_filas"] = Columnas.HayMasFilas(respuesta),
         };
+        if (molde.Layout is not null) spec["layout"] = molde.Layout;         // solo en bar (en line se omite)
         return spec;
     }
 

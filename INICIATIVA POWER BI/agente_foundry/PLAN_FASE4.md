@@ -48,15 +48,16 @@ Plan para ejecutar sin contexto previo. Todo vive en `INICIATIVA POWER BI/agente
 | `uso-docentes` | `barras_agrupadas` | `escuela` | `maestros`, `con_conexiones`, `con_asignaciones` |
 | `buscar-escuela` | — (sin gráfica) | | |
 
-Contrato de la especificación (snake_case):
+Contrato de la especificación (snake_case), **formato Recharts** (decisión del usuario, sección 5 · 3): `data` es un arreglo de objetos planos `{categoria, <serie1>, <serie2>…}`; `eje_x.clave` (siempre `"categoria"`) y cada `series[].clave` son las claves de esos objetos; `tipo` = `"line"` | `"bar"` (el front admite también `"pie"`, esta API no lo genera); `layout` (solo en `bar`) = `"horizontal"` (columnas) | `"vertical"` (barras horizontales), con la semántica del prop `layout` de `BarChart`. `barras` / `barras_agrupadas` del mapa de arriba son `bar` + `layout:"horizontal"` (varias series = agrupadas); `barras_horizontales` es `bar` + `layout:"vertical"`; `lineas` es `line`.
 ```json
-{ "consulta": "tendencia_conexiones", "tipo": "lineas", "titulo": "Conexiones por mes",
-  "eje_x": { "titulo": "Período", "categorias": ["2026-01", "2026-02"] },
+{ "consulta": "tendencia_conexiones", "tipo": "line", "titulo": "Conexiones por mes",
+  "eje_x": { "clave": "categoria", "titulo": "Período" },
   "eje_y": { "titulo": "Conexiones", "unidad": "conexiones" },
-  "series": [ { "clave": "conexiones", "nombre": "Conexiones", "valores": [12, 30] } ],
+  "series": [ { "clave": "conexiones", "nombre": "Conexiones" } ],
+  "data": [ { "categoria": "2026-01", "conexiones": 12 }, { "categoria": "2026-02", "conexiones": 30 } ],
   "periodo": {...}, "filtros": {...}, "datos_hasta": "2026-11-17", "nota": "…", "filas": 2, "hay_mas_filas": false }
 ```
-`valores` copia tal cual los números de `resultados` (los `null` quedan `null`). Sin gráfica si hay < 2 filas (`/exportar?formato=grafica` responde 422 `{error:"sin_grafica", mensaje}`).
+`data` copia tal cual los números de `resultados` (los `null` quedan `null`). Sin gráfica si hay < 2 filas (`/exportar?formato=grafica` responde 422 `{error:"sin_grafica", mensaje}`).
 
 ## 3. Tareas
 Leyenda: **M/E** = modelo / esfuerzo sugeridos. **∥** = puede correr en paralelo con las indicadas.
@@ -98,7 +99,7 @@ Leyenda: **M/E** = modelo / esfuerzo sugeridos. **∥** = puede correr en parale
   3. Exportación sin `limite` trae **todas** las filas (> 50 cuando los datos sintéticos lo permiten; si no, == total del `resumen`).
   4. `Referencias` contiene período, `cuentas_de_prueba` del modo, `datos_hasta` y el `AVISO` cuando el período pasa de los datos.
   5. Celdas numéricas son número (no texto); una escuela con tilde se lee igual.
-  6. `grafica`: `categorias` == nombres/periodos de `resultados` en el mismo orden; cada serie == la columna correspondiente; `tipo` según D9; suma de `conexiones` de `tendencia` == `resumen.total_conexiones`.
+  6. `grafica`: `data[i].categoria` == nombre/período de `resultados[i]` en el mismo orden; cada serie == la columna correspondiente; `tipo`/`layout` según D9 (formato Recharts); suma de `conexiones` de `tendencia` == `resumen.total_conexiones`.
   7. `buscar-escuela` → 404; `formato=pdf` → 400; `limite=0` → 400; escuela inexistente → 400; 1 sola fila → 422.
 - Terminado: 116 + nuevas, todas ✓ en los tres modos.
 
@@ -120,7 +121,7 @@ Leyenda: **M/E** = modelo / esfuerzo sugeridos. **∥** = puede correr en parale
 
 ### T8 — Panel: botón Excel y gráficas (M/E: Sonnet/high · tras T6; ∥ con T7) — **repo del front**
 - Archivos (rama `REQ-3741-panel-asistente`, `src/components/data-analysis-module/assistant-panel/`): `index.js`, `assistant-api.js`, `textos.js`, `style.css`, nuevo `grafica.js`.
-- Cambio: por cada `descargas[i]`, botón «Descargar Excel» que hace `fetch` (mismos headers que `preguntar`) → `blob` → descarga con el nombre de `content-disposition`; 404 → «El enlace expiró, vuelve a preguntar». Por cada `graficas[i]`, componente que dibuja `lineas`/`barras`/`barras_horizontales`/`barras_agrupadas` en **SVG propio** (salvo que el front ya tenga una librería de gráficas: ver P3), con leyenda, ejes, unidad `%`, tooltip/título accesible, y aviso si `hay_mas_filas`. Visible si `destacar`; si no, plegado bajo «Ver gráfica». ES/EN en `textos.js`.
+- Cambio: por cada `descargas[i]`, botón «Descargar Excel» que hace `fetch` (mismos headers que `preguntar`) → `blob` → descarga con el nombre de `content-disposition`; 404 → «El enlace expiró, vuelve a preguntar». Por cada `graficas[i]`, componente **Recharts** (el front ya trae `recharts ^2.15.4` con React `^16.13.1`; ver `src/components/homeschooler-module/charts/*.js`) que consume `data`, `eje_x.clave`, `series[].clave`, `tipo` y `layout` directo (sin SVG propio), con leyenda, ejes, unidad `%`, tooltip/título accesible, y aviso si `hay_mas_filas`. Visible si `destacar`; si no, plegado bajo «Ver gráfica». ES/EN en `textos.js`.
 - Terminado y prueba: igual que en `PANEL_ASISTENTE.md` (navegador, ES/EN, escritorio y móvil); compila con esbuild. **Requiere la máquina del usuario** (el repo del front no está en este entorno).
 
 ### T9 — Documentación (M/E: Haiku/low · al final)
@@ -138,9 +139,9 @@ Leyenda: **M/E** = modelo / esfuerzo sugeridos. **∥** = puede correr en parale
 - **R6 Sin Foundry en la nube:** T6–T7 no se pueden probar de punta a punta sin `az login`; quedan como prueba manual del usuario.
 - **R7 ClosedXML:** fijar versión exacta en el `.csproj`; si su licencia o dependencias cambian, alternativa = `DocumentFormat.OpenXml` (MIT) con más código.
 
-## 5. Preguntas abiertas para el usuario
-1. **Filas del Excel:** ¿la descarga trae siempre la lista **completa** (hasta 5000, propuesta) o solo las filas que se vieron en el chat?
-2. **¿Gráfica dentro del Excel?** ClosedXML no crea gráficos nativos. ¿Basta con datos + referencias, o se necesita la gráfica en el libro (implica OpenXML a mano o PNG en el servidor)?
-3. **Librería de gráficas en el front:** ¿`gs-msj-private-webapp-teachers` ya usa alguna (Recharts, Chart.js…)? Si no, se dibuja con SVG propio (sin dependencias nuevas).
-4. **¿Mostrar siempre el botón Excel y la gráfica** (plegada) o solo cuando la persona los pide?
-5. **¿Exportación directa fuera del asistente?** (`/exportar` para los admins sin pasar por el chat). Hoy queda como ruta técnica, sin UI.
+## 5. Decisiones del usuario (antes «preguntas abiertas»)
+1. **Filas del Excel:** lista **completa**, hasta 5000 filas. ✔ implementado (D5).
+2. **Gráfica dentro del Excel:** **no**; solo datos + referencias. ✔
+3. **Librería de gráficas en el front:** `gs-msj-private-webapp-teachers` ya usa **Recharts ^2.15.4** (React ^16.13.1). La especificación de T2 se ajustó para consumirla directo: `data` (objetos planos), claves de eje y serie, y `tipo` bar/line (pie admitido por el front, no generado). ✔ implementado en `Graficas.cs`; T8 usa Recharts, no SVG propio.
+4. **Botón Excel y gráfica:** se muestran **SIEMPRE** que la consulta lo admita (no solo cuando la persona los pide ni plegados). En D7 y T8, `destacar` deja de ser necesario para mostrar; si se conserva, solo ordena/resalta.
+5. **Exportación directa fuera del asistente:** **sí**. `/exportar/{consulta}` es una ruta pública de la API con la misma protección que el resto (`x-api-key` solo si existe `EYA_API_KEY`). Documentada en `EXPORTAR_API.md`; sigue fuera de `openapi.json` (D6, para que el modelo no la vea como herramienta). **Riesgo:** hoy esa protección es opcional y no hay autenticación de usuario ni alcance por rol (ver R4 y `EXPORTAR_API.md`).

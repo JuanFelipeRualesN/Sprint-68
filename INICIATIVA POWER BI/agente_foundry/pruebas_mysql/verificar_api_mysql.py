@@ -554,18 +554,18 @@ def txt(v):                 # como Columnas.Texto en C#
 
 D = dict(desde="2026-01-01", hasta="2026-11-10")
 CMP = dict(desde_a="2026-09-01", hasta_a="2026-09-30", desde_b="2026-10-01", hasta_b="2026-10-31")
-# (consulta, parámetros, nombre de archivo esperado, tipo de gráfica, columna de categorías, series)
+# (consulta, parámetros, nombre de archivo esperado, (tipo, layout) de gráfica Recharts, columna de categorías, series)
 CASOS = [
-    ("uso-por-area", dict(desde="2026-09-01", hasta="2026-11-10"), "uso_por_area_2026-09-01_2026-11-10", "barras_agrupadas", "nombre", ["pruebas_asignadas", "pruebas_completadas"]),
-    ("conexiones-por-escuela", D, "conexiones_por_escuela_2026-01-01_2026-11-10", "barras_horizontales", "nombre", ["conexiones"]),
-    ("conexiones-por-maestro", D, "conexiones_por_maestro_2026-01-01_2026-11-10", "barras_horizontales", "nombre", ["conexiones"]),
-    ("comparar-areas", CMP, "comparar_areas_a_2026-09-01_2026-09-30_b_2026-10-01_2026-10-31", "barras_agrupadas", "nombre", ["pruebas_completadas_a", "pruebas_completadas_b"]),
-    ("comparar-escuelas", CMP, "comparar_escuelas_a_2026-09-01_2026-09-30_b_2026-10-01_2026-10-31", "barras_agrupadas", "nombre", ["conexiones_a", "conexiones_b"]),
-    ("tendencia-conexiones", D, "tendencia_conexiones_2026-01-01_2026-11-10", "lineas", "periodo", ["conexiones"]),
-    ("conexiones-acumuladas", D, "conexiones_acumuladas_2026-01-01_2026-11-10", "lineas", "periodo", ["conexiones_acumuladas", "usuarios_acumulados"]),
-    ("uso-docentes", dict(fecha="2026-11-18"), "uso_docentes_2026-11-18", "barras_agrupadas", "escuela", ["maestros", "con_conexiones", "con_asignaciones"]),
-    ("patrones-conexion", D, "patrones_conexion_2026-01-01_2026-11-10", "barras", "nombre", ["conexiones"]),
-    ("participacion-escuelas", D, "participacion_escuelas_2026-01-01_2026-11-10", "barras_horizontales", "nombre", ["porcentaje_participacion"]),
+    ("uso-por-area", dict(desde="2026-09-01", hasta="2026-11-10"), "uso_por_area_2026-09-01_2026-11-10", ("bar", "horizontal"), "nombre", ["pruebas_asignadas", "pruebas_completadas"]),
+    ("conexiones-por-escuela", D, "conexiones_por_escuela_2026-01-01_2026-11-10", ("bar", "vertical"), "nombre", ["conexiones"]),
+    ("conexiones-por-maestro", D, "conexiones_por_maestro_2026-01-01_2026-11-10", ("bar", "vertical"), "nombre", ["conexiones"]),
+    ("comparar-areas", CMP, "comparar_areas_a_2026-09-01_2026-09-30_b_2026-10-01_2026-10-31", ("bar", "horizontal"), "nombre", ["pruebas_completadas_a", "pruebas_completadas_b"]),
+    ("comparar-escuelas", CMP, "comparar_escuelas_a_2026-09-01_2026-09-30_b_2026-10-01_2026-10-31", ("bar", "horizontal"), "nombre", ["conexiones_a", "conexiones_b"]),
+    ("tendencia-conexiones", D, "tendencia_conexiones_2026-01-01_2026-11-10", ("line", None), "periodo", ["conexiones"]),
+    ("conexiones-acumuladas", D, "conexiones_acumuladas_2026-01-01_2026-11-10", ("line", None), "periodo", ["conexiones_acumuladas", "usuarios_acumulados"]),
+    ("uso-docentes", dict(fecha="2026-11-18"), "uso_docentes_2026-11-18", ("bar", "horizontal"), "escuela", ["maestros", "con_conexiones", "con_asignaciones"]),
+    ("patrones-conexion", D, "patrones_conexion_2026-01-01_2026-11-10", ("bar", "horizontal"), "nombre", ["conexiones"]),
+    ("participacion-escuelas", D, "participacion_escuelas_2026-01-01_2026-11-10", ("bar", "vertical"), "nombre", ["porcentaje_participacion"]),
 ]
 print("  (promedio-full-quiz: no se prueba aquí; el esquema sintético no tiene result_generic.total_percent_full_quiz)")
 
@@ -585,9 +585,9 @@ for ruta, q, archivo, tipo, col_cat, series in CASOS:
     etiquetas = [f[col_cat] for f in filas]
     if ruta == "uso-docentes" and len(set(etiquetas)) != len(etiquetas):
         etiquetas = [f"{f['escuela']} ({f['periodo_desde']})" for f in filas]
-    igual(f"{ruta}: gráfica tipo {tipo}, categorías y series = resultados",
-          (st, g.get("tipo"), g["eje_x"]["categorias"], [(s["clave"], s["valores"]) for s in g["series"]], g["filas"], g["consulta"]),
-          (200, tipo, etiquetas, [(k, [f.get(k) for f in filas]) for k in series], len(filas), r["consulta"]))
+    igual(f"{ruta}: gráfica {tipo[0]}/{tipo[1]}: data (objetos planos) y series = resultados",
+          (st, (g.get("tipo"), g.get("layout")), g["eje_x"]["clave"], [s["clave"] for s in g["series"]], g["data"], g["filas"], g["consulta"], "categorias" in g["eje_x"]),
+          (200, tipo, "categoria", series, [{"categoria": e, **{k: f.get(k) for k in series}} for e, f in zip(etiquetas, filas)], len(filas), r["consulta"], False))
 
 # exportación = lista completa, contrastada con la fuerza bruta
 a, b = rango("2026-01-01", "2026-11-10")
@@ -660,7 +660,7 @@ igual("encabezados legibles en español", datos[0][:3], ["Nombre", "Pruebas asig
 # gráfica: coherencia con el resumen y filtros
 st, g = grafica("tendencia-conexiones", **D)
 _, r = api("/tendencia-conexiones", **D)
-igual("gráfica de tendencia: la suma de 'conexiones' = resumen.total_conexiones", sum(g["series"][0]["valores"]), r["resumen"]["total_conexiones"])
+igual("gráfica de tendencia: la suma de 'conexiones' en data = resumen.total_conexiones", sum(p["conexiones"] for p in g["data"]), r["resumen"]["total_conexiones"])
 igual("gráfica de tendencia: título, ejes y hay_mas_filas", (g["titulo"], g["eje_x"]["titulo"], g["eje_y"]["unidad"], g["hay_mas_filas"]),
       ("Conexiones por mes", "Período", "conexiones", False))
 st, g = grafica("conexiones-por-maestro", **D, limite=3)

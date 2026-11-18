@@ -59,7 +59,7 @@ if (asistenteOn)
     builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration));
     var origenes = (builder.Configuration["Asistente:Origenes"] ?? "http://localhost:3000")
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes).WithHeaders("content-type").WithMethods("POST")));
+    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes).WithHeaders("content-type").WithMethods("GET", "POST").WithExposedHeaders("content-disposition")));   // GET + content-disposition: descarga directa de /exportar desde el panel
 }
 
 var app = builder.Build();
