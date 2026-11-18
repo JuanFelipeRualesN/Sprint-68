@@ -1,8 +1,12 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { leerAdjuntos, descargarArchivo, descargarExportacion } from "../assistant-api";
+import { leerAdjuntos, descargarArchivo, descargarExportacion, preguntar } from "../assistant-api";
+import { mensajeDeError } from "../index";
 import { textosPara } from "../textos";
 import Grafica from "../grafica";
+
+// A5: la sesión de la plataforma (header Token) sale de getAuthHeaders(); aquí se simula para no cargar axios/SweetAlert/imágenes.
+jest.mock("../../../../api/interceptors", () => ({ getAuthHeaders: () => ({ Token: "tok-sesion", "Accept-Language": "es" }) }));
 
 const spec = (extra = {}) => ({
   consulta: "tendencia_conexiones", tipo: "line", titulo: "Conexiones por mes",
@@ -92,5 +96,53 @@ describe("Grafica", () => {
   test("avisa si hay más filas", () => {
     expect(renderToStaticMarkup(<Grafica spec={spec({ hay_mas_filas: true })} t={t} idioma="es" />)).toContain(t.hayMasFilas);
     expect(renderToStaticMarkup(<Grafica spec={spec()} t={t} idioma="es" />)).not.toContain(t.hayMasFilas);
+  });
+});
+
+describe("sesión (Fase 4 · A5)", () => {
+  const original = global.fetch;
+  afterEach(() => { global.fetch = original; jest.restoreAllMocks(); });
+  const resp = (estado, cuerpo) => ({
+    ok: estado >= 200 && estado < 300, status: estado, headers: { get: () => null },
+    blob: async () => new Blob(["x"]), json: async () => JSON.parse(cuerpo),
+  });
+  const cabeceras = () => global.fetch.mock.calls[0][1].headers;
+
+  test("preguntar manda Token y Accept-Language, sin x-api-key", async () => {
+    global.fetch = jest.fn(async () => resp(200, '{"respuesta":"ok"}'));
+    await preguntar({ pregunta: "hola" });
+    expect(cabeceras()).toMatchObject({ "Content-Type": "application/json", Token: "tok-sesion", "Accept-Language": "es" });
+    expect(Object.keys(cabeceras()).map((k) => k.toLowerCase())).not.toContain("x-api-key");
+  });
+  test("descargarArchivo y la exportación directa mandan Token", async () => {
+    jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    URL.createObjectURL = jest.fn(() => "blob:x"); URL.revokeObjectURL = jest.fn();
+    global.fetch = jest.fn(async () => resp(200, "x"));
+    await descargarArchivo("/asistente/descargas/abc", "a.xlsx");
+    expect(cabeceras().Token).toBe("tok-sesion");
+    global.fetch = jest.fn(async () => resp(200, "x"));
+    await descargarExportacion("uso-por-area", { desde: "2026-01-01", hasta: "2026-11-10" });
+    expect(cabeceras().Token).toBe("tok-sesion");
+  });
+  test.each([
+    [401, "no_autorizado", "errSesion"], [403, "sin_permiso", "errPermiso"], [503, "autenticacion_no_disponible", "errAutenticacion"],
+  ])("HTTP %i (%s) se traduce al texto de la sesión en preguntar y en descargas", async (estado, codigo, texto) => {
+    const t = textosPara("es");
+    const cuerpo = JSON.stringify({ error: codigo, mensaje: "m" });
+    global.fetch = jest.fn(async () => resp(estado, cuerpo));
+    const e1 = await preguntar({ pregunta: "hola" }).catch((e) => e);
+    expect(e1.codigo).toBe(codigo);
+    expect(mensajeDeError(e1, t)).toBe(t[texto]);
+    global.fetch = jest.fn(async () => resp(estado, cuerpo));
+    const e2 = await descargarArchivo("/x").catch((e) => e);
+    expect(e2.codigo).toBe(codigo);
+    expect(mensajeDeError(e2, t)).toBe(t[texto]);
+  });
+  test("textos de sesión: 401 y 403 (sin código de la API) y en inglés", () => {
+    const es = textosPara("es"), en = textosPara("en");
+    expect(mensajeDeError({ codigo: "http_401" }, es)).toBe("Tu sesión expiró, vuelve a iniciar sesión.");
+    expect(mensajeDeError({ codigo: "http_403" }, es)).toBe("No tienes permiso para estos datos.");
+    expect(es.errAutenticacion).toBe("No se pudo validar tu sesión, intenta de nuevo.");
+    expect(mensajeDeError({ codigo: "no_autorizado" }, en)).toBe(en.errSesion);
   });
 });

@@ -1,17 +1,21 @@
 import { ASSISTANT_URL } from "./config";
+import { getAuthHeaders } from "../../../api/interceptors";
 
 /**
  * Hace una pregunta al servicio del asistente. Devuelve el JSON del servicio:
  * { respuesta, conversacion_id, referencias[], avisos[], advertencias[], consultas[], descargas[]?, graficas[]?, error? }
- * Si falla, lanza un Error con `codigo` (sin_conexion, sin_acceso_al_modelo, modelo_no_disponible, pregunta_vacia, http_NNN).
- * Usa fetch directo (no el axios de la plataforma): el servicio es independiente de gs-base-api.
+ * Si falla, lanza un Error con `codigo` (sin_conexion, sin_acceso_al_modelo, modelo_no_disponible, pregunta_vacia, no_autorizado, sin_permiso,
+ * autenticacion_no_disponible, http_NNN).
+ * Usa fetch directo (no el axios de la plataforma): el servicio es independiente de gs-base-api, pero se autentica con la MISMA sesión:
+ * manda el header `Token` (y Accept-Language) de getAuthHeaders(). El servicio lo valida en UsersAPI y limita los datos al rol/ORE de la persona.
+ * Errores de sesión (Fase 4 · A5): no_autorizado (401), sin_permiso (403), autenticacion_no_disponible (503).
  */
 export async function preguntar({ pregunta, conversacionId, contexto, idioma, signal }) {
   let respuesta;
   try {
     respuesta = await fetch(`${ASSISTANT_URL}/asistente/preguntar`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({
         pregunta,
         conversacion_id: conversacionId || undefined,
@@ -69,14 +73,16 @@ function nombreDeContentDisposition(cd) {
 
 /**
  * GET a `url` (ruta relativa al servicio o absoluta) y baja el archivo con el nombre de content-disposition
- * (o `nombreRespaldo`). Sin headers propios: un GET simple no dispara preflight de CORS.
- * Errores con `codigo`: descarga_expirada (404), sin_conexion, http_NNN, o el `error` del servicio (p. ej. parametros_invalidos).
+ * (o `nombreRespaldo`). Va con `fetch` → `blob` (no un <a href>) para poder mandar el header `Token` de la sesión (getAuthHeaders):
+ * el servicio exige la sesión también en las descargas y exportaciones, así que ya no es un GET «simple» (el navegador hace preflight de CORS).
+ * Errores con `codigo`: descarga_expirada (404), no_autorizado (401), sin_permiso (403), autenticacion_no_disponible (503),
+ * sin_conexion, http_NNN, o el `error` del servicio (p. ej. parametros_invalidos).
  */
 export async function descargarArchivo(url, nombreRespaldo, signal) {
   const destino = /^https?:\/\//i.test(url) ? url : `${ASSISTANT_URL}${url.startsWith("/") ? "" : "/"}${url}`;
   let r;
   try {
-    r = await fetch(destino, { method: "GET", signal });
+    r = await fetch(destino, { method: "GET", headers: getAuthHeaders(), signal });
   } catch (e) {
     if (e && e.name === "AbortError") throw e;
     const err = new Error("sin conexión con el asistente");
