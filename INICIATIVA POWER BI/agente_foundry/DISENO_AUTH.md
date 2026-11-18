@@ -157,3 +157,49 @@ Orden: **A1 ∥ A2 ∥ A5 → A3 ∥ A4 → A6** (A7 opcional, tras A3). Un PR p
 
 ## 6. Hallazgo fuera de alcance (informar, no corregir aquí)
 `LoginProcessSSO` usa `ValidateIssuer = false` con una app multi-inquilino (`authority …/common/`) y toma el correo de `preferred_username`: un usuario de **otro** tenant con ese UPN podría iniciar sesión como un usuario existente si el cliente SSO de su dominio lo permite. Conviene validar el emisor (`tid` del tenant del cliente SSO) en gs-base-api. No bloquea este diseño, pero B′ hereda la confianza en esa sesión.
+
+---
+
+## 7. Implementación (A1–A6) · decisiones del usuario, configuración y supuestos
+
+### 7.1 Decisiones del usuario sobre las preguntas de §5 y cómo se aplicaron
+| # | Respuesta | En el código |
+|---|---|---|
+| 1 | Roles con acceso: `admin`, `admin-ore` y `director`. | `Auth:RolesTodo=2`, `Auth:RolesOre=8`, `Auth:RolesEscuela=6`. Director = **solo su escuela** (el alcance más restrictivo; el diseño no lo definía). Su escuela sale de `gs_data_analysis.user.school_id` (UsersAPI no devuelve `SchoolId`); si no se encuentra → 403. |
+| 2 | Reusar `embed-powerbi-info`. | `Auth:Permiso` por defecto `embed-powerbi-info`. No hay que dar de alta ningún permiso. |
+| 3 | URL de UsersAPI por ambiente: no se sabe. | `Auth__UsersApiUrl` (obligatoria en `plataforma`; en Production la API no arranca si falta). Ejemplo: `https://users-api.ejemplo.invalid` (no real). |
+| 4 | Despliegue y orígenes CORS: no se sabe. | `Cors__Origenes` (lista separada por comas). En Production no se permite `*` ni valores que no sean un origen http(s). |
+| 5 | Identidad administrada hacia Foundry: sí. | `Asistente__Credencial=managed` (por defecto): `DefaultAzureCredential` con la identidad administrada del App Service; `Asistente__ClientId` si es asignada por el usuario. Sin claves. |
+| 6 | Agente en la nube y panel van a producción. | El panel usa `Token`. El agente en la nube (`crear_agente.py`, conexión `eya-api-key`) usa la identidad de servicio: **`EYA_API_KEY` debe tener valor en producción** (desde Key Vault) y ese agente ve todas las escuelas. |
+| 7 | Descarga fuera del panel: no. | No se hizo A7 (enlace firmado). |
+| 8 | ORE ↔ `ore_id` 1:1: no se sabe. | No se pudo verificar (no hay acceso a la base real ni el esquema de UsersAPI lo dice). Ver supuestos. |
+
+### 7.2 Variables de entorno (App Service). Ningún valor secreto va en el repositorio
+| Variable | Valor | Notas |
+|---|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Production` | Activa las comprobaciones de arranque. |
+| `Auth__Modo` | `plataforma` | Obligatorio en Production (`local` no arranca). |
+| `Auth__UsersApiUrl` | URL base de UsersAPI del ambiente | **Pendiente del usuario.** Debe ser alcanzable desde el App Service; se prefiere https. |
+| `Auth__Permiso` | `embed-powerbi-info` (por defecto) | Cambia a `data-assistant` solo si algún día se crea un permiso propio. |
+| `Auth__RolesTodo` / `Auth__RolesOre` / `Auth__RolesEscuela` | `2` / `8` / `6` (por defecto) | Ids de rol de UsersAPI. |
+| `Auth__CacheSegundos` | `60` (por defecto) | Caché de sesión válida; las inválidas, 10 s; los fallos de UsersAPI no se cachean. |
+| `Cors__Origenes` | `https://<front dev>,https://<front uat>,…` | **Pendiente del usuario.** Sin `*`. |
+| `Asistente__Habilitado` | `true` | Activa `/asistente/*`. |
+| `Asistente__Credencial` | `managed` | Identidad administrada hacia Foundry (rol «Azure AI User» sobre el proyecto). `azcli` solo en desarrollo. |
+| `Foundry__Endpoint`, `Foundry__Modelo` | del proyecto de Foundry | Ya tienen valor por defecto; revisar por ambiente. |
+| `EYA_API_KEY` | secreto en Key Vault | Identidad de servicio del agente en la nube. Vacío = no existe esa identidad. |
+| `Datos__Origen=mysql`, `EYA_MYSQL` (o `EYA_MYSQL_HOST/_USER/_PASSWORD`) | cadena desde Key Vault | Cuenta de solo lectura. |
+
+Pendiente del usuario en Azure: (a) URL de UsersAPI por ambiente; (b) dominios del front por ambiente; (c) habilitar la identidad administrada del App Service y asignarle el rol «Azure AI User» en el proyecto de Foundry; (d) revisar que UsersAPI sea alcanzable desde el App Service.
+
+### 7.3 Supuestos que quedan explícitos en el código
+1. **`OreId` de UsersAPI = `gs_data_analysis.school.ore_id`** (`ConsultasMySql.FA`). Si no coincidieran, un admin-ore vería otras escuelas o ninguna. Verificar con un admin-ore real antes de abrir el acceso.
+2. **`UserId` de UsersAPI = `gs_data_analysis.user.user_id`** para ubicar la escuela de un director (`ConsultasMySql.EscuelaDeUsuario`). Si no coincide, el director recibe 403 (falla cerrada) o, en el peor caso, la escuela de otro usuario: verificar con un director real.
+3. **Nombre de ORE ↔ `ore_id` 1:1** para `uso-docentes`: la vista `vw_teacher_activities` trae solo nombres, así que se exige que la escuela del alcance coincida en nombre de escuela **y** de ORE (el criterio más restrictivo). Si hay dos escuelas con el mismo nombre en el mismo ORE, ambas cuentan.
+4. `get_user_by_token` responde 401 también cuando el rol no tiene el permiso: eso se ve como 401 (no 403). El 403 es por rol no autorizado en esta API.
+5. Los usuarios sin escuela quedan fuera cuando hay alcance (admin-ore y director); el admin los sigue viendo como hoy.
+
+### 7.4 Qué se probó y qué no
+- **Probado** (MySQL 8 local con datos sintéticos, UsersAPI y Foundry **falsos**): `pruebas_mysql/correr_pruebas_auth.sh` → local **190/190** y plataforma **234/234** en `paridad`, `dominio` e `incluir`; pruebas del panel (jest) 19/19.
+- **No probado:** UsersAPI real (el formato de la respuesta se tomó del código de gs-base-api), Foundry real (identidad administrada, modelo, instrucciones), el despliegue en Azure, el navegador con la sesión real y la prueba de los roles reales (OreId / director).
+- **Hallazgo de §6 sin cambios:** `LoginProcessSSO` con `ValidateIssuer = false`; fuera de alcance.

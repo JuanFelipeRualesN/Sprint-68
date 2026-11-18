@@ -21,9 +21,10 @@ El modelo **nunca ve la base**: solo el JSON agregado que devuelven las consulta
 |---|---|
 | `Asistente.cs` | Bucle del agente contra Foundry (Responses API, token `https://ai.azure.com/.default`), herramientas leídas de `openapi.json`, referencias/avisos deterministas, verificador anti-invención (cifras que no salen de las consultas → `advertencias`), conversaciones con `previous_response_id` (2 h), manejo de errores (filtro de contenido de Azure, 401/403, 5xx). |
 | `instrucciones.txt` | **Única fuente** de las instrucciones del agente (la leen el servicio y los scripts de Python). Incluye reglas de idioma (ES/EN), contexto del tablero, período, empates, exclusión de cuentas de prueba… |
-| `Program.cs` | `POST /asistente/preguntar` + CORS acotado. **Apagado por defecto** (`Asistente__Habilitado=true` lo activa). |
+| `Program.cs` | `POST /asistente/preguntar`, `GET /asistente/descargas/{id}` y CORS por origen (`Cors__Origenes`). **Apagado por defecto** (`Asistente__Habilitado=true` lo activa). |
+| `Auth.cs` | Autenticación (header `Token` ↔ UsersAPI), alcance por rol, caché, CORS y comprobaciones de arranque. |
 
-Contrato (JSON en snake_case): petición `{ pregunta, conversacion_id?, contexto?: {reporte, pagina}, idioma? }` → respuesta `{ respuesta, conversacion_id, referencias[], avisos[], advertencias[], consultas[], error? }`.
+Contrato (JSON en snake_case): petición `{ pregunta, conversacion_id?, contexto?: {reporte, pagina}, idioma? }` → respuesta `{ respuesta, conversacion_id, referencias[], avisos[], advertencias[], consultas[], error?, descargas[]?, graficas[]? }`. Todas las llamadas llevan el header `Token` de la sesión. `descargas[i] = {id, nombre, consulta, url: "/asistente/descargas/{id}", destacar}` (el enlace baja el `.xlsx` con el `Token`; 404 `descarga_expirada` si venció o es de otra persona); `graficas[i]` = especificación Recharts (`tipo`, `layout`, `eje_x`, `series`, `data`, `destacar`…). Errores de sesión: 401 `no_autorizado`, 403 `sin_permiso`, 503 `autenticacion_no_disponible`.
 
 ## Front — rama `REQ-3741-panel-asistente` del repo `gs-msj-private-webapp-teachers` (sin commit ni push)
 **Archivos nuevos** (`src/components/data-analysis-module/assistant-panel/`): `index.js` (panel), `assistant-api.js`, `textos.js` (ES/EN), `config.js`, `style.css`.
@@ -35,7 +36,7 @@ No se toca el chatbot de planeación, `AI_BOT_AVAILABLE`, `AI_DASHBOARD_AVAILABL
 **Contexto de Power BI:** el panel lee la **página activa** del informe (`getActivePage()` y el evento `pageChanged`) y la manda como *orientación*; las instrucciones prohíben usarla como dato o período.
 
 ## Cómo correrlo
-1. **API real con el asistente** (VPN activa; `az login` vigente): `correr_api_mysql.sh` ya exporta `Asistente__Habilitado=true`, `Asistente__Credencial=azcli` y CORS para `http://localhost:3000`.
+1. **API real con el asistente** (VPN activa; `az login` vigente): `correr_api_mysql.sh` ya exporta `Asistente__Habilitado=true`, `Asistente__Credencial=azcli`, `ASPNETCORE_ENVIRONMENT=Development`, `Auth__Modo=local` (sin validación, solo loopback) y `Cors__Origenes=http://localhost:3000`.
 2. **Front** (otra terminal; entras con tu usuario administrador):
    ```bash
    cd "/Users/juanfelipe/Desktop/REQUIRE SPRINT 1/repos/gs-msj-private-webapp-teachers"
@@ -50,7 +51,7 @@ No se toca el chatbot de planeación, `AI_BOT_AVAILABLE`, `AI_DASHBOARD_AVAILABL
 
 ## Lo que falta (en orden)
 1. **Probarlo dentro de la plataforma** con tu sesión y el MySQL real (reiniciar la API con el script nuevo).
-2. **Seguridad antes de desplegar (requisito, no mejora):** el servicio hoy no autentica al usuario. Debe ir detrás del backend de la plataforma (sesión + rol), que además imponga el alcance (ORE/escuela) del lado del servidor y use identidad administrada hacia Foundry. Mientras tanto, solo local.
+2. ~~Seguridad antes de desplegar~~ **Hecho (Fase 4 · A1–A6, ver `DISENO_AUTH.md`):** el servicio valida el `Token` de la plataforma en UsersAPI, impone el alcance (admin: todo · admin-ore: su ORE · director: su escuela) en SQL, reenvía la identidad en las llamadas internas, liga descargas y conversaciones a su dueño y usa identidad administrada hacia Foundry (`Asistente__Credencial=managed`). **Pendiente del usuario** para desplegar: URL de UsersAPI por ambiente, orígenes CORS del front y la identidad administrada en Azure (§7 de `DISENO_AUTH.md`). Sin probar contra UsersAPI ni Foundry reales.
 3. Decidir si el panel se muestra a otros roles (hoy solo `admin` y `admin-ore`).
 4. Opcional: botón «Ver en el tablero» (cambiar de página / aplicar filtro de escuela con `powerbi-client`) y respuestas en streaming.
 5. Commit y PR de la rama cuando lo decidas (hoy los cambios están sin commit).
