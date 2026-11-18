@@ -23,8 +23,15 @@ MATERIAS = [("EN", "English"), ("MAT-SP", "Matemáticas"), ("SP", "Español"), (
             ("A2", "Álgebra II"), ("BI-SP", "Biología"), ("CD", "BORRAR")]   # BI-SP y CD: sin pruebas nunca
 ESCUELAS = [(i + 1, f"Escuela Prueba {chr(65 + i)}") for i in range(9)]       # la 9 (I) no tiene usuarios
 ESCUELAS += [(10, "Escuela Demo Interna"), (11, "Escuela Demo T3 School"), (12, "Escuela Facilitadores MSJ")]    # de prueba: ORE DEMOSTRACION / excluida por nombre
+# A2 (alcance por ORE): tres escuelas de OTROS ORE. Se añaden al final y con su propio generador aleatorio para no alterar
+# ni un número de las escuelas 1-12 (los datos de siempre son idénticos).
+ESCUELAS += [(13, "Escuela Prueba J"), (14, "Escuela Prueba K"), (15, "Escuela Prueba L")]
 ORE = {s: "MUNICIPIO PRUEBA" for s, _ in ESCUELAS}
 ORE[10] = "DEMOSTRACION"
+ORE_ID = {s: 1 for s, _ in ESCUELAS}                    # ore_id de cada escuela: 1 = MUNICIPIO PRUEBA (escuelas 1-12)
+ORE.update({13: "MUNICIPIO SEGUNDO", 14: "MUNICIPIO SEGUNDO", 15: "MUNICIPIO TERCERO"})
+ORE_ID.update({10: 9, 13: 2, 14: 2, 15: 3})      # ore_id ↔ nombre de ORE 1:1 (DEMOSTRACION = 9)
+ESCUELAS_ORE2 = {13, 14}
 DOMINIO_INTERNO = "requiretechnology.com"
 
 
@@ -64,6 +71,23 @@ def generar():
     for h in (D(2026, 8, 31, 23, 59, 59), D(2026, 9, 1, 0, 0, 0), D(2026, 10, 31, 23, 59, 59), D(2026, 11, 1, 0, 0, 0)):
         conex[(maestro_b, h.date())] = h               # fronteras de septiembre/octubre (en UTC y en UTC-4)
     conex[(maestro_b, ULT_CONEXION.date())] = ULT_CONEXION
+    # ── A2: usuarios, conexiones y pruebas de las escuelas 13-15 (otros ORE), con un generador aparte ──
+    R2 = random.Random(1313)
+    base = len(usuarios)
+    for sid, n_maestros, n_est in ((13, 3, 6), (14, 2, 4), (15, 2, 4)):
+        usuarios.append((uid, 6, sid, "Director", f"Prueba {sid:02d}")); uid += 1
+        for k in range(n_maestros):
+            usuarios.append((uid, 5, sid, "Maestro", f"Prueba {sid:02d}-{k + 1}")); uid += 1
+        for k in range(n_est):
+            usuarios.append((uid, 3, sid, "Estudiante", f"Prueba {sid:02d}-{k + 1:02d}")); uid += 1
+    extra = usuarios[base:]
+    dia = dt.date(2026, 1, 12)
+    while dia <= ULT_CONEXION.date():
+        if dia.weekday() < 5:
+            for u in extra:
+                if R2.random() < prob[u[1]]:
+                    conex[(u[0], dia)] = D.combine(dia, dt.time(R2.randint(0, 23), R2.randint(0, 59), R2.randint(0, 59)))
+        dia += dt.timedelta(days=1)
     conexiones = sorted((u, h) for (u, _), h in conex.items())
 
     # ── pruebas: solo estudiantes (más unas filas de docentes que deben ignorarse) ──
@@ -93,6 +117,14 @@ def generar():
     docentes = [u[0] for u in usuarios if u[1] == 5][:3]
     for k, d in enumerate(docentes):                   # no son estudiantes: la consulta debe ignorarlas
         resultados.append((d, "EN", D(2026, 9, 5 + k, 10, 0, 0), D(2026, 9, 6 + k, 10, 0, 0)))
+    for e in (u[0] for u in extra if u[1] == 3):           # A2: pruebas de los estudiantes de las escuelas 13-15 (generador aparte)
+        for _ in range(R2.randint(4, 9)):
+            asig = D(2026, 2, 1) + dt.timedelta(seconds=R2.randint(0, int((D(2026, 10, 19) - D(2026, 2, 1)).total_seconds())))
+            tom = None
+            if R2.random() < 0.25:
+                t = asig + dt.timedelta(days=R2.randint(0, 9), seconds=R2.randint(0, 80000))
+                tom = t if t <= ULT_TOMADA else None
+            resultados.append((e, R2.choice(["EN", "MAT-SP", "SP"]), asig, tom))
     return usuarios, conexiones, resultados
 
 
@@ -154,7 +186,7 @@ def a_sql(usuarios, conexiones, resultados):
            + ", ".join(f"{c} VARCHAR(2)" for c in INDICADORES) + ");"]
     out.append("INSERT INTO role VALUES " + ",".join(f"({i},{q(n)})" for i, n in ROLES) + ";")
     out.append("INSERT INTO school (school_id, school_name, school_type, city, ore, ore_id, country, country_iso) VALUES "
-               + ",".join(f"({i},{q(n)},'Public','Ciudad Prueba',{q(ORE[i])},1,'Puerto Rico','PR')" for i, n in ESCUELAS) + ";")
+               + ",".join(f"({i},{q(n)},'Public','Ciudad Prueba',{q(ORE[i])},{ORE_ID[i]},'Puerto Rico','PR')" for i, n in ESCUELAS) + ";")
     out.append("INSERT INTO user (user_id, username, email, first_name, last_name, role_id, role, school_id) VALUES "
                + ",".join(f"({u[0]},'usuario{u[0]}',{q(email_de(u[0], u[3], u[4]))},{q(u[3])},{q(u[4])},{u[1]},{q(rol[u[1]])},{q(u[2])})" for u in usuarios) + ";")
     out.append("INSERT INTO subject (id, subject_code, subject_name) VALUES "
