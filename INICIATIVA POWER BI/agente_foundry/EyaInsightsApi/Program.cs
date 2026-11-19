@@ -65,6 +65,8 @@ if (asistenteOn)
 
 // CORS (A3): orígenes del front por ambiente en Cors:Origenes (variable Cors__Origenes, separados por coma). Aplica a TODAS las rutas
 // (consultas, /exportar y /asistente/*), no solo al asistente. Sin «*» en Production; sin cookies (la sesión va en el header Token).
+// OJO (revisión del #4): la política es GLOBAL; GET permite que los orígenes listados lean por JavaScript TODAS las rutas GET (no solo /exportar). Con Auth:Modo=plataforma
+// hace falta además un Token válido, y los datos ya vienen limitados al alcance de esa persona.
 // Compatibilidad: sin Cors:Origenes y con el asistente habilitado se usa Asistente:Origenes (por defecto http://localhost:3000, solo desarrollo).
 var origenes = Auth.OrigenesCors(builder.Configuration, asistenteOn, builder.Environment.IsProduction());
 if (origenes.Length > 0)
@@ -162,7 +164,8 @@ foreach (var (ruta, f) in Rutas.Consultas)
 
 // Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
 // NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
-// y el modelo no debe poder pedir archivos. Solo la usa el panel, vía /asistente/descargas/{id}.
+// y el modelo no debe poder pedir archivos. Es una ruta pública de la API (decisión 5 del plan): la usa el panel y se puede llamar directo,
+// con la misma protección que las demás (x-api-key solo si existe EYA_API_KEY; ver EXPORTAR_API.md). /asistente/descargas/{id} (T6) aún no existe.
 app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUso c) =>
 {
     if (consulta == "buscar-escuela" || !Rutas.Consultas.TryGetValue(consulta, out var f))
@@ -263,13 +266,16 @@ static class P
         return (mn, mx);
     }
 
+    /// <summary>Límite máximo de filas: 50 en las rutas JSON; 5000 en la exportación.</summary>
+    public static int MaxLimite(HttpRequest r) => r.HttpContext.Items["exportar"] is true ? 5000 : 50;
+
     public static (bool desc, int limite) OrdenLimite(HttpRequest r)
     {
         var orden = r.Query["orden"].FirstOrDefault() ?? "desc";
         if (orden is not ("asc" or "desc")) throw new ErrorConsulta("'orden' debe ser 'asc' o 'desc'.");
         // Exportación (GET /exportar/...): el límite sube a 5000 y, sin 'limite', se devuelven todas las filas (hasta 5000).
         var exportar = r.HttpContext.Items["exportar"] is true;
-        var max = exportar ? 5000 : 50;
+        var max = MaxLimite(r);
         var txt = r.Query["limite"].FirstOrDefault();
         var limite = exportar ? max : 10;
         if (txt is not null && !int.TryParse(txt, out limite)) throw new ErrorConsulta("'limite' debe ser un número entero.");
