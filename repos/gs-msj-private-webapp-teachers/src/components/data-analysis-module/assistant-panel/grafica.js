@@ -1,91 +1,45 @@
-import React from "react";
-import {
-  ResponsiveContainer, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-} from "recharts";
-import { TriangleAlert } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { ResponsiveContainer } from "recharts";
+import { TriangleAlert, Maximize2 } from "lucide-react";
+import GraficaAmpliada from "./grafica-ampliada";
+import { construirGrafica, datosVistaPrevia, totalesDe, esBarras, ALTO_VISTA_PREVIA } from "./grafica-base";
 
 /**
- * Gráfica del asistente (Fase 4 · REQ-3741). Dibuja con Recharts la especificación que arma el SERVICIO
- * (`graficas[i]`, ver leerAdjuntos en assistant-api.js): el modelo no escribe cifras. Sin SVG propio.
- *   tipo "line" | "bar" | "pie"; layout (solo bar): "horizontal" = columnas, "vertical" = barras horizontales.
+ * Vista previa de una gráfica en el chat (Fase 4 · REQ-3741): compacta, de altura fija (200 px), top 10 y el valor al final de cada barra.
+ * «Ampliar» (⤢) y «Ver todas» abren la ventana de grafica-ampliada.js. La especificación (`graficas[i]`) la arma el SERVICIO; el modelo no escribe cifras.
  */
-const COLORES = ["#1A7BAA", "#E08A1E", "#2E9E6B", "#8E5BC0", "#D1495B"];
-const MAX_ETIQUETA = 18;
-
-const recortar = (v) => {
-  const s = String(v == null ? "" : v);
-  return s.length > MAX_ETIQUETA ? `${s.slice(0, MAX_ETIQUETA - 1)}…` : s;
-};
-
-const Grafica = ({ spec, t, idioma }) => {
-  const claveX = (spec.eje_x && spec.eje_x.clave) || "categoria";
-  const unidad = (spec.eje_y && spec.eje_y.unidad) || "";
-  const esPct = unidad === "%";
-  const formato = (v) => {
-    if (v === null || v === undefined) return "—";
-    const n = typeof v === "number" ? v.toLocaleString(idioma === "en" ? "en-US" : "es-CO") : v;
-    return esPct ? `${n}%` : n;
-  };
-  const tooltip = <Tooltip formatter={(v, nombre) => [formato(v), nombre]} />;
-  const leyenda = spec.series.length > 1 || spec.tipo === "pie" ? <Legend wrapperStyle={{ fontSize: 11 }} /> : null;
-  const eje = { fontSize: 11 };
+const Grafica = ({ spec, t, idioma, descarga }) => {
+  const [ampliada, setAmpliada] = useState(null); // null | "top" | "todas": con qué vista se abrió la ventana
+  const botonRef = useRef(null);
   const titulo = spec.titulo || "";
-  const resumen = `${titulo}. ${spec.data.length} ${t.puntos}`;
-
-  let cuerpo;
-  let alto = 240;
-  if (spec.tipo === "pie") {
-    const s = spec.series[0];
-    cuerpo = (
-      <PieChart>
-        <Pie data={spec.data} dataKey={s.clave} nameKey={claveX} outerRadius={80} label={false}>
-          {spec.data.map((_, i) => <Cell key={i} fill={COLORES[i % COLORES.length]} />)}
-        </Pie>
-        <Tooltip formatter={(v) => [formato(v), s.nombre]} />
-        {leyenda}
-      </PieChart>
-    );
-  } else if (spec.tipo === "line") {
-    cuerpo = (
-      <LineChart data={spec.data} margin={{ top: 8, right: 22, left: 0, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey={claveX} tick={eje} tickFormatter={recortar} />
-        <YAxis tick={eje} tickFormatter={esPct ? (v) => `${v}%` : undefined} width={48} />
-        {tooltip}{leyenda}
-        {spec.series.map((s, i) => <Line key={s.clave} type="monotone" dataKey={s.clave} name={s.nombre || s.clave} stroke={COLORES[i % COLORES.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />)}
-      </LineChart>
-    );
-  } else {
-    const vertical = spec.layout === "vertical"; // barras horizontales: categorías en el eje Y
-    if (vertical) alto = Math.max(220, spec.data.length * 26 * spec.series.length + 56);
-    cuerpo = (
-      <BarChart data={spec.data} layout={vertical ? "vertical" : "horizontal"} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        {vertical ? (
-          <>
-            <XAxis type="number" tick={eje} tickFormatter={esPct ? (v) => `${v}%` : undefined} />
-            <YAxis type="category" dataKey={claveX} tick={eje} tickFormatter={recortar} width={112} interval={0} />
-          </>
-        ) : (
-          <>
-            <XAxis dataKey={claveX} tick={eje} tickFormatter={recortar} interval={0} angle={spec.data.length > 5 ? -30 : 0} textAnchor={spec.data.length > 5 ? "end" : "middle"} height={spec.data.length > 5 ? 64 : 30} />
-            <YAxis tick={eje} tickFormatter={esPct ? (v) => `${v}%` : undefined} width={48} />
-          </>
-        )}
-        {tooltip}{leyenda}
-        {spec.series.map((s, i) => <Bar key={s.clave} dataKey={s.clave} name={s.nombre || s.clave} fill={COLORES[i % COLORES.length]} maxBarSize={28} />)}
-      </BarChart>
-    );
-  }
+  const data = datosVistaPrevia(spec);
+  const { mostradas, total, ceros } = totalesDe(spec, data);
+  const { cuerpo, alto } = construirGrafica(spec, data, { t, idioma, compacto: true });
+  const resumen = `${titulo}. ${mostradas} ${t.puntos}`;
+  const hayMas = esBarras(spec) && total > mostradas;
 
   return (
     <figure className={`asst-grafica${spec.destacar ? " asst-grafica--destacada" : ""}`}>
-      <figcaption className="asst-grafica-titulo">{titulo}</figcaption>
-      <div className="asst-grafica-lienzo" role="img" aria-label={resumen} style={{ height: alto }}>
+      <div className="asst-grafica-cab">
+        <figcaption className="asst-grafica-titulo" title={titulo}>{titulo}</figcaption>
+        <button type="button" ref={botonRef} className="asst-grafica-ampliar" onClick={() => setAmpliada("top")} aria-label={`${t.ampliar}: ${titulo}`} title={t.ampliar}>
+          <Maximize2 size={14} />
+        </button>
+      </div>
+      <div className="asst-grafica-lienzo" role="img" aria-label={resumen} style={{ height: Math.min(alto, ALTO_VISTA_PREVIA) }}>
         <ResponsiveContainer width="100%" height="100%">{cuerpo}</ResponsiveContainer>
       </div>
+      {(hayMas || ceros > 0) && (
+        <div className="asst-grafica-nota">
+          {t.nDeM(mostradas, total)}
+          {ceros > 0 && ` · ${t.cerosOcultos(ceros)}`}
+          {hayMas && <> · <button type="button" className="asst-enlace" onClick={() => setAmpliada("todas")}>{t.verTodas}</button></>}
+        </div>
+      )}
       {spec.hay_mas_filas && <div className="asst-aviso-dato"><TriangleAlert size={13} /> <span>{t.hayMasFilas}</span></div>}
+      {ampliada && (
+        <GraficaAmpliada spec={spec} descarga={descarga} t={t} idioma={idioma} inicialTodas={ampliada === "todas"} onCerrar={() => setAmpliada(null)} />
+      )}
     </figure>
   );
 };

@@ -4,6 +4,9 @@ import { preguntar, leerAdjuntos, descargarExcel } from "./assistant-api";
 import Grafica from "./grafica";
 import ExportarDirecto from "./exportar-directo";
 import { textosPara } from "./textos";
+import { mensajeDeError } from "./errores";
+
+export { mensajeDeError };
 import "./style.css";
 
 /**
@@ -135,33 +138,23 @@ function BotonExcel({ descarga, t }) {
   );
 }
 
+/** La descarga (Excel) de la misma consulta que la gráfica: comparten `id`. Sin `id` (servicio antiguo) la ventana ampliada no ofrece Excel. */
+function descargaDeGrafica(g, descargas) {
+  return g && g.id ? (descargas || []).find((d) => d.id === g.id) || { id: g.id, url: `/asistente/descargas/${g.id}`, nombre: `${g.consulta || "datos"}.xlsx` } : undefined;
+}
+
 function Mensaje({ m, t, idioma }) {
   if (m.rol === "usuario") return <div className="asst-msg asst-msg-usuario"><p>{m.texto}</p></div>;
   return (
-    <div className={`asst-msg asst-msg-asistente${m.error || m.bloqueado ? " asst-msg-error" : ""}`}>
+    <div className={`asst-msg asst-msg-asistente${m.error || m.bloqueado ? " asst-msg-error" : ""}${(m.graficas || []).length > 0 ? " asst-msg--ancho" : ""}`}>
       <TextoRespuesta texto={m.texto} />
       {(m.avisos || []).map((a, i) => <div className="asst-aviso-dato" key={i}><TriangleAlert size={13} /> <span>{a}</span></div>)}
       {(m.advertencias || []).map((a, i) => <div className="asst-advertencia" key={i}><b>{t.verificacion}:</b> {a}</div>)}
-      {(m.graficas || []).map((g, k) => <Grafica key={`g${k}`} spec={g} t={t} idioma={idioma} />)}
+      {(m.graficas || []).map((g, k) => <Grafica key={`g${k}`} spec={g} t={t} idioma={idioma} descarga={descargaDeGrafica(g, m.descargas)} />)}
       {(m.descargas || []).map((d, k) => <BotonExcel key={d.id || `d${k}`} descarga={d} t={t} />)}
       <Referencias refs={m.referencias} consultas={m.consultas} t={t} idioma={idioma} />
     </div>
   );
-}
-
-export function mensajeDeError(e, t) {
-  switch (e && e.codigo) {
-    case "sin_conexion": return t.errRed;
-    case "sin_acceso_al_modelo": return t.errModelo;
-    case "modelo_no_disponible": return t.errNoDisponible;
-    case "descarga_expirada": return t.descargaExpirada;
-    case "no_autorizado": case "http_401": return t.errSesion;
-    case "sin_permiso": case "http_403": return t.errPermiso;
-    case "autenticacion_no_disponible": return t.errAutenticacion;
-    case "parametros_invalidos": return e.message || t.errDescarga;
-    case "http_500": case "http_503": case "base_no_disponible": return t.errDescarga;
-    default: return t.errGenerico;
-  }
 }
 
 // ---------- componente ----------
