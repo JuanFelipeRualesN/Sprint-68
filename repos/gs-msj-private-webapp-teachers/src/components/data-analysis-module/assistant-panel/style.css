@@ -282,3 +282,23 @@
 .asst-descarga--sec:hover:not(:disabled) { background: #e8f3f9; }
 .asst-modal button:focus-visible, .asst-modal input:focus-visible { outline: 2px solid #1A7BAA; outline-offset: 2px; }
 @media (max-width: 767px) { .asst-modal { width: 96vw; height: 92vh; } .asst-modal-cuenta { margin-left: 0; } }
+
+/* ---- Fase 4 (ronda 3): tooltip con la medida extra, dona y colores que siguen el tema ---- */
+.asst-grafica, .asst-modal { color: #0f172a; }
+.asst-tooltip { box-sizing: border-box; max-width: 260px; padding: 7px 10px; font-size: 0.74rem; line-height: 1.4; color: #0f172a; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); }
+.asst-tooltip-titulo { margin-bottom: 3px; font-weight: 700; overflow-wrap: anywhere; }
+.asst-tooltip-fila { display: flex; align-items: center; gap: 6px; }
+.asst-tooltip-punto { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; }
+.asst-tooltip-extra { margin-top: 3px; padding-top: 3px; border-top: 1px solid #e2e8f0; color: #334155; }
+.asst-grafica .recharts-legend-item-text, .asst-modal .recharts-legend-item-text { color: inherit !important; }
+.asst-segmentos button:disabled { opacity: .45; cursor: not-allowed; text-decoration: line-through; }
+@media (prefers-color-scheme: dark) {
+    .asst-tooltip { color: #e2e8f0; background: #1e293b; border-color: #475569; }
+    .asst-tooltip-extra { color: #cbd5e1; border-top-color: #475569; }
+}
+.asst-grafica-fila { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.asst-grafica-fila .asst-grafica-lienzo { flex: 0 0 46%; width: 46%; }
+.asst-dona-leyenda { flex: 1 1 0; min-width: 0; margin: 0; padding: 0; list-style: none; font-size: 0.72rem; line-height: 1.35; }
+.asst-dona-leyenda li { display: block; margin-bottom: 5px; overflow-wrap: anywhere; }
+.asst-dona-leyenda b { font-weight: 600; white-space: nowrap; }
+.asst-dona-punto { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 2px; }

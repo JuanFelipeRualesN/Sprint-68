@@ -14,7 +14,7 @@ const Grafica = ({ spec, t, idioma, descarga }) => {
   const titulo = spec.titulo || "";
   const data = datosVistaPrevia(spec);
   const { mostradas, total, ceros } = totalesDe(spec, data);
-  const { cuerpo, alto } = construirGrafica(spec, data, { t, idioma, compacto: true });
+  const { cuerpo, alto, tipoVista, leyenda } = construirGrafica(spec, data, { t, idioma, compacto: true });
   const resumen = `${titulo}. ${mostradas} ${t.puntos}`;
   const hayMas = esBarras(spec) && total > mostradas;
 
@@ -26,8 +26,11 @@ const Grafica = ({ spec, t, idioma, descarga }) => {
           <Maximize2 size={14} />
         </button>
       </div>
-      <div className="asst-grafica-lienzo" role="img" aria-label={resumen} style={{ height: Math.min(alto, ALTO_VISTA_PREVIA) }}>
-        <ResponsiveContainer width="100%" height="100%">{cuerpo}</ResponsiveContainer>
+      <div className={leyenda ? "asst-grafica-fila" : undefined}>
+        <div className="asst-grafica-lienzo" role="img" aria-label={resumen} data-tipo={tipoVista} style={{ height: Math.min(alto, ALTO_VISTA_PREVIA) }}>
+          <ResponsiveContainer width="100%" height="100%">{cuerpo}</ResponsiveContainer>
+        </div>
+        {leyenda}
       </div>
       {(hayMas || ceros > 0) && (
         <div className="asst-grafica-nota">

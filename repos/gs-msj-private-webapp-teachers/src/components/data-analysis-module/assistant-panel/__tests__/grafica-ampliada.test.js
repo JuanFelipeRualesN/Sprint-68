@@ -164,11 +164,13 @@ describe("ventana ampliada", () => {
     expect(dialogo().querySelector('[role="alert"]').textContent).toBe(t.errSesion);
   });
 
-  test("las líneas también se amplían, sin controles de «Top 10 / Todas», con Descargar imagen", () => {
+  test("las líneas también se amplían, sin «Top 10 / Todas» ni orden, con Descargar imagen", () => {
     montar(specLineas(), { id: "lin", url: "/asistente/descargas/lin", nombre: "x.xlsx" });
     clic(contenedor.querySelector(".asst-grafica-ampliar"));
     const d = dialogo();
-    expect(d.querySelector(".asst-segmentos")).toBeNull();
+    expect(botonCon("Top 10", d)).toBeUndefined();
+    expect(botonCon("Todas", d)).toBeUndefined();
+    expect(d.querySelector(".asst-modal-orden")).toBeNull();
     expect(botonCon(t.descargarImagen, d)).toBeTruthy();
     expect(botonCon(t.descargarExcel, d)).toBeTruthy();
   });

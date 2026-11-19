@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { ResponsiveContainer } from "recharts";
 import { X, Download, Image as Imagen, ArrowDown, ArrowUp } from "lucide-react";
-import { COLORES, construirGrafica } from "./grafica-base";
+import { construirGrafica, colorDeSerie, tipoPorDefecto, tiposPermitidos, TIPOS } from "./grafica-base";
 import { pedirGrafica, descargarExcel } from "./assistant-api";
 import { descargarImagen } from "./imagen";
 import { mensajeDeError } from "./errores";
@@ -12,6 +12,8 @@ import { mensajeDeError } from "./errores";
  * scroll vertical y cada barra mantiene su altura: no se aplastan), orden ↓/↑, «Ocultar 0», Descargar Excel y Descargar imagen (PNG).
  * Se cierra con Esc, ✕ o clic fuera. Accesible: role="dialog" + aria-modal, foco atrapado y devuelto a quien la abrió.
  * Las vistas «Todas», el orden y los ceros se piden al servicio (`spec.url`, GET /asistente/graficas/{id}): él ordena, filtra y aplica el alcance de la persona.
+ * Selector de tipo (Barras / Línea / Dona) con los mismos datos: Línea solo para series de tiempo y Dona solo con 6 categorías o menos y UNA medida
+ * (se deshabilitan si los datos no lo permiten); cambiar el tipo no vuelve a pedir nada al servicio.
  */
 const MAX_EJE = 300; // tope del ancho del eje de nombres (px): más allá se recorta con «…» y el tooltip da el nombre completo
 const FOCUSABLES = 'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])';
@@ -22,7 +24,7 @@ export const anchoDeEje = (data, claveX) => {
 };
 
 const GraficaAmpliada = ({ spec, descarga, t, idioma, inicialTodas, onCerrar }) => {
-  const puedePedir = spec.tipo === "bar" && !!spec.url;
+  const puedePedir = !!spec.url && typeof spec.categorias_en_cero === "number"; // el servicio ordena/filtra (barras y donas); las líneas no
   const ordenInicial = spec.orden === "asc" ? "asc" : "desc";
   const cerosInicial = spec.incluir_ceros === true;
   const [actual, setActual] = useState(spec);
@@ -32,6 +34,7 @@ const GraficaAmpliada = ({ spec, descarga, t, idioma, inicialTodas, onCerrar }) 
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [bajando, setBajando] = useState("");
+  const [tipoElegido, setTipoElegido] = useState(null); // null = el de la especificación
   const dialogoRef = useRef(null);
   const cerrarRef = useRef(null);
   const lienzoRef = useRef(null);
@@ -91,8 +94,13 @@ const GraficaAmpliada = ({ spec, descarga, t, idioma, inicialTodas, onCerrar }) 
   const claveX = (actual.eje_x && actual.eje_x.clave) || "categoria";
   const data = actual.data;
   const anchoEje = anchoDeEje(data, claveX);
-  const { cuerpo, alto, vertical } = construirGrafica(actual, data, { t, idioma, compacto: false, anchoEje, altoBarra: 28 });
-  const muchasColumnas = actual.tipo === "bar" && !vertical && data.length > 12;
+  const permitidos = tiposPermitidos(actual, data);
+  const porDefecto = tipoPorDefecto(actual, data);
+  const tipoVista = tipoElegido && permitidos[tipoElegido] ? tipoElegido : porDefecto; // si lo elegido ya no es posible con estos datos, vuelve al de la especificación
+  const { cuerpo, alto, vertical } = construirGrafica(actual, data, { t, idioma, compacto: false, anchoEje, altoBarra: 28, tipoVista });
+  const muchasColumnas = tipoVista === TIPOS.BARRAS && !vertical && data.length > 12;
+  const esDeBarras = actual.tipo === "bar";
+  const motivo = { [TIPOS.LINEA]: t.soloSerieTemporal, [TIPOS.DONA]: t.soloDona };
   const total = Math.max(typeof actual.total_categorias === "number" ? actual.total_categorias : data.length, data.length);
   const ceros = typeof actual.categorias_en_cero === "number" && actual.incluir_ceros === false ? actual.categorias_en_cero : 0;
 
@@ -106,7 +114,7 @@ const GraficaAmpliada = ({ spec, descarga, t, idioma, inicialTodas, onCerrar }) 
     if (bajando) return;
     setBajando("png"); setError("");
     try {
-      await descargarImagen(lienzoRef.current, { titulo: actual.titulo, series: actual.series.map((s) => s.nombre || s.clave), colores: COLORES, consulta: actual.consulta });
+      await descargarImagen(lienzoRef.current, { titulo: actual.titulo, series: actual.series.map((s) => s.nombre || s.clave), colores: actual.series.map((s, i) => colorDeSerie(actual, s, i)), consulta: actual.consulta });
     } catch (e) { setError(t.errImagen); }
     setBajando("");
   };
@@ -120,31 +128,37 @@ const GraficaAmpliada = ({ spec, descarga, t, idioma, inicialTodas, onCerrar }) 
           <button type="button" ref={cerrarRef} className="asst-modal-cerrar" onClick={onCerrar} aria-label={t.cerrarVentana} title={t.cerrarVentana}><X size={18} /></button>
         </header>
 
-        {actual.tipo === "bar" && (
-          <div className="asst-modal-controles">
-            {puedePedir && (
-              <>
-                <div className="asst-segmentos" role="group" aria-label={t.vista}>
-                  <button type="button" aria-pressed={!todas} className={!todas ? "activo" : ""} onClick={() => setTodas(false)}>{t.top10}</button>
-                  <button type="button" aria-pressed={todas} className={todas ? "activo" : ""} onClick={() => setTodas(true)}>{t.todasLasCategorias}</button>
-                </div>
-                <button type="button" className="asst-modal-orden" onClick={() => setOrden(orden === "desc" ? "asc" : "desc")}
-                  aria-label={`${t.orden}: ${orden === "desc" ? t.ordenDesc : t.ordenAsc}`} title={t.orden}>
-                  {orden === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />} {orden === "desc" ? t.ordenDesc : t.ordenAsc}
-                </button>
-                <label className="asst-modal-ceros">
-                  <input type="checkbox" checked={ocultarCeros} onChange={(e) => setOcultarCeros(e.target.checked)} /> {t.ocultarCeros}
-                </label>
-              </>
-            )}
-            <span className="asst-modal-cuenta" aria-live="polite">{t.nDeM(data.length, total)}{ceros > 0 ? ` · ${t.cerosOcultos(ceros)}` : ""}</span>
+        <div className="asst-modal-controles">
+          <div className="asst-segmentos" role="group" aria-label={t.tipoGrafica}>
+            {[[TIPOS.BARRAS, t.tipoBarras], [TIPOS.LINEA, t.tipoLinea], [TIPOS.DONA, t.tipoDona]].map(([tipo, texto]) => (
+              <button key={tipo} type="button" data-tipo={tipo} aria-pressed={tipoVista === tipo} className={tipoVista === tipo ? "activo" : ""}
+                disabled={!permitidos[tipo]} title={permitidos[tipo] ? texto : motivo[tipo]} onClick={() => setTipoElegido(tipo)}>{texto}</button>
+            ))}
           </div>
-        )}
+          {puedePedir && tipoVista === TIPOS.BARRAS && esDeBarras && (
+            <>
+              <div className="asst-segmentos" role="group" aria-label={t.vista}>
+                <button type="button" aria-pressed={!todas} className={!todas ? "activo" : ""} onClick={() => setTodas(false)}>{t.top10}</button>
+                <button type="button" aria-pressed={todas} className={todas ? "activo" : ""} onClick={() => setTodas(true)}>{t.todasLasCategorias}</button>
+              </div>
+              <button type="button" className="asst-modal-orden" onClick={() => setOrden(orden === "desc" ? "asc" : "desc")}
+                aria-label={`${t.orden}: ${orden === "desc" ? t.ordenDesc : t.ordenAsc}`} title={t.orden}>
+                {orden === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />} {orden === "desc" ? t.ordenDesc : t.ordenAsc}
+              </button>
+            </>
+          )}
+          {puedePedir && tipoVista !== TIPOS.LINEA && (
+            <label className="asst-modal-ceros">
+              <input type="checkbox" checked={ocultarCeros} onChange={(e) => setOcultarCeros(e.target.checked)} /> {t.ocultarCeros}
+            </label>
+          )}
+          {tipoVista !== TIPOS.LINEA && <span className="asst-modal-cuenta" aria-live="polite">{t.nDeM(data.length, total)}{ceros > 0 ? ` · ${t.cerosOcultos(ceros)}` : ""}</span>}
+        </div>
 
         <div className="asst-modal-cuerpo" aria-busy={cargando}>
           {error && <div className="asst-advertencia" role="alert">{error}</div>}
           {cargando && <div className="asst-modal-cargando" role="status">{t.cargandoGrafica}</div>}
-          <div ref={lienzoRef} className="asst-modal-lienzo" role="img" aria-label={`${actual.titulo}. ${data.length} ${t.puntos}`}
+          <div ref={lienzoRef} className="asst-modal-lienzo" role="img" aria-label={`${actual.titulo}. ${data.length} ${t.puntos}`} data-tipo={tipoVista}
             style={{ height: alto, minWidth: muchasColumnas ? data.length * 46 : undefined, opacity: cargando ? 0.45 : 1 }}>
             <ResponsiveContainer width="100%" height="100%">{cuerpo}</ResponsiveContainer>
           </div>
