@@ -109,3 +109,13 @@ Consecuencia: **el Excel descargado NO es una referencia válida** para la parid
 - Verificación: 116/116 en los tres modos con MySQL 8.0.46 y datos sintéticos; guardas que impiden probar el filtro «una sola vez» solo con resultados vacíos.
 - `preguntas_fase1.txt`: 24 formulaciones para el agente de Foundry (necesita las credenciales de Azure; no se corrió desde la nube).
 - Pendiente con la base real: comparar `/participacion-escuelas?desde=2026-07-01&hasta=2026-11-18` con el gráfico del tablero (The School of San Juan 21, Esc. Especializada 161, Esc. del Deporte 254, The United School 13 / 17 %, Leap STEAM 2 / 14 %…; esas etiquetas son el segmento mostrado de cada barra, hay que mirar conectados vs. no conectados).
+
+## 11. «Usuario activo»: dos definiciones en la plataforma (verificado el 19-nov-2026)
+| | Definición | Dónde se usa | Cifra de referencia |
+|---|---|---|---|
+| **A** | `subscription_profile_history.status = 'active'`, **sin mirar** `cancellation_date` | `vw_total_users_with_connection_details` → tarjeta «Activos» / «% Conexión usuarios» y el gráfico «% de usuarios conectados por escuela» del tablero. **La que usa la API** (`conexiones-acumuladas`, `participacion-escuelas`, `usuarios-por-suscripcion`). | **7.277 = 7.277** (cruce del 18-nov, oráculo C); Leap STEAM 14 activos / 14,3 % |
+| **B** | `status = 'active'` **y** `cancellation_date >= NOW()` | Filtro `status=active\|inactive` de las **descargas** de gs-base-api (`DataAnalysisAPI/Infrastructure/Dapper/Users.cs`) y `vw_not_connected` | 7.199 (cruce del 12-nov, otra fecha) |
+
+- Las líneas 49–51 de este documento atribuían la tarjeta «usuarios con matrícula activa (7.199)» a B. El cruce del 18-nov (línea 82: 7.277 = 7.277 con A) **la corrige**: lo que el tablero muestra como «Activos» es A. B es la definición del filtro de descargas, no de las tarjetas.
+- **Decisión:** la API conserva A en `conexiones-acumuladas` y `participacion-escuelas` (coincide con el tablero y no mueve ninguna cifra ya validada: 7.277, 1,31 %, 13,04 %, Leap STEAM 14 / 14,3 %). **No se cambió ninguna cifra.**
+- La diferencia A−B (usuarios con `status='active'` pero fecha de cancelación vencida o vacía) se ve en `usuarios-por-suscripcion` (`activas_con_fecha_de_cancelacion_vencida` del `resumen`). Para medirla en la base real y confirmar los valores de `status` (activa/inactiva/cancelada), correr `sql/13_estados_de_suscripcion.sql`: **pendiente del usuario** (no hay acceso a la base real desde esta sesión; la diferencia 7.199 vs 7.277 se debe a la fecha y/o a la definición, no se pudo separar).
