@@ -419,5 +419,33 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Infrastructure.Dapper
             return items != null ? items.ToList() : new List<RoleModel>();
         }
 
+        /// <summary>
+        /// To return the subscription status.
+        /// </summary>
+        /// <returns>Returns a list of status.</returns>
+        public static List<StatusModel> GetStatus()
+        {
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+            string query = @"SELECT * FROM `gs_data_analysis`.`status`";
+
+            IEnumerable<StatusModel> items = null;
+            MySqlConnection connection = Configurations.GetMySqlConnection();
+            connection.Open();
+            try
+            {
+                items = connection.Query<StatusModel>(query);
+            }
+            catch (Exception)
+            {
+
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return items != null ? items.ToList() : new List<StatusModel>();
+        }
     }
 }

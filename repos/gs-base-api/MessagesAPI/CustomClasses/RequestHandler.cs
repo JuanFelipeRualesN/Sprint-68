@@ -21,13 +21,20 @@ namespace MessagesAPI.CustomClasses
         /// <returns>Returns the langCode.</returns>
         public static string GetLanguage(HttpContext context)
         {
-            if (context.Request.Headers.TryGetValue("Accept-Language", out var langValues))
+            try
             {
-                return langValues.FirstOrDefault();
+                if (context.Request.Headers.TryGetValue("Accept-Language", out var langValues))
+                {
+                    return langValues.FirstOrDefault();
+                }
+                else
+                {
+                    return configDefaultLanguageCode;
+                }
             }
-            else
+            catch (Exception)
             {
-                return configDefaultLanguageCode;
+                return AppConfiguration.Configuration["AppSettings:default_language_code"];
             }
         }
 

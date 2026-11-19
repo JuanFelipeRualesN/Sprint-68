@@ -2,7 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileDownload } from '@fortawesome/free-solid-svg-icons';
 import { getEventsByMonthAndYearForTeachers } from '../../../../api/teachers';
+import { getEventFileSignedUrl } from '../../../../api/events-files';
+import { getFileExtension } from '../../../../utils/utils';
 import { todayKey, dateKey, buildEventsMap } from './utils/calendar-events-utils';
 
 // ─── Timezone helpers (unchanged) ────────────────────────────────────────────
@@ -13,7 +17,7 @@ const USER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 // only accepts IANA names and throws a RangeError on anything else. Every zone
 // goes through resolveTimeZone() before it reaches a formatter.
 const WINDOWS_TO_IANA = {
-    'SA Western Standard Time':        'America/La_Paz',
+    'SA Western Standard Time':        'America/Puerto_Rico',
     'SA Pacific Standard Time':        'America/Bogota',
     'SA Eastern Standard Time':        'America/Cayenne',
     'Pacific SA Standard Time':        'America/Santiago',
@@ -122,6 +126,80 @@ const eventSourceTz = (event) =>
         ? 'Etc/UTC'
         : resolveTimeZone(event.timezone ?? event.timeZone);
 
+const CALENDAR_EVENT_TYPE = 'calendarEvent';
+const MAX_CALENDAR_EVENT_DAYS = 31;
+const isCalendarEvent = (event) => String(event?.type) === CALENDAR_EVENT_TYPE;
+
+function shiftDayKey(key, amount) {
+    const [year, month, day] = String(key).split('-').map(Number);
+    if (!year || !month || !day) return key;
+    const shifted = new Date(Date.UTC(year, month - 1, day + amount));
+    return dateKey(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate());
+}
+
+function dayKeyInTimeZone(instant, timeZone = USER_TZ) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(instant).reduce((acc, part) => {
+        acc[part.type] = part.value;
+        return acc;
+    }, {});
+    return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+// Only EventType 4 receives timezone-aware, end-exclusive coverage. Planning
+// items keep their legacy mapping in calendar-events-utils.
+function calendarEventDayKeys(event) {
+    if (!isCalendarEvent(event)) return null;
+
+    const sourceTz = eventSourceTz(event);
+    const start = toInstant(event.startDate, sourceTz);
+    const end = toInstant(event.endDate, sourceTz);
+    if (!start || !end || isNaN(start) || isNaN(end) || end <= start) return null;
+
+    const firstKey = dayKeyInTimeZone(start);
+    const lastKey = dayKeyInTimeZone(new Date(end.getTime() - 1));
+    const keys = [];
+    let key = firstKey;
+
+    for (let i = 0; i < MAX_CALENDAR_EVENT_DAYS; i++) {
+        keys.push(key);
+        if (key === lastKey) break;
+        key = shiftDayKey(key, 1);
+    }
+    return keys;
+}
+
+function getEventSegment(event) {
+    const sourceTz = eventSourceTz(event);
+    const originalStart = toInstant(event.startDate, sourceTz);
+    const originalEnd = toInstant(event.endDate, sourceTz);
+    const occurrenceKey = event.occurrenceDateKey;
+    const keys = isCalendarEvent(event) ? calendarEventDayKeys(event) : null;
+
+    if (!occurrenceKey || !keys || keys.length < 2
+        || !originalStart || !originalEnd || isNaN(originalStart) || isNaN(originalEnd)) {
+        return {
+            startInstant: originalStart,
+            endInstant: originalEnd,
+            isMultiDay: false,
+            startsAtDayBoundary: false,
+            endsAtDayBoundary: false,
+        };
+    }
+
+    const dayStart = wallTimeToInstant(`${occurrenceKey} 00:00:00`, USER_TZ);
+    const dayEnd = wallTimeToInstant(`${shiftDayKey(occurrenceKey, 1)} 00:00:00`, USER_TZ);
+
+    return {
+        startInstant: new Date(Math.max(originalStart.getTime(), dayStart.getTime())),
+        endInstant: new Date(Math.min(originalEnd.getTime(), dayEnd.getTime())),
+        isMultiDay: true,
+        startsAtDayBoundary: occurrenceKey !== keys[0],
+        endsAtDayBoundary: occurrenceKey !== keys[keys.length - 1],
+    };
+}
+
 // Minutes-past-midnight for an instant, expressed in the user's zone.
 function minutesOfDayInUserTz(date) {
     const p = new Intl.DateTimeFormat('en-US', {
@@ -153,35 +231,41 @@ function isAllDayEvent(event) {
 // Returns null when there is nothing meaningful to show.
 function eventTime(event, locale) {
     if (isAllDayEvent(event)) return null;
+
+    const segment = getEventSegment(event);
+    if (segment.isMultiDay) {
+        const formatBoundary = (instant, fallback) => {
+            if (fallback) return fallback;
+            if (!instant || isNaN(instant)) return null;
+            return new Intl.DateTimeFormat(locale, {
+                hour: '2-digit', minute: '2-digit', hour12: true, timeZone: USER_TZ,
+            }).format(instant);
+        };
+
+        const start = formatBoundary(segment.startInstant, segment.startsAtDayBoundary ? '00:00' : null);
+        const end = formatBoundary(segment.endInstant, segment.endsAtDayBoundary ? '24:00' : null);
+        return start && end ? `${start} – ${end}` : start || end;
+    }
+
     return formatTimeRangeInUserTz(
         event.startDate, event.endDate, eventSourceTz(event),
         locale, String(event.type) === 'homework',
     );
 }
 
-// Multi-day events need the date as well as the clock time, otherwise
-// "4:00 PM – 5:00 PM" hides the fact that the event runs across three days.
-function spansMultipleDays(event) {
-    const tz = eventSourceTz(event);
-    const start = toInstant(event.startDate, tz);
-    const end = toInstant(event.endDate, tz);
-    if (!start || !end || isNaN(start) || isNaN(end)) return false;
-    const dayOf = (d) => new Intl.DateTimeFormat('en-CA', {
-        timeZone: USER_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
-    }).format(d);
-    return dayOf(start) !== dayOf(end);
-}
+function fullCalendarEventRange(event, locale) {
+    if (!isCalendarEvent(event) || (calendarEventDayKeys(event)?.length ?? 0) < 2) return null;
 
-function formatDateTimeRange(event, locale) {
-    const tz = eventSourceTz(event);
-    const start = toInstant(event.startDate, tz);
-    const end = toInstant(event.endDate, tz);
-    if (!start || isNaN(start)) return null;
-    const fmt = (d) => new Intl.DateTimeFormat(locale, {
-        day: 'numeric', month: 'short',
+    const sourceTz = eventSourceTz(event);
+    const start = toInstant(event.startDate, sourceTz);
+    const end = toInstant(event.endDate, sourceTz);
+    if (!start || !end || isNaN(start) || isNaN(end)) return null;
+
+    const formatter = new Intl.DateTimeFormat(locale, {
+        day: 'numeric', month: 'short', year: 'numeric',
         hour: '2-digit', minute: '2-digit', hour12: true, timeZone: USER_TZ,
-    }).format(d);
-    return end && !isNaN(end) ? `${fmt(start)} – ${fmt(end)}` : fmt(start);
+    });
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
 }
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
@@ -302,6 +386,7 @@ function getEventLink(event) {
 // ─── Event modal — full detail for a single event ────────────────────────────
 function EventModal({ event, dateLabel, onClose }) {
     const { t, i18n } = useTranslation(['calendar-events', 'common']);
+    const [openingAttachment, setOpeningAttachment] = useState(null);
 
     useEffect(() => {
         const handler = (e) => { if (e.key === 'Escape') onClose(); };
@@ -320,9 +405,10 @@ function EventModal({ event, dateLabel, onClose }) {
     const badgeStyle      = { background: backgroundColor, color };
 
     const type  = String(event.type);
-    const time  = spansMultipleDays(event) && !isAllDayEvent(event)
-        ? formatDateTimeRange(event, i18n.language)
-        : eventTime(event, i18n.language);
+    // Cards show the clipped segment for their day; the modal shows the true
+    // range so a multi-day event cannot look like independent daily events.
+    const time  = fullCalendarEventRange(event, i18n.language)
+        ?? eventTime(event, i18n.language);
 
     const place           = locationFor(event, t);
     const descriptionHtml = descriptionToHtml(event.description);
@@ -330,6 +416,42 @@ function EventModal({ event, dateLabel, onClose }) {
     const attachments     = Array.isArray(event.attachments) ? event.attachments : [];
 
     const eventLink = getEventLink(event);
+
+    const openAttachment = async (attachment, attachmentKey) => {
+        const source = attachment.url
+            || attachment.attachmentUrl
+            || attachment.AttachmentUrl
+            || attachment.path
+            || attachment.link;
+        if (!source) return;
+
+        if (/^https?:\/\//i.test(source)) {
+            window.open(source, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
+        const extension = getFileExtension(source) || '';
+        const fileName = extension ? source.slice(0, -(extension.length + 1)) : source;
+        const popup = window.open('', '_blank');
+        if (popup) popup.opener = null;
+
+        setOpeningAttachment(attachmentKey);
+        try {
+            const response = await getEventFileSignedUrl(fileName, extension);
+            const signedUrl = response.data?.FileUrl ?? response.data?.fileUrl;
+            if (!signedUrl) {
+                popup?.close();
+                return;
+            }
+
+            if (popup) popup.location.href = signedUrl;
+            else window.open(signedUrl, '_blank', 'noopener,noreferrer');
+        } catch {
+            popup?.close();
+        } finally {
+            setOpeningAttachment(null);
+        }
+    };
 
     // Every row gates itself on real data — nothing renders as "N/A" any more.
     const fields = [];
@@ -383,10 +505,23 @@ function EventModal({ event, dateLabel, onClose }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {attachments.map((att, i) => {
                         const name = att.name || att.fileName || att.title || t('common:general.na');
-                        const url  = att.url || att.path || att.link;
-                        return url
-                            ? (<a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                                  style={{ color: 'var(--text-accent)', textDecoration: 'none', wordBreak: 'break-all' }}>{name}</a>)
+                        const source = att.url || att.attachmentUrl || att.AttachmentUrl || att.path || att.link;
+                        const attachmentKey = att.id ?? att.Id ?? source ?? i;
+                        return source
+                            ? (<button key={attachmentKey} type="button"
+                                  onClick={() => openAttachment(att, attachmentKey)}
+                                  disabled={openingAttachment === attachmentKey}
+                                  style={{
+                                      alignSelf: 'flex-start', background: '#EBF5FA', border: '1px solid #B8DDEC',
+                                      borderRadius: 6, padding: '6px 10px', textAlign: 'left',
+                                      cursor: openingAttachment === attachmentKey ? 'wait' : 'pointer',
+                                      color: '#197BAA', fontSize: 13, fontWeight: 500,
+                                      textDecoration: 'none', wordBreak: 'break-all',
+                                      opacity: openingAttachment === attachmentKey ? 0.7 : 1,
+                                  }}>
+                                  <FontAwesomeIcon icon={faFileDownload} style={{ marginRight: 6 }} />
+                                  {name}
+                              </button>)
                             : <span key={i} style={{ color: 'var(--text-primary)' }}>{name}</span>;
                     })}
                 </div>
@@ -464,17 +599,19 @@ function buildTimeline(events, locale) {
 
     events.forEach((ev) => {
         const hex = hexFor(ev);
-        const tz = eventSourceTz(ev);
-        const start = toInstant(ev.startDate, tz);
+        const segment = getEventSegment(ev);
+        const start = segment.startInstant;
 
         if (isAllDayEvent(ev) || !start || isNaN(start)) {
             allDay.push({ ev, hex });
             return;
         }
 
-        const end = toInstant(ev.endDate, tz);
-        const startMin = minutesOfDayInUserTz(start);
-        const endMin = end && !isNaN(end) ? minutesOfDayInUserTz(end) : null;
+        const end = segment.endInstant;
+        const startMin = segment.startsAtDayBoundary ? 0 : minutesOfDayInUserTz(start);
+        const endMin = segment.endsAtDayBoundary
+            ? 24 * 60
+            : (end && !isNaN(end) ? minutesOfDayInUserTz(end) : null);
 
         rows.push({
             ev, hex, startMin,
@@ -525,7 +662,7 @@ export default function CalendarEventsWeekly() {
                 if (cancelled) return;
                 const merged = {};
                 datas.forEach((data) => {
-                    const map = buildEventsMap(data || []);
+                    const map = buildEventsMap(data || [], { calendarEventDayKeys });
                     Object.entries(map).forEach(([k, v]) => {
                         merged[k] = (merged[k] || []).concat(v);
                     });
@@ -581,9 +718,9 @@ export default function CalendarEventsWeekly() {
         let mins = 0;
         selectedEvents.forEach((ev) => {
             if (isAllDayEvent(ev)) return;
-            const tz = eventSourceTz(ev);
-            const s = toInstant(ev.startDate, tz);
-            const e = toInstant(ev.endDate, tz);
+            const segment = getEventSegment(ev);
+            const s = segment.startInstant;
+            const e = segment.endInstant;
             if (s && e && !isNaN(s) && !isNaN(e) && e > s) mins += (e - s) / 60000;
         });
         const h = mins / 60;

@@ -3,32 +3,34 @@
 # For libraries, web, APIs, tests
 # -----------------------------
 
-# Build results
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-[Tt]emp/
-[Tt]mp/
-[Bb]uild/
-artifacts/
-publish/
-dist/
+# Build results (in any subfolder)
+**/[Bb]in/
+**/[Oo]bj/
+**/[Ll]og/
+**/[Ll]ogs/
+**/[Tt]emp/
+**/[Tt]mp/
+**/[Bb]uild/
+**/artifacts/
+**/publish/
+**/dist/
 
-# Visual Studio
-.vs/
+# Visual Studio (recursive)
+**/.vs/
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
 *.sln.ide
 *.vcxproj.user
+.vs/
+*/.vs/
 
-# VS Code
-.vscode/
+# VS Code (recursive)
+**/.vscode/
 
 # Rider / ReSharper / JetBrains
-.idea/
+**/.idea/
 *.sln.iml
 _ReSharper*/
 *.[Rr]e[Ss]harper
@@ -59,7 +61,7 @@ _ReSharper*/
 # Azure / publish
 *.pubxml
 *.publishproj
-Properties/PublishProfiles/
+**/Properties/PublishProfiles/
 # Azure Functions local settings (contains secrets)
 local.settings.json
 
@@ -67,11 +69,8 @@ local.settings.json
 appsettings.*.local.json
 appsettings.Local.json
 
-# IIS Express
-# (applicationhost.config is under .vs, which is already ignored)
-
 # Test results / coverage
-[Tt]est[Rr]esults/
+**/[Tt]est[Rr]esults/
 *.trx
 *.coverage
 *.coveragexml
@@ -82,7 +81,7 @@ nunit-*.xml
 TestResult.xml
 
 # Entity Framework / tooling (common temp artifacts)
-Migrations/obj/
+**/Migrations/obj/
 
 # StyleCop / analyzers
 StyleCop.Cache

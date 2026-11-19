@@ -1,0 +1,36 @@
+name: Base API Private Pipeline
+
+trigger:
+  branches:
+    include:
+      - dev
+      - uat
+
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+  # name: 'MSJ-Agents'
+  # demands:
+  #   - Agent.Name -equals ubuntu-dev-agent
+
+extends:
+  template: azure-pipelines-template.yml
+  parameters:
+    ${{ if eq(variables['Build.SourceBranchName'], 'dev') }}:
+      azureAppService: 'app-apis-private-dev-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'private-dev'
+    
+    ${{ if eq(variables['Build.SourceBranchName'], 'uat') }}:
+      azureAppService: 'app-apis-private-uat-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'private-uat'
+
+    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+      azureAppService: 'app-apis-private-prod-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'private'

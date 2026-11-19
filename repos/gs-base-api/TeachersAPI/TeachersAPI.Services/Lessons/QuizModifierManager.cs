@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Dapper;
+using MySqlConnector;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -85,6 +87,52 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                 responseModel.QuizRubricModel = QuizSimpleRubricCreate(quizRequestModel.QuizRubricModel, quizRequestModel.QuizModel.Id, userCreatedBy);
             }
 
+            // Create QuizMatchInstructions
+            QuizMatchInstructionsDAO quizMatchInstructionsDAO = new QuizMatchInstructionsDAO();
+            if (quizRequestModel.QuizMatchInstructionsModel != null)
+            {
+                foreach (var matchInstructions in quizRequestModel.QuizMatchInstructionsModel)
+                {
+                    // Check if match instruction is new or existing
+                    List<QuizMatchInstructionsModel> existingMatchInstruction =
+                        new List<QuizMatchInstructionsModel>();
+
+                    existingMatchInstruction = quizMatchInstructionsDAO.Read(_connectionStringRead,
+                        new QuizMatchInstructionsModel() { Id = matchInstructions.Id }, false, false);
+
+                    int parsedId;
+                    if (!int.TryParse(matchInstructions.Id, out parsedId) || existingMatchInstruction == null ||
+                        existingMatchInstruction.Count == 0)
+                    {
+                        // save id to change on questions
+                        var matchInstructionId = matchInstructions.Id;
+                        // remove actual id
+                        matchInstructions.Id = null;
+                        // create new match instruction
+                        matchInstructions.QuizId = quizRequestModel.QuizModel.Id;
+                        matchInstructions.ModifiedBy = userCreatedBy;
+                        matchInstructions.MatchGroupNumber = "1";
+                        matchInstructions.Id =
+                            quizMatchInstructionsDAO.Create(_connectionString, matchInstructions)[0].Id;
+
+                        // update quizMatchInstructionsId in questions that have the same id
+                        foreach (var questionRequest in quizRequestModel.QuestionRequestModelList)
+                        {
+                            if (questionRequest.QuizQuestionModel.QuizMatchInstructionId == matchInstructionId)
+                            {
+                                questionRequest.QuizQuestionModel.QuizMatchInstructionId = matchInstructions.Id;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // update existing math instruction
+                        quizMatchInstructionsDAO.Update(_connectionString, matchInstructions,
+                            new QuizMatchInstructionsModel() { Id = matchInstructions.Id });
+                    }
+                }
+            }
+
             if (quizRequestModel.QuestionRequestModelList != null &&
                 quizRequestModel.QuestionRequestModelList.Count > 0)
             {
@@ -130,6 +178,7 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
             responseModel.Messages.Add(messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:ls_message_code_success"]));
             responseModel.QuestionRequestModelList = quizRequestModel.QuestionRequestModelList;
             responseModel.QuizAttachmentModelList = quizRequestModel.QuizAttachmentModelList;
+            responseModel.QuizMatchInstructionsModel = quizRequestModel.QuizMatchInstructionsModel;
             responseModel.QuizModel = quizRequestModel.QuizModel;
             return responseModel;
 
@@ -387,7 +436,15 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 			// Get the modified HTML
 			string modifiedHtml = doc.DocumentNode.OuterHtml;
 
-			return modifiedHtml;
+            // 🧹 Clean invisible UTF-8 control characters (BOM, zero-width spaces, etc.)
+            modifiedHtml = modifiedHtml
+                .Replace("\uFEFF", "")  // BOM (Byte Order Mark)
+                .Replace("\u200B", "")  // Zero width space
+                .Replace("\u200C", "")  // Zero width non-joiner
+                .Replace("\u200D", "")  // Zero width joiner
+                .Replace("\u2060", ""); // Word joiner
+
+            return modifiedHtml;
 		}
 
 		/// <summary>
@@ -593,7 +650,11 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 
             if (quizquestionModelToDelete.Count > 0)
             {
-                // Delete the responses first 
+                foreach (var questionToDelete in quizquestionModelToDelete)
+                {
+                    DeleteQuizQuestionPosition(questionToDelete.Id);
+                }
+                // Delete the responses first
                 quizQuestionResponseDAO.Delete(_connectionString, quizQUestionsRepsonseModelList);
                 quizQuestionDAO.Delete(_connectionString, quizquestionModelToDelete);
             }
@@ -696,6 +757,14 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 
             if (quizQuestionModelToEditList.Count > 0)
             {
+                //  Matters most for a mixed quiz, where questions of
+                // different kinds are interleaved and id order says nothing about the layout.
+                for (int i = 0; i < quizQuestionModelToEditList.Count; i++)
+                {
+                    SetQuizQuestionPosition(quizQuestionModelToEditList[i].QuizId,
+                        quizQuestionModelToEditWhereList[i].Id, i + 1);
+                }
+
                 quizQuestionDAO.Update(_connectionString, quizQuestionModelToEditList, quizQuestionModelToEditWhereList);
 				// Set the URLs
 				foreach (QuizQuestionModel quizQuestionToUpdate in quizQuestionModelToEditList)
@@ -1042,6 +1111,7 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                         Desc = questionRequest.QuizQuestionModel.Desc.Trim(),
                         QuestionTypeId = questionRequest.QuizQuestionModel.QuestionTypeId,
                         CustomValue = questionRequest.QuizQuestionModel.CustomValue,
+                        QuizMatchInstructionId = questionRequest.QuizQuestionModel.QuizMatchInstructionId,
                         ModifiedBy = userCreatedBy,
                     });
 
@@ -1477,6 +1547,70 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 
             return true;
         }
-		
-    }
+
+
+        /// <summary>
+        /// Sets the position of quiz questions based on the provided models and returns the updated positions.
+        /// </summary>
+        private void SetQuizQuestionPosition(string quizId, string quizQuestionId, int position)
+        {
+            var query = @"
+                        INSERT INTO quiz_question_positions (
+                            quiz_id,
+                            quiz_question_id,
+                            quiz_question_position
+                        ) VALUES (
+                            @quizId,
+                            @quizQuestionId,
+                            @position
+                        )
+                        ON DUPLICATE KEY UPDATE
+                            quiz_question_position = @position;";
+
+            using var connection = new MySqlConnection(_connectionString);
+            connection.Open();
+
+            var parameters = new
+            {
+                quizId,
+                quizQuestionId,
+                position
+            };
+
+            try
+            {
+                connection.Query(query, parameters);
+            }
+            catch (Exception)
+            {
+                // continue
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        private void DeleteQuizQuestionPosition(string quizQuestionId)
+        {
+            var query = @"DELETE FROM quiz_question_positions
+                          WHERE quiz_question_id = @quizQuestionId;";
+
+            using var connection = new MySqlConnection(_connectionString);
+            connection.Open();
+
+            try
+            {
+                connection.Execute(query, new { quizQuestionId });
+            }
+            catch (Exception)
+            {
+                // continue
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+}
 }

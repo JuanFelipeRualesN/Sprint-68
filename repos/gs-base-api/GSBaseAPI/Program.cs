@@ -1,15 +1,101 @@
+using Azure;
+using Azure.AI.OpenAI;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
+using Azure.Storage.Blobs;
+using GSBaseAPI.GPTModule.Services;
+using GSBaseAPI.GPTModule.Services.ExternalAPIs;
+using GSBaseAPI.GPTModule.Services.Helpers;
+using GSWebAPI.AccessLogs.Infrastructure;
+using GSWebAPI.AccessLogs.Infrastructure.Interfaces;
+using GSWebAPI.AccessLogs.Services;
 using GSWebAPI.CustomClasses.CacheHandler;
 using MessagesAPI.CustomClasses.CacheHandler;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
+using ReadingAPI.ReadingAPI.Services.Metrics;
+using ReadingAPI.ReadingAPI.Services.Metrics.ProgressAndDomain;
+using ReadingAPI.ReadingAPI.Services.Metrics.ReadingAndContent;
+using ReadingAPI.ReadingAPI.Services.Metrics.UsageAndEngagement;
+using ReadingAPI.ReadingAPI.Services.Story;
 using SubscriptionsAPI.CustomClasses.CacheHandler;
+using System.Globalization;
 using TeachersAPI.CustomClasses.CacheHandler;
 using UsersAPI.CustomClasses.CacheHandler;
-using AthenasAPICache = TeachersAPI.CustomClasses.CacheHandler.AthenasAPICache;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add AI services error messages configuration file
+builder.Configuration.AddJsonFile("appsettings.aiservices.json", optional: true, reloadOnChange: true);
+
+// Use invariant culture so date/number formatting is consistent across machines.
+// This is needed when running locally on computers with different regional settings (e.g. dd/MM vs MM/dd).
+// IMPORTANT: keep this commented out for production environments; enable it only for local runs.
+//CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+//CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+// ===== Azure Key Vault Configuration =====
+var env = builder.Environment.EnvironmentName;
+
+var keyVaultUrl = builder.Configuration["KeyVault:VaultUrl"];
+if (!string.IsNullOrEmpty(keyVaultUrl))
+{
+    try
+    {
+        var credential = new DefaultAzureCredential();
+
+        var reloadInterval = builder.Configuration.GetValue<TimeSpan?>("KeyVault:ReloadInterval")
+            ?? TimeSpan.FromMinutes(10);
+
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUrl),
+            credential,
+            new AzureKeyVaultConfigurationOptions
+            {
+                ReloadInterval = reloadInterval
+            });
+
+        Console.WriteLine($"✓ Azure Key Vault configured: {keyVaultUrl} (reload every {reloadInterval})");
+
+        // Sanity check: confirm a known secret actually loaded, so a naming
+        // mismatch or partial failure surfaces here instead of in a DB call later.
+        var testKey = builder.Configuration["ConnectionStrings:GSWebDBConnection"];
+        if (string.IsNullOrEmpty(testKey))
+        {
+            Console.WriteLine("⚠ WARNING: ConnectionStrings:GSWebDBConnection is empty after Key Vault load. " +
+                               "Check that the secret 'ConnectionStrings--GSWebDBConnection' exists in the vault.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠ Azure Key Vault access failed: {ex.Message}");
+
+        if (!env.Equals("Development", StringComparison.OrdinalIgnoreCase))
+        {
+            throw;
+        }
+    }
+}
+else
+{
+    Console.WriteLine("⚠ KeyVault:VaultUrl not configured. Secrets will be loaded from appsettings only.");
+}
+// ===== End Azure Key Vault Configuration =====
+// ===== End Azure Key Vault Configuration =====
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 // Add services to the container.
 
@@ -35,8 +121,17 @@ builder.Services.AddControllers()
         opts.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Include;
         
     });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
+builder.Services.Configure<BackgroundQueueOptions>(
+    builder.Configuration.GetSection("BackgroundQueue"));
+
+builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+builder.Services.AddHostedService<QueuedHostedService>();
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSAIServicesAPI.Controllers.GenerateController).Assembly));
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ReadingAPI.Controllers.ReadingDiagnosticsController).Assembly));
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ReadingAPI.Controllers.StoryController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(AddressAPI.Controllers.CountriesController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(AddressAPI.Controllers.StatesController).Assembly));
 
@@ -45,6 +140,7 @@ builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyP
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.ResultsController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.TestController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.UsersController).Assembly));
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.PowerBIController).Assembly));
 
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.AddressesController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.AvatarController).Assembly));
@@ -58,6 +154,7 @@ builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyP
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.ReportsController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.RewardsController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.VersionGameController).Assembly));
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.AccessLogs.AccessLogsController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(MessagesAPI.Controllers.FilesController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(MessagesAPI.Controllers.MessageController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(SchoolsAPI.Controllers.AcademicDetailsController).Assembly));
@@ -116,6 +213,7 @@ builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyP
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(UsersAPI.Controllers.StatusAccountsController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(UsersAPI.Controllers.UsersSchoolController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(UsersAPI.Controllers.UsersController).Assembly));
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(UsersAPI.Controllers.UsersMetricsController).Assembly));
 
 
 
@@ -135,8 +233,12 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "GS API", Version = "v1" });
 });
 
+builder.Services.AddSingleton<IQuizJobQueue, QuizJobQueue>();
+builder.Services.AddHostedService<QuizJobWorker>();
+
 /** To add memory cache for version caching **/
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ITutorConversationStore, MemoryTutorConversationStore>();
 builder.Services.AddScoped<VersionCache>();
 builder.Services.AddScoped<TeachersAPI.CustomClasses.CacheHandler.AthenasAPICache>();
 builder.Services.AddScoped<GSWebAPI.CustomClasses.CacheHandler.UsersAPICache>();
@@ -153,8 +255,123 @@ builder.Services.AddScoped<QuizTypeCache>();
 builder.Services.AddScoped<SubscriptionAPICache>();
 builder.Services.AddScoped<AuthenticationCache>();
 builder.Services.AddScoped<CacheHandlerLibrary.ExternalAPIsCache>();
+// OpenAI client
+builder.Services.AddHttpClient<IOpenAiClient, OpenAiClient>();
+
+// Teachers Homework API client
+builder.Services.AddHttpClient<ITeachersHomeworkApi, TeachersHomeworkApi>();
+
+// Depr tutor service
+builder.Services.AddScoped<DeprTutorService>();
+
+// Reading AI services
+builder.Services.AddScoped<SessionTrackerService>();
+builder.Services.AddScoped<SessionMetricsService>();
+builder.Services.AddScoped<ModuleUsageService>();
+builder.Services.AddScoped<PerformanceMetricsService>();
+builder.Services.AddScoped<ContentMetricsService>();
+builder.Services.AddScoped<StudentMetricsService>();
+builder.Services.AddScoped<StoryModifierService>();
+builder.Services.AddScoped<StoryReaderService>();
+builder.Services.AddScoped<UserStoryResultsService>();
+builder.Services.AddScoped<ReadingAPI.ReadingAPI.Infrastructure.ReadingLessonsInfrastructure>();
+
+var readingAPIConnString = builder.Configuration.GetConnectionString("ReadingAIAPIDBConnection");
+builder.Services.AddDbContext<ReadingAPI.ReadingAPI.Infrastructure.ReadingAIDbContext>(options =>
+    options.UseMySql(readingAPIConnString, ServerVersion.AutoDetect(readingAPIConnString)));
+
+// Azure Speech options + service
+builder.Services.Configure<AzureSpeechOptions>(builder.Configuration.GetSection("AzureSpeech"));
+builder.Services.AddSingleton<SpeechService>();
+
+var aiServicesConnString = builder.Configuration.GetConnectionString("AIServicesAPIDBConnection");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(aiServicesConnString, ServerVersion.AutoDetect(aiServicesConnString)));
+
+builder.Services.AddHttpClient<GSAIServicesAPI.FeignAPIs.AthenasFeignAPI>();
+builder.Services.AddHttpClient<GSAIServicesAPI.FeignAPIs.ImageGenerationFeignAPI>();
+// Image generation providers; the order they are tried in comes from ImageGeneration:ProviderOrder.
+builder.Services.AddHttpClient<GSAIServicesAPI.Services.Images.Providers.IImageGenerationProvider,
+                               GSAIServicesAPI.Services.Images.Providers.FoundryImageProvider>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Images.Providers.IImageGenerationProvider,
+                           GSAIServicesAPI.Services.Images.Providers.StableDiffusionImageProvider>();
+
+builder.Services.AddScoped<GSAIServicesAPI.Services.CodesService>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.LessonsService>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Quotas.QuotaConfigService>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Quotas.QuotaService>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Tutor.GenerativeTutorEngine>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Tutor.RagTutorEngine>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Tutor.AthenasLessonClient>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Tutor.SubjectLanguageProvider>();
+
+builder.Services.Configure<GSAIServicesAPI.Infrastructure.Configuration.MongoDbSettings>(
+    builder.Configuration.GetSection(GSAIServicesAPI.Infrastructure.Configuration.MongoDbSettings.SectionName));
+builder.Services.AddSingleton<GSAIServicesAPI.Infrastructure.Context.MongoDbContext>();
+builder.Services.AddScoped(typeof(GSAIServicesAPI.Infrastructure.Interfaces.IMongoRepository<>),
+                           typeof(GSAIServicesAPI.Infrastructure.Repositories.MongoRepository<>));
+builder.Services.AddScoped<GSAIServicesAPI.Services.PromptMonitoring.IPromptMonitoringService,
+                           GSAIServicesAPI.Services.PromptMonitoring.PromptMonitoringService>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.PromptMonitoring.IPromptClassifier,
+                           GSAIServicesAPI.Services.PromptMonitoring.PromptClassifier>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.IRoleNameResolver,
+                              GSAIServicesAPI.Services.RoleNameResolver>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.PromptMonitoring.IViewerStudentsProvider,
+                              GSAIServicesAPI.Services.PromptMonitoring.UsersApiViewerStudentsProvider>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Images.IImageGenerationService,
+                           GSAIServicesAPI.Services.Images.ImageGenerationService>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.Images.IBlobUrlSigner,
+                              GSAIServicesAPI.Services.Images.BlobUrlSigner>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.Documents.IDocumentContentRewriter,
+                              GSAIServicesAPI.Services.Documents.DocumentContentRewriter>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.Images.IImageBlobStorage,
+                              GSAIServicesAPI.Services.Images.AzureImageBlobStorage>();
+
+builder.Services.AddSingleton<GSAIServicesAPI.Services.Tutor.TutorSettingsService>();
+
+var azureOpenAiEndpoint = builder.Configuration["AzureOpenAI:Endpoint"];
+var azureOpenAiApiKey = builder.Configuration["AzureOpenAI:ApiKey"];
+
+/*
+if (string.IsNullOrWhiteSpace(azureOpenAiEndpoint) || string.IsNullOrWhiteSpace(azureOpenAiApiKey))
+{
+    throw new InvalidOperationException(
+        "AzureOpenAI:Endpoint and AzureOpenAI:ApiKey must be configured for the AI services module.");
+}
+*/
+
+builder.Services.AddSingleton(new AzureOpenAIClient(
+    new Uri(azureOpenAiEndpoint),
+    new AzureKeyCredential(azureOpenAiApiKey)));
+
+builder.Services.AddOptions<GSAIServicesAPI.Models.Images.BlobStorageOptions>()
+    .Bind(builder.Configuration.GetSection("BlobStorage"))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.ConnectionString),
+        "BlobStorage:ConnectionString is required.")
+    .Validate(o => !string.IsNullOrWhiteSpace(o.ContainerName),
+        "BlobStorage:ContainerName is required.")
+    .ValidateOnStart();
+
+builder.Services.AddSingleton(sp =>
+{
+    var opts = sp.GetRequiredService<IOptions<GSAIServicesAPI.Models.Images.BlobStorageOptions>>().Value;
+    return new BlobServiceClient(opts.ConnectionString);
+});
+
+var foundryProjectEndpoint = builder.Configuration["Foundry:ProjectEndpoint"]
+    ?? throw new InvalidOperationException("Foundry:ProjectEndpoint must be configured.");
+
+builder.Services.AddSingleton(new Azure.AI.Projects.AIProjectClient(
+    new Uri(foundryProjectEndpoint),
+    new DefaultAzureCredential()));
 
 var app = builder.Build();
+
+// Use this when encountering date format issues caused by the server's regional settings
+//var defaultCulture = new CultureInfo("en-US");
+//CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
+//CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
 MessagesAPI.AppConfiguration.Initialize(builder.Configuration);
 AddressAPI.AppConfiguration.Initialize(builder.Configuration);
@@ -164,7 +381,10 @@ SchoolsAPI.AppConfiguration.Initialize(builder.Configuration);
 SubscriptionsAPI.AppConfiguration.Initialize(builder.Configuration);
 TeachersAPI.AppConfiguration.Initialize(builder.Configuration);
 UsersAPI.AppConfiguration.Initialize(builder.Configuration);
+GSBaseAPI.AppConfiguration.Initialize(builder.Configuration);
 CacheHandlerLibrary.AppConfiguration.Initialize(builder.Configuration);
+ReadingAPI.AppConfiguration.Initialize(builder.Configuration);
+GSAIServicesAPI.AppConfiguration.Initialize(builder.Configuration);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -174,6 +394,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 

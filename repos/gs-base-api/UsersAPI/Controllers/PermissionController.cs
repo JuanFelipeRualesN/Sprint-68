@@ -30,8 +30,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var permissions = new PermissionManager(
-                    "", // Connection string placeholder
-                    "", // Connection string placeholder
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                      AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode).GetPermissions(new List<PermissionModel>());
                 return Ok(permissions);
             }
@@ -57,8 +57,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var permissions = new PermissionManager(
-                    "", // Connection string placeholder
-                    "", // Connection string placeholder
+                  AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                      AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode).GetPermissions(new List<PermissionModel> { new PermissionModel { Id = id } });
                 return Ok(permissions);
             }
@@ -84,8 +84,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var permissionResponseModel = new PermissionManager(
-                    "", // Connection string placeholder
-                    "", // Connection string placeholder
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                      AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode).CreatePermission(permissionModel, sessionResponseModel.UserId);
                 if (!permissionResponseModel.Valid)
                 {
@@ -115,8 +115,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var permissionResponseModel = new PermissionManager(
-                    "", // Connection string placeholder
-                    "", // Connection string placeholder
+                   AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                      AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode).UpdatePermission(permissionModel, sessionResponseModel.UserId);
                 if (!permissionResponseModel.Valid)
                 {

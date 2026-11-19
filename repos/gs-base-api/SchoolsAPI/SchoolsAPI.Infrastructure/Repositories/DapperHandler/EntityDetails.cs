@@ -29,10 +29,10 @@ namespace SchoolsAPI.SchoolsAPI.Infrastructure.Repositories.DapperHandler
         public static List<EntityGeneralDetailsResponseModel> GetEntities(string entityId = null, string entityTypeId = null, string entityName = null, string oreId = null, string phone = null, string state = null, string city = null, string countryIsoCode = null, string privateOrPublic = null)
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
-            string query = @"SELECT e.id as entity_id, e.name as entity_name, e.token as entity_identifier, e.entity_type_id, e.private as is_private, 
-            ad.address_line_1, ad.address_line_2, ad.region_id as region, ad.state, ad.country, ad.city, ad.zip as zip_code, pho.phone
+            string query = @"SELECT e.id as entity_id, e.name as entity_name, e.token as entity_identifier, e.entity_type_id, e.private as is_private,
+            MIN(ad.address_line_1) as address_line_1, MIN(ad.address_line_2) as address_line_2, MIN(ad.region_id) as region, MIN(ad.state) as state, MIN(ad.country) as country, MIN(ad.city) as city, MIN(ad.zip) as zip_code, MIN(pho.phone) as phone
             FROM gs_schools_api_db_prod.sch_entities e
-            LEFT JOIN `gs_schools_api_db_prod`.`sch_addresses` ad ON ad.entity_id = e.id 
+            LEFT JOIN `gs_schools_api_db_prod`.`sch_addresses` ad ON ad.entity_id = e.id
             LEFT JOIN `gs_schools_api_db_prod`.`sch_phones` pho ON pho.entity_id = e.id ";
 
             DynamicParameters parameters = new DynamicParameters();
@@ -192,6 +192,11 @@ namespace SchoolsAPI.SchoolsAPI.Infrastructure.Repositories.DapperHandler
             {
                 Console.WriteLine(ex.ToString());
                 items = new List<EntityGeneralDetailsResponseModel>();
+                items.Add(new EntityGeneralDetailsResponseModel
+                {
+                    EntityId = "-1",
+                    EntityName = "Error: " + ex.Message
+                });
             }
             finally
             {

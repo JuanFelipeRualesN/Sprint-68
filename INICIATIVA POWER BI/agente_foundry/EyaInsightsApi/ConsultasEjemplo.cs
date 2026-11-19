@@ -8,16 +8,43 @@ namespace EyaInsightsApi;
 public class ConsultasEjemplo : IConsultasUso
 {
     static readonly string[] Areas = ["Matemáticas", "Lectura", "Ciencias", "Estudios Sociales", "Inglés"];
-    static readonly string[] Escuelas = "ABCDEFGHIJKL".Select(c => $"Escuela Ejemplo {c}").ToArray();   // K y L sin actividad
-    static readonly string[] EscuelasActivas = Escuelas.Take(10).ToArray();
-    static readonly (string Maestro, string Escuela)[] Maestros =
-        Enumerable.Range(0, 36).Select(i => ($"Maestro Ejemplo {i + 1:00}", Escuelas[i % 12])).ToArray();
+    static readonly string[] TodasEscuelas = "ABCDEFGHIJKL".Select(c => $"Escuela Ejemplo {c}").ToArray();   // K y L sin actividad
+    static readonly (string Maestro, string Escuela)[] TodosMaestros =
+        Enumerable.Range(0, 36).Select(i => ($"Maestro Ejemplo {i + 1:00}", TodasEscuelas[i % 12])).ToArray();
+
+    // A2 — ids sintéticos para que el alcance también funcione sin MySQL: escuela i (A=0…) → school_id i+1; ORE 1 = A–F, ORE 2 = G–L.
+    static int IdEscuela(string e) => Array.IndexOf(TodasEscuelas, e) + 1;
+    static int OreDe(string e) => IdEscuela(e) <= 6 ? 1 : 2;
+
+    // Vistas acotadas (Para): comparten los datos generados pero solo ven las escuelas del alcance.
+    string[] Escuelas = TodasEscuelas;
+    string[] EscuelasActivas = TodasEscuelas.Take(10).ToArray();
+    (string Maestro, string Escuela)[] Maestros = TodosMaestros;
+    Alcance _alc = Alcance.Todo;
+    public string DescripcionAlcance => _alc.EsTodo ? "todas las escuelas"
+        : _alc.EscuelaId is { } e ? $"escuela {TodasEscuelas.ElementAtOrDefault(e - 1) ?? "#" + e}" : $"ORE ejemplo {_alc.OreId}";
+    public int? EscuelaDeUsuario(string userId) => null;       // los datos de ejemplo no tienen usuarios con escuela
+
+    public IConsultasUso Para(Alcance alcance)
+    {
+        if (alcance.EsTodo) return this;
+        bool Ve(string e) => (alcance.OreId is null || OreDe(e) == alcance.OreId) && (alcance.EscuelaId is null || IdEscuela(e) == alcance.EscuelaId);
+        var v = (ConsultasEjemplo)MemberwiseClone();
+        v._alc = alcance;
+        v.Escuelas = Escuelas.Where(Ve).ToArray();
+        v.EscuelasActivas = EscuelasActivas.Where(Ve).ToArray();
+        v.Maestros = Maestros.Where(m => Ve(m.Escuela)).ToArray();
+        var visibles = v.Escuelas.ToHashSet();
+        v._conexiones = _conexiones.Where(c => visibles.Contains(c.Escuela)).ToList();
+        v._pruebas = _pruebas.Where(x => visibles.Contains(x.Escuela)).ToList();
+        return v;
+    }
 
     record Conexion(DateOnly Dia, string Escuela, string Maestro, int Cantidad);
     record Prueba(DateOnly Dia, string Area, string Escuela, int Asignadas, int Completadas);
 
-    readonly List<Conexion> _conexiones = [];
-    readonly List<Prueba> _pruebas = [];
+    List<Conexion> _conexiones = [];
+    List<Prueba> _pruebas = [];
 
     public string Fuente => "datos_de_ejemplo";
     public string ColumnaFechaPruebas => "día de la prueba (dato de ejemplo)";
@@ -77,14 +104,16 @@ public class ConsultasEjemplo : IConsultasUso
     {
         var filas = Escuelas.Select(e =>   // incluye escuelas con cero conexiones
             new FilaEscuela(e, _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Sum(c => c.Cantidad),
-                            _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => c.Maestro).Distinct().Count()));
+                            _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => c.Maestro).Distinct().Count(),
+                            UltimaConexion: _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => (DateOnly?)c.Dia).Max()));
         return Ordenar(filas, f => f.Conexiones, f => f.Nombre, desc).Take(limite).ToList();
     }
 
     public List<FilaMaestro> ConexionesPorMaestro(DateOnly desde, DateOnly hasta, bool desc, int limite, string? escuela)
     {
         var filas = Maestros.Where(m => escuela is null || m.Escuela == escuela).Select(m =>
-            new FilaMaestro(m.Maestro, m.Escuela, _conexiones.Where(c => c.Maestro == m.Maestro && c.Dia >= desde && c.Dia <= hasta).Sum(c => c.Cantidad)));
+            new FilaMaestro(m.Maestro, m.Escuela, _conexiones.Where(c => c.Maestro == m.Maestro && c.Dia >= desde && c.Dia <= hasta).Sum(c => c.Cantidad),
+                            UltimaConexion: _conexiones.Where(c => c.Maestro == m.Maestro && c.Dia >= desde && c.Dia <= hasta).Select(c => (DateOnly?)c.Dia).Max()));
         return Ordenar(filas, f => f.Conexiones, f => f.Nombre, desc).Take(limite).ToList();
     }
 
@@ -118,4 +147,81 @@ public class ConsultasEjemplo : IConsultasUso
             acc[Clave(c.Dia, granularidad)] += c.Cantidad;
         return acc.Select(kv => new FilaTendencia(kv.Key, kv.Value)).ToList();
     }
+
+    // ── Conexiones acumuladas y uso de docentes (datos inventados) ─────────────────────
+    public List<(DateOnly Dia, int Conexiones, int UsuariosNuevos)> ConexionesYNuevosPorDia(DateOnly desde, DateOnly hasta, string? escuela)
+    {
+        var sel = _conexiones.Where(c => c.Dia >= desde && c.Dia <= hasta && (escuela is null || c.Escuela == escuela)).ToList();
+        var primera = sel.GroupBy(c => c.Maestro).ToDictionary(g => g.Key, g => g.Min(c => c.Dia));
+        return sel.GroupBy(c => c.Dia).OrderBy(g => g.Key)
+            .Select(g => (g.Key, g.Sum(c => c.Cantidad), g.Select(c => c.Maestro).Distinct().Count(m => primera[m] == g.Key))).ToList();
+    }
+
+    public ConteoActivos UsuariosActivos() => new(Maestros.Length * 4, _conexiones.Select(c => c.Maestro).Distinct().Count());
+    public string? NotaActivos => "Datos de ejemplo: usuarios_activos y usuarios_conectados_alguna_vez son inventados.";
+
+    public (List<FilaUsoDocentes> Filas, FilaUsoDocentes Total) UsoDocentes(DateOnly? fecha, DateOnly? periodoDesde, string? escuela)
+    {
+        // Dos calendarios inventados: escuelas A–F (ago–oct / oct–ene) y G–J (sep–oct / oct–ene).
+        (DateOnly D, DateOnly H)[] Cal(int i) => i < 6
+            ? [(new(2026, 8, 28), new(2026, 10, 23)), (new(2026, 10, 24), new(2027, 1, 8))]
+            : [(new(2026, 9, 12), new(2026, 10, 15)), (new(2026, 10, 16), new(2027, 1, 21))];
+        var filas = new List<FilaUsoDocentes>();
+        for (var i = 0; i < EscuelasActivas.Length; i++)
+        {
+            var esc = EscuelasActivas[i];
+            if (escuela is not null && esc != escuela) continue;
+            foreach (var (d, h) in Cal(i))
+            {
+                if (periodoDesde is { } pd ? d != pd : !(fecha is { } f && f >= d && f <= h)) continue;
+                int m = Maestros.Count(x => x.Escuela == esc), k = (i + d.Month) % 3;
+                filas.Add(new(esc, d.ToString("yyyy-MM-dd"), h.ToString("yyyy-MM-dd"), m, Math.Min(m, k + 1), k % 2, 0, Math.Min(m, k), Math.Min(m, 2)));
+            }
+        }
+        filas = filas.OrderByDescending(f => f.Maestros).ThenBy(f => f.Escuela, StringComparer.Ordinal).ToList();
+        var total = new FilaUsoDocentes("TOTAL", "", "", filas.Sum(f => f.Maestros), filas.Sum(f => f.ConConexiones), filas.Sum(f => f.ConPlanes),
+            filas.Sum(f => f.PlanesConDatos), filas.Sum(f => f.ConGrupos), filas.Sum(f => f.ConAsignaciones));
+        return (filas, total);
+    }
+
+    public string? NotaDocentes => "Datos de ejemplo: maestros y actividades inventados.";
+
+    public List<FilaPatron> PatronConexiones(DateOnly desde, DateOnly hasta, string agrupar, string? escuela)
+    {
+        var sel = _conexiones.Where(c => c.Dia >= desde && c.Dia <= hasta && (escuela is null || c.Escuela == escuela)).ToList();
+        if (agrupar == "rol") return sel.Count == 0 ? [] : [new("teacher", sel.Sum(c => c.Cantidad), sel.Select(c => c.Maestro).Distinct().Count())];
+        string[] dias = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+        return dias.Select((n, i) =>
+        {
+            var g = sel.Where(c => ((int)c.Dia.DayOfWeek + 6) % 7 == i).ToList();
+            return new FilaPatron(n, g.Sum(c => c.Cantidad), g.Select(c => c.Maestro).Distinct().Count());
+        }).ToList();
+    }
+
+    public (List<FilaSuscripcion> Filas, ConteoSuscripcion Total) UsuariosPorSuscripcion(string agrupar, string? escuela)
+    {
+        // Datos inventados: por escuela activa, 4 usuarios por maestro (3 activos, 1 inactivo) y 1 sin suscripción.
+        var porEscuela = EscuelasActivas.Where(e => escuela is null || e == escuela).Select(e =>
+        {
+            int m = Maestros.Count(x => x.Escuela == e);
+            return new FilaSuscripcion(e, m * 3, m, 0, m, m * 5);
+        }).ToList();
+        var filas = agrupar == "escuela" ? porEscuela
+            : agrupar == "rol" ? [new FilaSuscripcion("teacher", porEscuela.Sum(f => f.Activas), porEscuela.Sum(f => f.Inactivas), 0, porEscuela.Sum(f => f.SinSuscripcion), porEscuela.Sum(f => f.TotalUsuarios))]
+            : [new FilaSuscripcion("total", porEscuela.Sum(f => f.Activas), porEscuela.Sum(f => f.Inactivas), 0, porEscuela.Sum(f => f.SinSuscripcion), porEscuela.Sum(f => f.TotalUsuarios))];
+        var t = new ConteoSuscripcion(porEscuela.Sum(f => f.Activas), porEscuela.Sum(f => f.Inactivas), 0, porEscuela.Sum(f => f.SinSuscripcion), 0,
+            new Dictionary<string, int> { ["active"] = porEscuela.Sum(f => f.Activas), ["inactive"] = porEscuela.Sum(f => f.Inactivas) });
+        return (filas, t);
+    }
+
+    public string? NotaSuscripcion => "Datos de ejemplo: usuarios por estado de suscripción inventados.";
+
+    public string? NotaParticipacion => "Datos de ejemplo: usuarios activos inventados (4 por maestro).";
+    public List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta) =>
+        EscuelasActivas.Select(e =>
+        {
+            int activos = Maestros.Count(m => m.Escuela == e) * 4;
+            int con = _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => c.Maestro).Distinct().Count();
+            return new FilaParticipacion(e, activos, con, activos == 0 ? null : Math.Round(100.0 * con / activos, 1));
+        }).ToList();
 }

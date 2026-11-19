@@ -7,10 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="DataAnalysisAPI.Domain\Models\" />
     <Folder Include="DataAnalysisAPI.Infrastructure\Repositories\" />
-    <Folder Include="DataAnalysisAPI.Services\" />
   </ItemGroup>
 
   <ItemGroup>

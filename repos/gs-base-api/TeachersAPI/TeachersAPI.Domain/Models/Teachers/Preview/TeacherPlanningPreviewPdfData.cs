@@ -208,7 +208,50 @@ namespace TeachersAPI.Domain.Models.Teachers.Preview
         {
             AddDataToDay("DataCustomStrategies", day, customStrategyData);
         }
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="day"></param>
+        /// <param name="differentiationStrategyData"></param>
+        public void AddDataDifferentiationStrategiesToDay(DateTime day, DataInfo differentiationStrategyData)
+        {
+            AddDataToDay("DataDifferentiationStrategies", day, differentiationStrategyData);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="day"></param>
+        /// <param name="observationsData"></param>
+        public void AddDataObservationsToDay(DateTime day, DataInfo observationsData)
+        {
+            AddDataToDay("DataObservations", day, observationsData);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="day"></param>
+        /// <param name="commonExperiencesData"></param>
+        public void AddDataCommonExperiencesToDay(DateTime day, DataInfo commonExperiencesData)
+        {
+            AddDataToDay("DataCommonExperiences", day, commonExperiencesData);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="day"></param>
+        /// <param name="activeResponsesData"></param>
+        public void AddDataActiveResponsesToDay(DateTime day, DataInfo activeResponsesData)
+        {
+            AddDataToDay("DataActiveResponses", day, activeResponsesData);
+        }
+
+
+
+
         private void AddDataToDay(string dataName, DateTime day, DataInfo data)
         {
             var weekDay = Days.FirstOrDefault(x => x.Date.Date == day.Date);

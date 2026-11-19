@@ -17,12 +17,10 @@ namespace UsersAPI.Controllers
     [Route("usersapi/roles")]
     public class RolesController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        public RolesController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
+        /// <summary>
+        /// To read the roles.
+        /// </summary>
+        /// <returns>Returns a list of roles.</returns>
         [HttpGet]
         public async Task<IActionResult> ReadRoles()
         {
@@ -34,8 +32,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var rolesManager = new UsersAPI.Services.Roles.RolesManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 var result = rolesManager.GetRolesByRoleTypeModel(new List<UsersAPI.Domain.Models.Roles.RoleTypeModel>());
                 return Ok(result);
@@ -62,8 +60,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var rolesManager = new UsersAPI.Services.Roles.RolesManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 var result = rolesManager.GetRoleDetails(new UsersAPI.Domain.Models.Roles.Request.RoleRequestModel { Id = id });
                 return Ok(result);
@@ -85,8 +83,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var rolesManager = new UsersAPI.Services.Roles.RolesManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 var roleResponseModel = rolesManager.CreateRole(roleRequest, sessionResponseModel.UserId);
                 if (!roleResponseModel.Valid)
@@ -112,8 +110,8 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var rolesManager = new UsersAPI.Services.Roles.RolesManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 var roleResponseModel = rolesManager.UpdateRole(roleRequest, sessionResponseModel.UserId);
                 if (!roleResponseModel.Valid)

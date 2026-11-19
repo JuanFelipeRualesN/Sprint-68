@@ -12,13 +12,6 @@ namespace SchoolsAPI.Controllers
     [Route("schoolsapi")]
     public class SchoolsController : ControllerBase
     {
-        private readonly IConfiguration _config;
-
-        public SchoolsController(IConfiguration config)
-        {
-            _config = config;
-        }
-
         /// <summary>
         /// Returns the entities list by filters. Example of entities: schools, programs, corporations, etc.
         /// </summary>
@@ -92,7 +85,7 @@ namespace SchoolsAPI.Controllers
             try
             {
                 var reader = new SchoolsReader(
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var result = reader.GetEntityModels(schoolEntityRequest.EntityModifier?.Entities, true);
@@ -130,15 +123,15 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var reader = new SchoolsReader(
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var result = reader.GetEntityWithDetails(
                     new SchoolsAPI.Domain.Models.Schools.EntityModel { Id = entityId },
-                    _config["AppSettings:sch_program_type_id"],
-                    _config["AppSettings:sch_institution_type_id"],
-                    _config["AppSettings:sch_company_type_id"],
-                    _config["AppSettings:sch_school_type_id"]);
+                    AppConfiguration.Configuration["AppSettings:sch_program_type_id"],
+                    AppConfiguration.Configuration["AppSettings:sch_institution_type_id"],
+                    AppConfiguration.Configuration["AppSettings:sch_company_type_id"],
+                    AppConfiguration.Configuration["AppSettings:sch_school_type_id"]);
 
                 return Ok(result);
             }
@@ -175,8 +168,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var response = modifier.ModifyEntity(entityRequest.EntityModifier, responseSession.UserId);
@@ -218,8 +211,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var resp = modifier.ModifyAddress(address, responseSession.UserId);
@@ -264,8 +257,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var resp = modifier.DeleteAddress(address);
@@ -310,8 +303,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var resp = modifier.ModifyPhone(phone, responseSession.UserId);
@@ -356,8 +349,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var resp = modifier.DeletePhone(phone);
@@ -404,8 +397,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var resp = modifier.AddRelation(relation, responseSession.UserId);
@@ -452,8 +445,8 @@ namespace SchoolsAPI.Controllers
                 }
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var resp = modifier.DeleteRelation(relation);
@@ -472,7 +465,7 @@ namespace SchoolsAPI.Controllers
         /// <summary>
         /// Returns generic details for a list of entities. Validates an API key (not user token).
         /// </summary>
-        [HttpPost("generic-details/by-list")]
+        [HttpPost("schools/generic-details/by-list")]
         public async Task<IActionResult> GetSchoolGenericDetails(List<string> schoolIds)
         {
             var apiKey = RequestHandler.GetAPIKey(HttpContext);
@@ -495,7 +488,7 @@ namespace SchoolsAPI.Controllers
             }
 
             var reader = new SchoolsReader(
-                _config.GetConnectionString("SchoolDBConnectionReader"),
+                AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                 langCode);
 
             var entitySchools = reader.GetEntityModels(entitySchoolsToFind, true) ?? new List<SchoolsAPI.Domain.Models.Schools.EntityModel>();

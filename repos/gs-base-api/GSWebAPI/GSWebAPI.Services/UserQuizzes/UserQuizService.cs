@@ -12,6 +12,8 @@ using GSWebAPI.GSWebAPI.Services.GameUserRewards;
 using GSWebAPI.GSWebAPI.Domain.Models.General.Responses;
 using GSWebAPI.GSWebAPI.Infrastructure.Repositories.LessonsOldVeersions;
 using GSWebAPI.GSWebAPI.Domain.Models.LessonsOldVersions;
+using GSWebAPI.GSWebAPI.Domain.Models.General.Responses.APIs.Athenas;
+using GSWebAPI.GSWebAPI.Services.LessonProgress;
 
 namespace GSWebAPI.GSWebAPI.Services.UserQuizzes
 {
@@ -429,9 +431,44 @@ namespace GSWebAPI.GSWebAPI.Services.UserQuizzes
                     _gsWebDbConnectionReader,
                     langCode);
 
+                // Mark the exam section as completed once the student has results for every exam in the lesson.
+                // Practice section is completed via a manual button on the front.
+                if (userQuizResultToInsert.IsExam != ((int)QuizType.Practice).ToString())
+                {
+                    try
+                    {
+                        // All exam quizzes the lesson has.
+                        LessonQuizzesResponseModel lessonQuizzes =
+                            AthenasDetailsHandler.GetLessonQuizzes(userQuizResultToInsert.LessonId);
+
+                        var requiredQuizIds = lessonQuizzes.Quizzes
+                            .Where(q => q.IsExam != ((int)QuizType.Practice).ToString())
+                            .Select(q => q.Id)
+                            .ToList();
+
+                        // Exam quiz ids the student already has results for in this lesson.
+                        var completedQuizIds = GetUserQuizResults(new UserQuizResultModel()
+                        {
+                            UserId = userId,
+                            LessonId = userQuizResultToInsert.LessonId,
+                        }).Select(r => r.QuizId).ToList();
+
+                        LessonProgressManager lessonProgressManager = new LessonProgressManager(
+                            _connectionString,
+                            _connectionStringRead);
+                        lessonProgressManager.MarkQuizSectionIfComplete(
+                            userId, userQuizResultToInsert.LessonId,
+                            "exam", requiredQuizIds, completedQuizIds);
+                    }
+                    catch (Exception)
+                    {
+                        // The quiz result was stored, losing the progress mark must not break the submit
+                    }
+                }
+
                 generalResponseModel.UserRewardModel = new GSWebAPI.Domain.Models.GameUserReward.UserRewardModel(); // Initialize if needed
                 double totalPointsStudent = double.Parse(responseUserQuiz.TotalPercent);
-                generalResponseModel.UserRewardModel = gameUserRewardsManager.GenerateReward(responseUserQuiz, totalPointsStudent, responseUserQuiz.TotalPercent); 
+                generalResponseModel.UserRewardModel = gameUserRewardsManager.GenerateReward(responseUserQuiz, totalPointsStudent, userQuizResultToInsert.IsExam); 
 
                 // --- Integrate with Teachers API for Non-Homeschooling Subscriptions ---
                 if (subscriptionType != "H")
@@ -704,15 +741,15 @@ namespace GSWebAPI.GSWebAPI.Services.UserQuizzes
         /// <summary>
         /// Returns the user quiz details plus the responses.
         /// </summary>
-        /// <param name="userQuizId">The user quiz id to call.</param>
+        /// <param name="userQuizResultId">The user quiz id to call.</param>
         /// <param name="webServiceURL">The url of the webservice. (To retrieve the files).</param>
         /// <param name="studentId">Optional: The student's id to get the student's responses.</param>
         /// <returns>Returns the list of user quiz results responses.</returns>
-        public GSWebAPI.Domain.Models.UserQuiz.UserQuizResponseModel GetUserQuizResponse(string userQuizId, string webServiceURL, string studentId = null)
+        public GSWebAPI.Domain.Models.UserQuiz.UserQuizResponseModel GetUserQuizResponse(string userQuizResultId, string webServiceURL, string studentId = null)
         {
             UserQuizResultModel userQuizResultModelToFind = new UserQuizResultModel()
             {
-                Id = userQuizId,
+                Id = userQuizResultId,
                 UserId = studentId,
             };
 
@@ -741,10 +778,10 @@ namespace GSWebAPI.GSWebAPI.Services.UserQuizzes
                 userQuizFileModel.FileUrl = webServiceURL + userQuizFileModel.FileUrl;
             }
 
-            UserResponseDAO userResponseDAO = new UserResponseDAO();
+            var userResponseDAO = new UserResponseDAO();
 
             // Now connect everything
-            UserQuizResponseModel userQuizResponseModel = new UserQuizResponseModel
+            var userQuizResponseModel = new UserQuizResponseModel
             {
                 UserQuizResult = userQuizResultModelList[0],
                 UserResponsesList = userResponseDAO.Read(_connectionStringRead, userResponseModelsToFindList),

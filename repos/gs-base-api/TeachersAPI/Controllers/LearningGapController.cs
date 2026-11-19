@@ -406,7 +406,7 @@ namespace TeachersAPI.Controllers
             }
 
             // Create an instance of PlanningModifierManager
-            PlanningModifierManager planningModifierManager = new PlanningModifierManager(
+            var planningModifierManager = new PlanningModifierManager(
                     ConnectionString,
                     ConnectionStringReader,
                     responseSession.LangCode);

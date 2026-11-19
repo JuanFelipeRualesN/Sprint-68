@@ -5,21 +5,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using UsersAPI.CustomClasses.CacheHandler;
 using UsersAPI.CustomClasses;
-using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models.Filters;
-using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models;
+using UsersAPI.CustomClasses.CacheHandler;
+using UsersAPI.UsersAPI.Domain.Models.Generals;
 using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler;
+using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models;
+using UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler.Models.Filters;
 using UsersAPI.UsersAPI.Domain.Models.Generals.Requests;
-using UsersAPI.UsersAPI.Domain.Models.Generals.Responses.APIs;
 using UsersAPI.UsersAPI.Domain.Models.Generals.Responses;
+using UsersAPI.UsersAPI.Domain.Models.Generals.Responses.APIs;
+using UsersAPI.UsersAPI.Domain.Models.PersonalDetails; // Add this for ValidationResponseModel
+using UsersAPI.UsersAPI.Domain.Models.Roles;
 using UsersAPI.UsersAPI.Services.Accounts;
 using UsersAPI.UsersAPI.Services.FeignAPIs;
-using UsersAPI.UsersAPI.Services.PersonalDetails;
 using UsersAPI.UsersAPI.Services.Generals;
-using UsersAPI.UsersAPI.Domain.Models.Roles;
+using UsersAPI.UsersAPI.Services.PersonalDetails;
 using UsersAPI.UsersAPI.Services.Roles;
-using UsersAPI.UsersAPI.Domain.Models.Generals; // Add this for ValidationResponseModel
 
 namespace UsersAPI.Controllers
 {
@@ -30,13 +31,12 @@ namespace UsersAPI.Controllers
     [Route("usersapi/users")]
     public class UsersController : ControllerBase
     {
-        private readonly IConfiguration _configuration = AppConfiguration.Configuration;
-
         /// <summary>
         /// To return a generic message when user upload bulk controller fails. 
         /// </summary>
+        /// <param name="error">The error returned if any.</param>
         /// <returns>Returns a generic message.</returns>
-        private GeneralResponseModel ReturnGenericMessageBulk(string languageCode = "en")
+        private GeneralResponseModel ReturnGenericMessageBulk(string error, string languageCode = "en")
         {
             var generalResponseModel = new GeneralResponseModel()
             {
@@ -46,30 +46,47 @@ namespace UsersAPI.Controllers
             // Message no DB
             if (languageCode == "es")
             {
-                generalResponseModel.Messages.Add(_configuration["message_error_no_db_es"]);
+                generalResponseModel.Messages.Add(AppConfiguration.Configuration["AppSettings:message_error_no_db_es"]);
             }
             else
             {
-                generalResponseModel.Messages.Add(_configuration["message_error_no_db_en"]);
+                generalResponseModel.Messages.Add(AppConfiguration.Configuration["AppSettings:message_error_no_db_en"]);
+            }
+
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                generalResponseModel.Messages.Add(error);
             }
 
             return generalResponseModel;
         }
 
         /// <summary>
-        /// Validates the session for the given permission and optional parameters like IP address, token, and language code.
+        /// To retrieve the user full names.
         /// </summary>
-        /// <param name="permission">The required permission for the session.</param>
-        /// <param name="ipAddress">Optional. The IP address of the user.</param>
-        /// <returns>A ValidationResponseModel indicating the result of the validation.</returns>
-        private ValidationResponseModel ValidateSession(string permission, string ipAddress = null)
+        /// <param name="usersIds">The users ids to call.</param>
+        /// <returns>Returns the users' roles.</returns>
+        [HttpPost("fullnames")]
+        public async Task<IActionResult> GetUserFullnameModel([FromBody] List<string> usersIds)
         {
-            var request = HttpContext.Request;
-            string token = request.Headers["Token"].FirstOrDefault() ?? request.Query["Token"].FirstOrDefault();
-            string langCode = request.Headers["LangCode"].FirstOrDefault() ?? request.Query["LangCode"].FirstOrDefault() ?? "en";
-            ipAddress ??= HttpContext.Connection.RemoteIpAddress?.ToString();
-            // You may need to refactor ValidateGenericCall to accept these parameters, or mimic its logic here
-            return CustomClasses.ValidateGenericCall.Validate(token, permission, ipAddress, langCode, null);
+            try
+            {
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "ProfileConnections");
+                if (!sessionResponseModel.SessionValid)
+                {
+                    return Unauthorized();
+                }
+                var userPersonalDetailsManager = new UserPersonalDetailsManager(
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
+                    sessionResponseModel.LangCode);
+                var result = userPersonalDetailsManager.GetUsersFullName(usersIds);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.ToString());
+            }
         }
 
         /// <summary>
@@ -82,15 +99,15 @@ namespace UsersAPI.Controllers
         {
             try
             {
-                var sessionResponseModel = ValidateSession("UsersAdvanceRead");
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UsersAdvanceRead");
                 if (!sessionResponseModel.SessionValid)
                 {
                     return Unauthorized();
                 }
                 List<UserRoleModel> userRolesToCall = usersIds.Select(userId => new UserRoleModel() { UserId = userId }).ToList();
                 var userRolesManager = new UserRolesManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 var result = userRolesManager.GetUserRolesByRolesList(userRolesToCall);
                 return Ok(result);
@@ -114,7 +131,7 @@ namespace UsersAPI.Controllers
         {
             try
             {
-                var sessionResponseModel = ValidateSession("UsersAdvanceRead");
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UsersAdvanceRead");
                 if (!sessionResponseModel.SessionValid)
                 {
                     return Unauthorized();
@@ -177,6 +194,92 @@ namespace UsersAPI.Controllers
         }
 
         /// <summary>
+        /// To read the user for admins search. This is meant to be used just for the Admin. Do not allow other roles to enter here.
+        /// </summary>
+        /// <param name="generalRequestModel">The request with parameters.</param>
+        /// <returns>Returns the list of users.</returns>
+        [HttpPost("for-admin")]
+        public async Task<IActionResult> UserAdvanceReadAdmin([FromBody] UserRequestModel generalRequestModel)
+        {
+            try
+            {
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UsersAdvanceRead");
+
+                // If the transaction is not valid, stop the operation
+                if (!sessionResponseModel.SessionValid)
+                {
+                    return Unauthorized();
+                }
+
+                if (!string.IsNullOrWhiteSpace(sessionResponseModel.OreId))
+                {
+                    // Check if school ids is not null
+                    if (generalRequestModel.SchoolIds == null || generalRequestModel.SchoolIds.Count == 0)
+                    {
+                        generalRequestModel.SchoolIds = SchoolDetailsHandler.GetORESchoolIds(sessionResponseModel.OreId);
+                    }
+                    else
+                    {
+                        List<string> schoolsIds = SchoolDetailsHandler.GetORESchoolIds(sessionResponseModel.OreId);
+                        List<string> filteredSchoolIds = new List<string>();
+                        foreach (string schoolId in generalRequestModel.SchoolIds)
+                        {
+                            if (schoolsIds.Contains(schoolId))
+                            {
+                                filteredSchoolIds.Add(schoolId);
+                            }
+                        }
+                        generalRequestModel.SchoolIds = filteredSchoolIds;
+                    }
+
+                    if (generalRequestModel.SchoolIds == null || generalRequestModel.SchoolIds.Count == 0)
+                    {
+                        return Ok(new UserAdvanceResponseModel()
+                        {
+                            PageTotals = 0,
+                            UserInfo = new List<UserAdvance>(),
+                        });
+                    }
+                }
+
+                return Ok(Users.SearchUsersForAdmin(
+                    new AccountAdvance()
+                    {
+                        UserIds = generalRequestModel != null && generalRequestModel.UserIds != null && generalRequestModel.UserIds.Count > 0 ? generalRequestModel.UserIds : null,
+                        CallOnlyProfilesThatCanBeManaged = !sessionResponseModel.IsDirector && !sessionResponseModel.IsStaff,
+                        CreatedFrom = generalRequestModel?.CreatedFrom,
+                        CreatedTo = generalRequestModel?.CreatedTo,
+                        IsDirector = sessionResponseModel.IsDirector,
+                        IsStaff = sessionResponseModel.IsStaff,
+                        SameSchoolRequired = sessionResponseModel.RoleId != "1" && !sessionResponseModel.IsStaff && sessionResponseModel.RoleId != "7",
+                        IsClientAccount = sessionResponseModel.RoleId == "1",
+                        SchoolIds = generalRequestModel?.SchoolIds,
+                        LastName = generalRequestModel?.LastName,
+                        Email = generalRequestModel?.Email,
+                        FirstName = generalRequestModel?.FirstName,
+                        PhoneNumber = generalRequestModel?.PhoneNumber,
+                        RoleId = generalRequestModel?.RoleId,
+                        UserAlphaId = sessionResponseModel.UserId,
+                        Username = generalRequestModel?.Username,
+                        LastSessionFrom = generalRequestModel?.LastSessionFrom,
+                        LastSessionTo = generalRequestModel?.LastSessionTo,
+                        UserSchoolRecord = generalRequestModel?.UserSchoolRecord,
+                    },
+                    new Pagination()
+                    {
+                        ApplyPagination = true,
+                        FromPage = generalRequestModel?.PageFrom ?? 0,
+                        LimitRows = generalRequestModel?.Limiter ?? 50,
+                    }));
+            }
+            catch (Exception)
+            {
+                // Return error about invalid json
+                return BadRequest();
+            }
+        }
+
+        /// <summary>
         /// To modify the user by the employee.
         /// The properties AddressChange, UsernameChange, PasswordChange, EmailChange, NameChange,
         /// PhoneChange, AddressChange, RoleChange, OreChange should be true if any of those details are changed. 
@@ -194,7 +297,7 @@ namespace UsersAPI.Controllers
                 {
                     TransactionValid = true,
                 };
-                var sessionResponseModel = ValidateSession("UserInfoUpdate");
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "UserInfoUpdate");
                 if (!sessionResponseModel.SessionValid)
                 {
                     return Unauthorized();
@@ -228,8 +331,8 @@ namespace UsersAPI.Controllers
                     generalResponseModel.Messages.AddRange(userUpdateAddressModel.Messages);
                 }
                 var userModifyManager = new UserModifyManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 if (requestModel.EmailChange)
                 {
@@ -244,8 +347,8 @@ namespace UsersAPI.Controllers
                     generalResponseModel.Messages.AddRange(responseEmailModel.Details);
                 }
                 var userPersonalDetailsManager = new UserPersonalDetailsManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
                 if (requestModel.NameChange)
                 {
@@ -264,8 +367,8 @@ namespace UsersAPI.Controllers
                 if (requestModel.PasswordChange)
                 {
                     var passwordAccountManager = new PasswordAccountManager(
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), sessionResponseModel.LangCode);
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], sessionResponseModel.LangCode);
                     var responsePassword = passwordAccountManager.UpdatePasswordWithoutEntryOld(requestModel.UserId, requestModel.Password, requestModel.PasswordRetype, sessionResponseModel.UserId);
                     if (generalResponseModel.TransactionValid)
                     {
@@ -289,40 +392,40 @@ namespace UsersAPI.Controllers
                 }
                 if (requestModel.RoleChange)
                 {
-                    if (sessionResponseModel.IsStaff && sessionResponseModel.RoleId == _configuration["ur_role_admin_ore"])
+                    if (sessionResponseModel.IsStaff && sessionResponseModel.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                     {
-                        string[] nonAllowedRolesForORE = _configuration["ur_roles_not_allowed_to_register_for_ore_admin"].Split(',');
+                        string[] nonAllowedRolesForORE = AppConfiguration.Configuration["AppSettings:ur_roles_not_allowed_to_register_for_ore_admin"].Split(',');
                         if (nonAllowedRolesForORE.Contains(requestModel.RoleId))
                         {
                             generalResponseModel.Messages = new List<string>()
                             {
-                                new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), GetLanguage()).GetMessageDetails(_configuration["ur_roles_this_role_cannot_be_registered"])
+                                new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], GetLanguage()).GetMessageDetails(AppConfiguration.Configuration["AppSettings:ur_roles_this_role_cannot_be_registered"])
                             };
                             return BadRequest(generalResponseModel);
                         }
                     }
-                    if (requestModel.RoleId != _configuration["ur_role_admin_ore"])
+                    if (requestModel.RoleId != AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                     {
                         var userPreviousRole = Users.SearchUsersRolesByUserIds(new List<string>() { requestModel.UserId });
-                        if (userPreviousRole[0].RoleId == _configuration["ur_role_admin_ore"])
+                        if (userPreviousRole[0].RoleId == AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                         {
                             Users.DeleteAmdminOreRelation(requestModel.UserId);
                         }
                     }
-                    if (requestModel.RoleId == _configuration["ur_role_admin_ore"])
+                    if (requestModel.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                     {
                         Users.RelateUserAdminToOreId(requestModel.UserId, requestModel.OreId, sessionResponseModel.UserId);
                         generalResponseModel.Messages = new List<string>()
                         {
-                            new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), GetLanguage()).GetMessageDetails(_configuration["upd_message_code_ore_updated"])
+                            new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], GetLanguage()).GetMessageDetails(AppConfiguration.Configuration["AppSettings:upd_message_code_ore_updated"])
                         };
                     }
                     var userRolesManager = new UserRolesManager(
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                         sessionResponseModel.LangCode);
                     var userRoleResponseModel = userRolesManager.UpdateUserRole(requestModel.UserId, requestModel.RoleId, sessionResponseModel.UserId);
-                    if (_configuration["ur_role_client"] == requestModel.RoleId)
+                    if (AppConfiguration.Configuration["AppSettings:ur_role_client"] == requestModel.RoleId)
                     {
                         SubscriptionDetailsHandler.CreateCustomer(sessionResponseModel.IpAddress, sessionResponseModel.LangCode, requestModel.Email, requestModel.UserId, true);
                     }
@@ -352,8 +455,8 @@ namespace UsersAPI.Controllers
                     try
                     {
                         new SessionTokenManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader")).DeleteAllSessionsOfTheUser(requestModel.UserId);
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"]).DeleteAllSessionsOfTheUser(requestModel.UserId);
                     }
                     catch (Exception)
                     {
@@ -362,11 +465,11 @@ namespace UsersAPI.Controllers
                 }
                 if (requestModel.OreChange)
                 {
-                    if (requestModel.RoleId != _configuration["ur_role_admin_ore"])
+                    if (requestModel.RoleId != AppConfiguration.Configuration["AppSettings:ur_role_admin_ore"])
                     {
                         generalResponseModel.Messages = new List<string>()
                         {
-                            new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), GetLanguage()).GetMessageDetails(_configuration["upd_message_code_ore_only_for_admin_ore"])
+                            new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], GetLanguage()).GetMessageDetails(AppConfiguration.Configuration["AppSettings:upd_message_code_ore_only_for_admin_ore"])
                         };
                         return BadRequest(generalResponseModel);
                     }
@@ -375,7 +478,7 @@ namespace UsersAPI.Controllers
                         Users.RelateUserAdminToOreId(requestModel.UserId, requestModel.OreId, sessionResponseModel.UserId);
                         generalResponseModel.Messages = new List<string>()
                         {
-                            new MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), GetLanguage()).GetMessageDetails(_configuration["upd_message_code_ore_updated"])
+                            new MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], GetLanguage()).GetMessageDetails(AppConfiguration.Configuration["AppSettings:upd_message_code_ore_updated"])
                         };
                     }
                 }
@@ -409,16 +512,16 @@ namespace UsersAPI.Controllers
         {
             try
             {
-                var sessionResponseModel = ValidateSession("GameQuizCompetitionSearchRival", permissionSessionRequest.IpAddress);
+                var sessionResponseModel = CustomClasses.ValidateGenericCall.ValidateFullCall(HttpContext, "GameQuizCompetitionSearchRival");
                 if (!sessionResponseModel.SessionValid)
                 {
                     return Unauthorized();
                 }
                 var userGenderModel = new UserPersonalDetailsManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode).GetUserGender(permissionSessionRequest.UserId);
-                var userAccountModelList = new UserDetailsManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), sessionResponseModel.LangCode)
+                var userAccountModelList = new UserDetailsManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], sessionResponseModel.LangCode)
                     .GetUserAccountDetails(new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>
                     {
                         new UsersAPI.Domain.Models.Accounts.UserAccountModel { Id = permissionSessionRequest.UserId }
@@ -449,6 +552,7 @@ namespace UsersAPI.Controllers
         [HttpPost("bulk/upload/user-schools")]
         public async Task<IActionResult> UploadUsersBulk()
         {
+            string lineProcess = "";
             try
             {
                 var httpRequest = HttpContext.Request;
@@ -458,31 +562,31 @@ namespace UsersAPI.Controllers
                 string subscriptionId = httpRequest.Form["SubscriptionId"].ToString();
                 string ipAddress = IPAddressDetector.GetClientIpAddress(HttpContext);
 
-                UsersAPI.Services.Generals.MessageManager messagesGSWeb =
-                new UsersAPI.Services.Generals.MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
-
+                var messagesGSWeb =
+                new UsersAPI.Services.Generals.MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
+                lineProcess = "1";
 
                 // Check if role Id is allowed to be upload as bulk
-                if (!_configuration["ur_roles_can_upload_as_bulk"].Split(',').Contains(roleId))
+                if (!AppConfiguration.Configuration["AppSettings:ur_roles_can_upload_as_bulk"].Split(',').Contains(roleId))
                 {
-                    return BadRequest(ReturnGenericMessageBulk());
+                    return BadRequest(ReturnGenericMessageBulk("Role not found."));
                 }
 
-                UserBulkResponseModel generalResponseModel = new UserBulkResponseModel()
+                var generalResponseModel = new UserBulkResponseModel()
                 {
                     Messages = new List<string>(),
                     UserErrors = new List<UserErrorModel>(),
                 };
-                UsersAPI.Services.Generals.MessageManager messageManager = new UsersAPI.Services.Generals.MessageManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"), langCode);
+                var messageManager = new UsersAPI.Services.Generals.MessageManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"], langCode);
 
-                string invalidFormatError = messageManager.GetMessageDetails(_configuration["gus_message_code_wrong_format"]);
+                var invalidFormatError = messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_message_code_wrong_format"]);
 
                 // Now save the file. We do not read it directly because it can be a lot of users, and it's worst to mantain all that data in the Memory than the file.
                 if (httpRequest.HasFormContentType && httpRequest.Form.Files.Count > 0)
                 {
                     // Check if Logged User can do the operation
-                    UsersAPI.Domain.Models.Generals.ValidationResponseModel sessionResponseModel = new UsersAPI.Domain.Models.Generals.ValidationResponseModel();
-                    sessionResponseModel = ValidateSession("UploadProfilesBulk");
+                    lineProcess = "2";
+                    var sessionResponseModel = CustomClasses.ValidateGenericCall.Validate(token, "UploadProfilesBulk", ipAddress, langCode, HttpContext); 
                     generalResponseModel.Messages = new List<string>();
                     generalResponseModel.Messages = sessionResponseModel.Messages;
 
@@ -498,8 +602,9 @@ namespace UsersAPI.Controllers
                     string schoolId = new SchoolDetailsHandler().GetSchoolIdOfSubscription(subscriptionId);
                     if (string.IsNullOrWhiteSpace(schoolId))
                     {
-                        return BadRequest(ReturnGenericMessageBulk());
+                        return BadRequest(ReturnGenericMessageBulk("No school id was found for this subscription."));
                     }
+                    lineProcess = "3";
 
                     // Check if user can handle the school 
                     if (!string.IsNullOrWhiteSpace(sessionResponseModel.OreId))
@@ -511,26 +616,27 @@ namespace UsersAPI.Controllers
                     }
 
                     // Get the users of the school
-                    UsersAPI.Services.PersonalDetails.UserSchoolManager userSchoolManagerReader = new
+                    var userSchoolManagerReader = new
                         UsersAPI.Services.PersonalDetails.UserSchoolManager(
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                        null);
-                    List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel> userSchoolModelListResult =
+                    var userSchoolModelListResult =
                         userSchoolManagerReader.GetUserSchools(new List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel>(){
                             new UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel() { SchoolId = schoolId }});
+                    
 
-
-                    UsersAPI.Services.PersonalDetails.UserPersonalDetailsManager userPersonalDetailsManagerReader =
+                    var userPersonalDetailsManagerReader =
                     new UsersAPI.Services.PersonalDetails.UserPersonalDetailsManager(
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
-                    UsersAPI.Services.PersonalDetails.UserPersonalDetailsManager userPersonalDetailsManagerCUD =
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
+                    var userPersonalDetailsManagerCUD =
                    new UsersAPI.Services.PersonalDetails.UserPersonalDetailsManager(
-                       _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                       _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                       AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                       AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                     var docfiles = new List<string>();
+                    lineProcess = "4";
                     foreach (var postedFile in httpRequest.Form.Files)
                     {
                         // Check if the file is a CSV file
@@ -540,36 +646,36 @@ namespace UsersAPI.Controllers
                         if (fileFormat != "csv")
                         {
                             // Wrong format
-                            return BadRequest(ReturnGenericMessageBulk());
+                            return BadRequest(ReturnGenericMessageBulk("Not a CSV format."));
                         }
 
                         // Call the subscriptions details
-                        SubscriptionResponseModel subscriptionResponseModel = SubscriptionDetailsHandler.GetSubscriptionDetails(token, ipAddress, subscriptionId, langCode);
+                        var subscriptionResponseModel = SubscriptionDetailsHandler.GetSubscriptionDetails(token, ipAddress, subscriptionId, langCode);
 
                         // Get the user address
-                        UsersAPI.Domain.Models.PersonalDetails.UserAddressModel userAddressModel = RegisterUserManager.GetMainAccountMainAddress(subscriptionResponseModel.MainAccountUserId, langCode);
+                        var userAddressModel = RegisterUserManager.GetMainAccountMainAddress(subscriptionResponseModel.MainAccountUserId, langCode);
 
                         // Now call the profiles
-                        UsersAPI.Services.Accounts.UserDetailsManager userDetailsManager = new UserDetailsManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                        var userDetailsManager = new UserDetailsManager(
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                             langCode);
 
-                        /** KIU To check if exists **/
-                        List<UsersAPI.Domain.Models.Accounts.UserAccountModel> userAccountCheckIfUsernameExistsListToFind = new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>();
-                        List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailCheckIfEmailExistsListToFind = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel> userSchoolsCheckIfExistsRecordNoToFind = new List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel>();
-                        /** KU End of check if exists **/
+                        /** To check if exists **/
+                        var userAccountCheckIfUsernameExistsListToFind = new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>();
+                        var userEmailCheckIfEmailExistsListToFind = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
+                        var userSchoolsCheckIfExistsRecordNoToFind = new List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel>();
+                        /**  End of check if exists **/
 
                         // Save the file in the upload folder
-                        List<string> lines = new List<string>();
-                        using (StreamReader csvReader = new StreamReader(postedFile.OpenReadStream()))
+                        var lines = new List<string>();
+                        using (var csvReader = new StreamReader(postedFile.OpenReadStream()))
                         {
                             while (!csvReader.EndOfStream)
                             {
                                 lines.Add(csvReader.ReadLine());
                             }
                         }
-
+                        lineProcess = "5";
 
                         // var filePath = HttpContext.Current.Server.MapPath(AppConfiguration.Configuration["AppSettings:gus_path_bulk_files"] + string.Format(@"{0}.csv", DateTime.Now.Ticks));
                         // postedFile.SaveAs(filePath);
@@ -578,30 +684,30 @@ namespace UsersAPI.Controllers
 
                         generalResponseModel.UserErrors = new List<UserErrorModel>();
 
-                        List<UsersAPI.Domain.Models.Generals.Requests.RegisterRequestModel> registerRequestList = new List<RegisterRequestModel>();
-                        UsersAPI.Services.Accounts.CustomClasses.ValidationManager validationManager = new UsersAPI.Services.Accounts.CustomClasses.ValidationManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"), langCode);
+                        var registerRequestList = new List<RegisterRequestModel>();
+                        var validationManager = new UsersAPI.Services.Accounts.CustomClasses.ValidationManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"], langCode);
 
-                        List<string> usernamesInListToAvoidDuplicates = new List<string>();
-                        List<string> emailsInListToAvoidDuplicates = new List<string>();
-                        List<string> userIdentifierInRecordToAvoudDuplicates = new List<string>();
+                        var usernamesInListToAvoidDuplicates = new List<string>();
+                        var emailsInListToAvoidDuplicates = new List<string>();
+                        var userIdentifierInRecordToAvoudDuplicates = new List<string>();
 
                         // Check the lines length
-                        if (lines.Count > int.Parse(_configuration["max_bulk_users_processing_allowed"]))
+                        if (lines.Count > int.Parse(AppConfiguration.Configuration["AppSettings:max_bulk_users_processing_allowed"]))
                         {
                             // The line does not have the full requirements. 
                             generalResponseModel.Messages = new List<string>
                             {
-                                messagesGSWeb.GetMessageDetails(_configuration["message_file_upload_too_long"])
+                                messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:message_file_upload_too_long"])
                             };
                             return BadRequest(generalResponseModel);
                         }
-
-                        if(lines.Count <= 1)
+                        lineProcess = "6";
+                        if (lines.Count <= 1)
                         {
                             // Empty file
                             generalResponseModel.Messages = new List<string>
                             {
-                                messagesGSWeb.GetMessageDetails(_configuration["message_file_empty_file"])
+                                messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:message_file_empty_file"])
                             };
                             return BadRequest(generalResponseModel);
                         }
@@ -620,12 +726,12 @@ namespace UsersAPI.Controllers
                                     // The line does not have the full requirements. 
                                     generalResponseModel.Messages = new List<string>
                                     {
-                                        messagesGSWeb.GetMessageDetails(_configuration["message_not_valid_columns_users_upload_bulk"]) + " " + i.ToString()
+                                        messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:message_not_valid_columns_users_upload_bulk"]) + " " + i.ToString()
                                     };
                                     return BadRequest(generalResponseModel);
                                 }
 
-                                UsersAPI.Domain.Models.Generals.Requests.RegisterRequestModel userRegister = new UsersAPI.Domain.Models.Generals.Requests.RegisterRequestModel()
+                                var userRegister = new UsersAPI.Domain.Models.Generals.Requests.RegisterRequestModel()
                                 {
                                     Username = userArray[0],
                                     DoB = userArray.Length > 3 ? userArray[4] : null,
@@ -637,16 +743,16 @@ namespace UsersAPI.Controllers
                                     SchoolUserIdentifier = userArray[6],
                                     Email = userArray.Length > 7 ? userArray[7] : null,
                                 };
-
+                                lineProcess = "7";
                                 // Fix text
                                 if (!string.IsNullOrWhiteSpace(userRegister.Username))
                                 {
                                     userRegister.Username = TextFixer.RemoveSpecialCharacters(TextFixer.RemoveDiacritics(TextFixer.ReplaceCSVWeirdCharacters(userRegister.Username)));
                                     // Validate
-                                    UsersAPI.Domain.Models.Accounts.ResponseModel usernameValidation = validationManager.ValidateUsername(userRegister.Username, false);
+                                    var usernameValidation = validationManager.ValidateUsername(userRegister.Username, false);
                                     if (!usernameValidation.Valid)
                                     {
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -669,7 +775,7 @@ namespace UsersAPI.Controllers
                                     if (usernamesInListToAvoidDuplicates.Find(x => x == userRegister.Username) != null)
                                     {
                                         // The username is already in this list. Please, avoid duplicates 
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -684,7 +790,7 @@ namespace UsersAPI.Controllers
                                         };
                                         userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                         generalResponseModel.Messages = new List<string>();
-                                        generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_username_duplicated_in_list"]));
+                                        generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_username_duplicated_in_list"]));
                                         generalResponseModel.UserErrors.Add(userErrorModel);
                                         return BadRequest(generalResponseModel);
                                     }
@@ -694,12 +800,12 @@ namespace UsersAPI.Controllers
                                     {
                                         Username = userRegister.Username,
                                     });
-
+                                    lineProcess = "8";
                                 }
                                 else
                                 {
                                     // Return error that all usernames are required
-                                    UserErrorModel userErrorModel = new UserErrorModel()
+                                    var userErrorModel = new UserErrorModel()
                                     {
                                         ErrorDetails = new List<string>(),
                                         Username = userArray?[0],
@@ -714,16 +820,16 @@ namespace UsersAPI.Controllers
                                     };
                                     userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                     generalResponseModel.Messages = new List<string>();
-                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_usernames_required"]));
+                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_usernames_required"]));
                                     generalResponseModel.UserErrors.Add(userErrorModel);
-
+                                    lineProcess = "9";
                                     return BadRequest(userErrorModel);
                                 }
 
                                 if (string.IsNullOrWhiteSpace(userRegister.Password))
                                 {
                                     // Return error that all usernames are required
-                                    UserErrorModel userErrorModel = new UserErrorModel()
+                                    var userErrorModel = new UserErrorModel()
                                     {
                                         ErrorDetails = new List<string>(),
                                         Username = userArray?[0],
@@ -738,17 +844,18 @@ namespace UsersAPI.Controllers
                                     };
                                     userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                     generalResponseModel.Messages = new List<string>();
-                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_passwords_required"]));
+                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_passwords_required"]));
                                     generalResponseModel.UserErrors.Add(userErrorModel);
 
                                     return BadRequest(userErrorModel);
                                 }
                                 else
                                 {
-                                    UsersAPI.Domain.Models.Accounts.ResponseModel passwordValidation = validationManager.ValidatePassword(userRegister.Password, userRegister.Password);
+                                    lineProcess = "10";
+                                    var passwordValidation = validationManager.ValidatePassword(userRegister.Password, userRegister.Password);
                                     if (!passwordValidation.Valid)
                                     {
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -773,10 +880,10 @@ namespace UsersAPI.Controllers
                                 {
                                     userRegister.FirstName = TextFixer.RemoveSpecialCharacterExceptWhiteSpaces(TextFixer.RemoveDiacritics(TextFixer.ReplaceCSVWeirdCharacters(userRegister.FirstName)));
 
-                                    UsersAPI.Domain.Models.PersonalDetails.ResponseModel nameValidation = UsersAPI.Services.PersonalDetails.CustomClasses.ValidationManager.ValidateName(userRegister.FirstName);
+                                    var nameValidation = UsersAPI.Services.PersonalDetails.CustomClasses.ValidationManager.ValidateName(userRegister.FirstName);
                                     if (!nameValidation.Valid)
                                     {
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -800,7 +907,7 @@ namespace UsersAPI.Controllers
                                 else
                                 {
                                     // Return error that all First names
-                                    UserErrorModel userErrorModel = new UserErrorModel()
+                                    var userErrorModel = new UserErrorModel()
                                     {
                                         ErrorDetails = new List<string>(),
                                         Username = userArray?[0],
@@ -815,12 +922,12 @@ namespace UsersAPI.Controllers
                                     };
                                     userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                     generalResponseModel.Messages = new List<string>();
-                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_first_names_required"]));
+                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_first_names_required"]));
                                     generalResponseModel.UserErrors.Add(userErrorModel);
 
                                     return BadRequest(userErrorModel);
                                 }
-
+                                lineProcess = "11";
                                 if (!string.IsNullOrWhiteSpace(userRegister.LastName))
                                 {
                                     userRegister.LastName = TextFixer.RemoveSpecialCharacterExceptWhiteSpaces(TextFixer.RemoveDiacritics(TextFixer.ReplaceCSVWeirdCharacters(userRegister.LastName)));
@@ -828,7 +935,7 @@ namespace UsersAPI.Controllers
                                     UsersAPI.Domain.Models.PersonalDetails.ResponseModel nameValidation = UsersAPI.Services.PersonalDetails.CustomClasses.ValidationManager.ValidateSurname(userRegister.LastName);
                                     if (!nameValidation.Valid)
                                     {
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -852,7 +959,7 @@ namespace UsersAPI.Controllers
                                 else
                                 {
                                     // Return error that all Last names are required
-                                    UserErrorModel userErrorModel = new UserErrorModel()
+                                    var userErrorModel = new UserErrorModel()
                                     {
                                         ErrorDetails = new List<string>(),
                                         Username = userArray?[0],
@@ -867,26 +974,26 @@ namespace UsersAPI.Controllers
                                     };
                                     userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                     generalResponseModel.Messages = new List<string>();
-                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_last_names_required"]));
+                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_last_names_required"]));
                                     generalResponseModel.UserErrors.Add(userErrorModel);
 
                                     return BadRequest(userErrorModel);
 
                                 }
-
+                                lineProcess = "12";
                                 if (!string.IsNullOrWhiteSpace(userRegister.SchoolUserIdentifier))
                                 {
                                     userRegister.SchoolUserIdentifier = TextFixer.RemoveSpecialCharacters(TextFixer.RemoveDiacritics(TextFixer.ReplaceCSVWeirdCharacters(userRegister.SchoolUserIdentifier)));
                                     userSchoolsCheckIfExistsRecordNoToFind.Add(new UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel()
                                     {
                                         Identifier = userRegister.SchoolUserIdentifier,
-                                        SchoolId = _configuration["global_school_identifier"] == "0" ? schoolId : null
+                                        SchoolId = AppConfiguration.Configuration["AppSettings:global_school_identifier"] == "0" ? schoolId : null
                                     });
 
                                     if (userIdentifierInRecordToAvoudDuplicates.Find(x => x == userRegister.SchoolUserIdentifier) != null)
                                     {
                                         // The username is already in this list. Please, avoid duplicates 
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -901,7 +1008,7 @@ namespace UsersAPI.Controllers
                                         };
                                         userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                         generalResponseModel.Messages = new List<string>();
-                                        generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_school_identifier_duplicated_in_list"]));
+                                        generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_school_identifier_duplicated_in_list"]));
                                         generalResponseModel.UserErrors.Add(userErrorModel);
                                         return BadRequest(generalResponseModel);
                                     }
@@ -911,7 +1018,7 @@ namespace UsersAPI.Controllers
                                 else
                                 {
                                     // Return error that all School Identifiers are required
-                                    UserErrorModel userErrorModel = new UserErrorModel()
+                                    var userErrorModel = new UserErrorModel()
                                     {
                                         ErrorDetails = new List<string>(),
                                         Username = userArray?[0],
@@ -926,20 +1033,20 @@ namespace UsersAPI.Controllers
                                     };
                                     userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                     generalResponseModel.Messages = new List<string>();
-                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_school_identifiers_required"]));
+                                    generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_school_identifiers_required"]));
                                     generalResponseModel.UserErrors.Add(userErrorModel);
 
                                     return BadRequest(generalResponseModel);
 
                                 }
-
+                                lineProcess = "13";
                                 if (!string.IsNullOrWhiteSpace(userRegister.Gender))
                                 {
                                     userRegister.Gender = TextFixer.FixSex(TextFixer.ReplaceCSVWeirdCharacters(TextFixer.RemoveSpecialCharacters(userRegister.Gender)));
                                     UsersAPI.Domain.Models.PersonalDetails.ResponseModel genderValidation = UsersAPI.Services.PersonalDetails.CustomClasses.ValidationManager.ValidateGender(userRegister.Gender);
                                     if (!genderValidation.Valid)
                                     {
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -967,7 +1074,7 @@ namespace UsersAPI.Controllers
                                     UsersAPI.Domain.Models.PersonalDetails.ResponseModel dobValidation = UsersAPI.Services.PersonalDetails.CustomClasses.ValidationManager.ValidateDOB(userRegister.DoB);
                                     if (!dobValidation.Valid)
                                     {
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -988,7 +1095,7 @@ namespace UsersAPI.Controllers
                                         return BadRequest(generalResponseModel);
                                     }
                                 }
-
+                                lineProcess = "14";
                                 if (!string.IsNullOrWhiteSpace(userRegister.Email))
                                 {
                                     userRegister.Email = userRegister.Email.Trim();
@@ -998,7 +1105,7 @@ namespace UsersAPI.Controllers
                                     });
 
                                     // Validate
-                                    UsersAPI.Domain.Models.Accounts.ResponseModel emailValidation = validationManager.ValidateEmail(userRegister.Email, false);
+                                    var emailValidation = validationManager.ValidateEmail(userRegister.Email, false);
                                     if (!emailValidation.Valid)
                                     {
                                         UserErrorModel userErrorModel = new UserErrorModel()
@@ -1024,7 +1131,7 @@ namespace UsersAPI.Controllers
                                     if (emailsInListToAvoidDuplicates.Find(x => x == userRegister.Email) != null)
                                     {
                                         // The username is already in this list. Please, avoid duplicates 
-                                        UserErrorModel userErrorModel = new UserErrorModel()
+                                        var userErrorModel = new UserErrorModel()
                                         {
                                             ErrorDetails = new List<string>(),
                                             Username = userArray?[0],
@@ -1039,7 +1146,7 @@ namespace UsersAPI.Controllers
                                         };
                                         userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                         generalResponseModel.Messages = new List<string>();
-                                        generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_email_duplicated_in_list"]));
+                                        generalResponseModel.Messages.Add(messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_email_duplicated_in_list"]));
                                         generalResponseModel.UserErrors.Add(userErrorModel);
                                         return BadRequest(generalResponseModel);
                                     }
@@ -1049,9 +1156,9 @@ namespace UsersAPI.Controllers
                                 registerRequestList.Add(userRegister);
 
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
-                                UserErrorModel userErrorModel = new UserErrorModel()
+                                var userErrorModel = new UserErrorModel()
                                 {
                                     ErrorDetails = new List<string>(),
                                     Username = userArray?[0],
@@ -1066,16 +1173,22 @@ namespace UsersAPI.Controllers
                                 };
                                 userErrorModel.ErrorDetails.Add(invalidFormatError + " " + i);
                                 generalResponseModel.UserErrors.Add(userErrorModel);
+                                generalResponseModel.Messages = new List<string>()
+                                {
+                                    ex.Message,
+                                    "Line error: " + lineProcess
+                                };
                                 return BadRequest(generalResponseModel);
                             }
                         }
 
+                        lineProcess = "15";
                         // Validate that there is no role changes. 
-                        List<UserSchoolRoleModel> userRolesSchoolsToDetectChanges = Users.SearchUserRolesByUserSchoolRecord(userIdentifierInRecordToAvoudDuplicates, _configuration["global_school_identifier"] == "0" ? schoolId : null);
+                        var userRolesSchoolsToDetectChanges = Users.SearchUserRolesByUserSchoolRecord(userIdentifierInRecordToAvoudDuplicates, AppConfiguration.Configuration["AppSettings:global_school_identifier"] == "0" ? schoolId : null);
                         // Now, check if the role being processed is different that the user existing role. 
                         if(userRolesSchoolsToDetectChanges.Count > 0)
                         {
-                            List<UserSchoolRoleModel> userSchoolRoleModelsThatAreSupposedToChangeRoles = userRolesSchoolsToDetectChanges.FindAll(x => x.RoleId != roleId);
+                            var userSchoolRoleModelsThatAreSupposedToChangeRoles = userRolesSchoolsToDetectChanges.FindAll(x => x.RoleId != roleId);
                             if(userSchoolRoleModelsThatAreSupposedToChangeRoles.Count > 0)
                             {
                                 string siesWithError = "";
@@ -1093,50 +1206,50 @@ namespace UsersAPI.Controllers
 
                                 generalResponseModel.Messages = new List<string>()
                                 {
-                                    messagesGSWeb.GetMessageDetails(_configuration["message_file_contains_change_of_role"]) + siesWithError,
+                                    messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:message_file_contains_change_of_role"]) + siesWithError,
                                 };
 
                                 // Return error.
                                 return BadRequest(generalResponseModel);
                             }                          
                         }
-
+                        lineProcess = "16";
                         // Now, call the emails, accounts, and user school identifiers to check if it's the same user or not. 
                         // Or if the user is trying to update an account that alread exists. 
-                        List<UsersAPI.Domain.Models.Accounts.UserAccountModel> userAccountCheckIfUsernameExistsListToFindResult = userDetailsManager.GetUserAccountDetails(userAccountCheckIfUsernameExistsListToFind);
-                        List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailCheckIfEmailExistsListToFindResult = userDetailsManager.GetUsersEmailByUserEmailList(userEmailCheckIfEmailExistsListToFind);
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel> userSchoolsCheckIfExistsRecordNoToFindResult = userSchoolManagerReader.GetUserSchools(userSchoolsCheckIfExistsRecordNoToFind);
+                        var userAccountCheckIfUsernameExistsListToFindResult = userDetailsManager.GetUserAccountDetails(userAccountCheckIfUsernameExistsListToFind);
+                        var userEmailCheckIfEmailExistsListToFindResult = userDetailsManager.GetUsersEmailByUserEmailList(userEmailCheckIfEmailExistsListToFind);
+                        var userSchoolsCheckIfExistsRecordNoToFindResult = userSchoolManagerReader.GetUserSchools(userSchoolsCheckIfExistsRecordNoToFind);
 
                         UsersAPI.Services.Accounts.PasswordAccountManager passwordAccountManager = new UsersAPI.Services.Accounts.PasswordAccountManager(
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                            _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                            AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                             langCode);
 
-
-                        List<string> accountsToCheckIfProfileSubscribedModelList = new List<string>();
+                        lineProcess = "17";
+                        var accountsToCheckIfProfileSubscribedModelList = new List<string>();
                         var userProfilesToAssociateInAccountList = new List<UsersAPI.Domain.Models.Relations.AssociatedAccountModel>();
                         // To edit
-                        List<UsersAPI.Domain.Models.Accounts.UserAccountModel> userAccountModelToUpdate = new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>();
-                        List<UsersAPI.Domain.Models.Accounts.UserAccountModel> userAccountModeltToUpdateWhere = new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>();
-                        List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailModelToUpdate = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
-                        List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailModelToUpdateWhere = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel> userFullNameToUpdate = new List<UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel> userFullNameToUpdateWhere = new List<UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel> userDobToUpdate = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel> userDobToUpdateWhere = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel> userGenderToUpdate = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel> userGenderToUpdateWhere = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
+                        var userAccountModelToUpdate = new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>();
+                        var userAccountModeltToUpdateWhere = new List<UsersAPI.Domain.Models.Accounts.UserAccountModel>();
+                        var userEmailModelToUpdate = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
+                        var userEmailModelToUpdateWhere = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
+                        var userFullNameToUpdate = new List<UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel>();
+                        var userFullNameToUpdateWhere = new List<UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel>();
+                        var userDobToUpdate = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
+                        var userDobToUpdateWhere = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
+                        var userGenderToUpdate = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
+                        var userGenderToUpdateWhere = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
 
                         // To add 
-                        List<RegisterRequestModel> userToRegisterAddList = new List<RegisterRequestModel>();
+                        var userToRegisterAddList = new List<RegisterRequestModel>();
 
                         // Evaluate each user to register
-                        foreach (RegisterRequestModel userToRegister in registerRequestList)
+                        foreach (var userToRegister in registerRequestList)
                         {
                             // Check if the user school exists and it is not the same user 
-                            UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel userSchoolCheckIfExists = userSchoolsCheckIfExistsRecordNoToFindResult.Find(x => x.Identifier == userToRegister.SchoolUserIdentifier);
-                            UsersAPI.Domain.Models.Accounts.UserAccountModel userAccountModelToCheckIfExists = userAccountCheckIfUsernameExistsListToFindResult.Find(x => x.Username == userToRegister.Username);
-                            UsersAPI.Domain.Models.Accounts.UserEmailModel userEmailCheckIfExists = userEmailCheckIfEmailExistsListToFindResult.Find(x => x.Email == userToRegister.Email);
+                            var userSchoolCheckIfExists = userSchoolsCheckIfExistsRecordNoToFindResult.Find(x => x.Identifier == userToRegister.SchoolUserIdentifier);
+                            var userAccountModelToCheckIfExists = userAccountCheckIfUsernameExistsListToFindResult.Find(x => x.Username == userToRegister.Username);
+                            var userEmailCheckIfExists = userEmailCheckIfEmailExistsListToFindResult.Find(x => x.Email == userToRegister.Email);
 
                             // Username taken
                             if (userAccountModelToCheckIfExists != null && userSchoolCheckIfExists == null)
@@ -1156,7 +1269,7 @@ namespace UsersAPI.Controllers
 
                                 generalResponseModel.Messages = new List<string>()
                                 {
-                                    messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_username_taken"])
+                                    messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_username_taken"])
                                 };
 
                                 return BadRequest(generalResponseModel);
@@ -1180,12 +1293,12 @@ namespace UsersAPI.Controllers
 
                                 generalResponseModel.Messages = new List<string>()
                                 {
-                                    messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_email_taken"])
+                                    messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_email_taken"])
                                 };
 
                                 return BadRequest(generalResponseModel);
                             }
-
+                            lineProcess = "18";
                             // Verify if it is the same user. 
                             if (userSchoolCheckIfExists != null)
                             {
@@ -1243,7 +1356,7 @@ namespace UsersAPI.Controllers
 
                                     generalResponseModel.Messages = new List<string>()
                                 {
-                                    messagesGSWeb.GetMessageDetails(_configuration["gus_error_message_bulk_all_email_taken"])
+                                    messagesGSWeb.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_error_message_bulk_all_email_taken"])
                                 };
 
                                     return BadRequest(generalResponseModel);
@@ -1263,7 +1376,7 @@ namespace UsersAPI.Controllers
                                     });
 
                                 }
-
+                                lineProcess = "19";
                                 // User fullname to update
                                 userFullNameToUpdate.Add(new UsersAPI.Domain.Models.PersonalDetails.UserFullNameModel()
                                 {
@@ -1321,12 +1434,12 @@ namespace UsersAPI.Controllers
                             }
                         }
 
-
+                        lineProcess = "20";
                         // Before making the insertions and updates, check if the users fits in subscription limit. 
-                        List<string> subscriptionsProfilesIdsToAddList = new List<string>();
+                        var subscriptionsProfilesIdsToAddList = new List<string>();
                         if (accountsToCheckIfProfileSubscribedModelList.Count > 0)
                         {
-                            foreach (string profileId in accountsToCheckIfProfileSubscribedModelList)
+                            foreach (var profileId in accountsToCheckIfProfileSubscribedModelList)
                             {
                                 SubscriptionProfileModel subscriptionProfile = subscriptionResponseModel.Subscriptions[0].SubscriptionProfiles.Find(x => x.ProfileId == profileId);
                                 // If the profile is not attached to the subscription, then it means that we should attached it.
@@ -1339,27 +1452,27 @@ namespace UsersAPI.Controllers
                         }
 
                         // Now verify the limits
-                        if (_configuration["gus_discount_only_students"] == "1" && roleId == _configuration["ur_role_client_child"])
+                        if (AppConfiguration.Configuration["AppSettings:gus_discount_only_students"] == "1" && roleId == AppConfiguration.Configuration["AppSettings:ur_role_client_child"])
                         {
                             // Check from the existing profiles which are students. 
-                            List<UsersAPI.Domain.Models.Roles.UserRoleModel> userRoleModelListToCheckStudents = new List<UsersAPI.Domain.Models.Roles.UserRoleModel>();
-                            foreach (SubscriptionProfileModel subscriptionProfileModel in subscriptionResponseModel.Subscriptions[0].SubscriptionProfiles)
+                            var userRoleModelListToCheckStudents = new List<UsersAPI.Domain.Models.Roles.UserRoleModel>();
+                            foreach (var subscriptionProfileModel in subscriptionResponseModel.Subscriptions[0].SubscriptionProfiles)
                             {
                                 userRoleModelListToCheckStudents.Add(new UsersAPI.Domain.Models.Roles.UserRoleModel()
                                 {
                                     UserId = subscriptionProfileModel.ProfileId,
-                                    RoleId = _configuration["ur_role_client_child"],
+                                    RoleId = AppConfiguration.Configuration["AppSettings:ur_role_client_child"],
                                 });
                             }
 
                             if (userRoleModelListToCheckStudents.Count > 0)
                             {
                                 // Now check the user roles
-                                UsersAPI.Services.Roles.UserRolesManager userRolesManager = new
+                                var userRolesManager = new
                                     UsersAPI.Services.Roles.UserRolesManager(
-                                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
-                                List<UsersAPI.Domain.Models.Roles.UserRoleModel> userRolesOfUsersStudentsThatExistsList = userRolesManager.GetUserRolesByRolesList(userRoleModelListToCheckStudents);
+                                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
+                                var userRolesOfUsersStudentsThatExistsList = userRolesManager.GetUserRolesByRolesList(userRoleModelListToCheckStudents);
 
                                 // Check if the is space, adding the: 
                                 // (Users from the subscription profiles that are students) + (New Users) + (Users that exists, but we have to attach to the subscription) > (The profile limit of the subscription)
@@ -1367,18 +1480,18 @@ namespace UsersAPI.Controllers
                                 {
                                     // Sorry. No space 
                                     generalResponseModel.Messages = new List<string>();
-                                    generalResponseModel.Messages.Add(messageManager.GetMessageDetails(_configuration["gus_message_code_add_profile_error"]));
+                                    generalResponseModel.Messages.Add(messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_message_code_add_profile_error"]));
                                     return BadRequest(generalResponseModel);
                                 }
                             }
                         }
-                        else if (_configuration["gus_discount_only_students"] == "0")
+                        else if (AppConfiguration.Configuration["AppSettings:gus_discount_only_students"] == "0")
                         {
                             if (subscriptionResponseModel.Subscriptions[0].SubscriptionProfiles.Count + userToRegisterAddList.Count + subscriptionsProfilesIdsToAddList.Count > int.Parse(subscriptionResponseModel.Subscriptions[0].ProfilesTotalQuantity))
                             {
                                 // Return the limit has bean reached
                                 generalResponseModel.Messages = new List<string>();
-                                generalResponseModel.Messages.Add(messageManager.GetMessageDetails(_configuration["gus_message_code_add_profile_error"]));
+                                generalResponseModel.Messages.Add(messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_message_code_add_profile_error"]));
                                 return BadRequest(generalResponseModel);
                             }
                         }
@@ -1386,9 +1499,9 @@ namespace UsersAPI.Controllers
                         // If everything is alright, just make the updates and the insertions 
 
                         // Lets start with the updates 
-                        UserModifyManager userModifyManager = new UserModifyManager(
-                           _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                           _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"), langCode);
+                        var userModifyManager = new UserModifyManager(
+                           AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                           AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"], langCode);
 
                         if (userAccountModelToUpdate.Count > 0)
                         {
@@ -1398,13 +1511,13 @@ namespace UsersAPI.Controllers
                         {
                             // Check if exists, if they do not exists, add them, otherwise updated
                             // Get the existings 
-                            List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailModelsExisting = userDetailsManager.GetUsersEmailByUserEmailList(userEmailModelToUpdateWhere);
-                            List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailModelsToInsertList = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
-                            List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailModelToUpdateOfficialList = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
-                            List<UsersAPI.Domain.Models.Accounts.UserEmailModel> userEmailModelToUpdateWhereOfficialList = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
+                            var userEmailModelsExisting = userDetailsManager.GetUsersEmailByUserEmailList(userEmailModelToUpdateWhere);
+                            var userEmailModelsToInsertList = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
+                            var userEmailModelToUpdateOfficialList = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
+                            var userEmailModelToUpdateWhereOfficialList = new List<UsersAPI.Domain.Models.Accounts.UserEmailModel>();
 
 
-                            foreach (UsersAPI.Domain.Models.Accounts.UserEmailModel userEmail in userEmailModelToUpdate)
+                            foreach (var userEmail in userEmailModelToUpdate)
                             {
                                 // If the user exists, put in the where list
                                 // Else, put in the insert list. 
@@ -1434,7 +1547,7 @@ namespace UsersAPI.Controllers
                             }
 
                         }
-
+                        lineProcess = "21";
                         // Continue with: 
                         // 1. Update the gender, the dob and the full name. 
                         // There full name is always required, so we do not have to insert anything new.
@@ -1447,13 +1560,13 @@ namespace UsersAPI.Controllers
                         if (userGenderToUpdate.Count > 0)
                         {
                             // Get the existings 
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel> userGenderModelsExisting = userPersonalDetailsManagerReader.GetUserGenderModelList(userGenderToUpdateWhere);
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel> userGenderModelsToInsertList = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel> userGenderModelToUpdateOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel> userGenderModelToUpdateWhereOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
+                            var userGenderModelsExisting = userPersonalDetailsManagerReader.GetUserGenderModelList(userGenderToUpdateWhere);
+                            var userGenderModelsToInsertList = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
+                            var userGenderModelToUpdateOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
+                            var userGenderModelToUpdateWhereOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserGenderModel>();
 
 
-                            foreach (UsersAPI.Domain.Models.PersonalDetails.UserGenderModel userGender in userGenderToUpdate)
+                            foreach (var userGender in userGenderToUpdate)
                             {
                                 // If the user exists, put in the where list
                                 // Else, put in the insert list. 
@@ -1493,15 +1606,16 @@ namespace UsersAPI.Controllers
                             }
 
                         }
+                        lineProcess = "22";
                         if (userDobToUpdate.Count > 0)
                         {
                             // Get the existings 
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel> userDobModelsExisting = userPersonalDetailsManagerReader.GetUserDobList(userDobToUpdateWhere);
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel> userDobModelsToInsertList = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel> userDobModelToUpdateOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
-                            List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel> userDobModelToUpdateWhereOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
+                            var userDobModelsExisting = userPersonalDetailsManagerReader.GetUserDobList(userDobToUpdateWhere);
+                            var userDobModelsToInsertList = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
+                            var userDobModelToUpdateOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
+                            var userDobModelToUpdateWhereOfficialList = new List<UsersAPI.Domain.Models.PersonalDetails.UserDobModel>();
 
-                            foreach (UsersAPI.Domain.Models.PersonalDetails.UserDobModel userDob in userDobToUpdate)
+                            foreach (var userDob in userDobToUpdate)
                             {
                                 try
                                 {
@@ -1530,7 +1644,7 @@ namespace UsersAPI.Controllers
                                         });
                                     }
                                 }
-                                catch (Exception)
+                                catch (Exception ex)
                                 {
                                     // Ignore because date bad format
                                 }
@@ -1549,18 +1663,24 @@ namespace UsersAPI.Controllers
                             }
 
                         }
-
+                        lineProcess = "23";
                         // 2. Create the new users.
-                        List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel> userSchoolModelsToRelateList = new List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel>();
+                        var userSchoolModelsToRelateList = new List<UsersAPI.Domain.Models.PersonalDetails.UserSchoolModel>();
 
                         // Do the insertion, everything has been validated. This will kill the performance since we need the Ids. 
                         // to be inserted. We could make a stored procedure for this, but we want to maintain the business logic 
                         // in the API. 
                         // You could also limit the users to register entry.
-                        foreach (RegisterRequestModel registerRequest in userToRegisterAddList)
+                        foreach (var registerRequest in userToRegisterAddList)
                         {
-
-                            RegisterProfileResponseModel registerProfileResponseModel = RegisterUserManager.RegisterUserProfile(
+                            registerRequest.SubscriptionId = subscriptionId;
+                            lineProcess += "\n";
+                            lineProcess += Newtonsoft.Json.JsonConvert.SerializeObject(registerRequest);
+                            lineProcess += "\n";
+                            lineProcess += Newtonsoft.Json.JsonConvert.SerializeObject(subscriptionResponseModel);
+                            lineProcess += "\n";
+                          
+                            var registerProfileResponseModel = RegisterUserManager.RegisterUserProfile(
                                 registerRequest,
                                 sessionResponseModel.UserId,
                                 ipAddress,
@@ -1568,6 +1688,9 @@ namespace UsersAPI.Controllers
                                 subscriptionResponseModel,
                                 roleId,
                                 langCode);
+                            lineProcess += "23.A";
+                            lineProcess += "\n";
+                            lineProcess += Newtonsoft.Json.JsonConvert.SerializeObject(registerProfileResponseModel);
 
                             if (registerProfileResponseModel.TransactionValid)
                             {
@@ -1608,12 +1731,14 @@ namespace UsersAPI.Controllers
                         // Attach the profiles to the subscription
                         if (subscriptionsProfilesIdsToAddList.Count > 0)
                         {
+                            lineProcess = "24";
                             SubscriptionDetailsHandler.AttachProfilesToSubscription(ipAddress, subscriptionsProfilesIdsToAddList, subscriptionId, langCode, token);
                         }
 
                         // Attach the profiles to the main account of the subscription.
                         if (userProfilesToAssociateInAccountList.Count > 0)
                         {
+                            lineProcess = "25";
                             // Relate the account to the main user id 
                             List<string> userIdsToAssociate = new List<string>();
 
@@ -1626,21 +1751,21 @@ namespace UsersAPI.Controllers
                             {
                                 // This function already evaluates if they exists or not to avoid duplications.
                                 new UsersAPI.Services.Relations.RelatedAccountsManager(
-                                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                                        _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                                        AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                                         langCode).AssociateAccounts(subscriptionResponseModel.MainAccountUserId, userIdsToAssociate, sessionResponseModel.UserId);
                             }
                         }
-
+                        lineProcess = "26";
                         // Attach users to school
                         if (userSchoolModelsToRelateList.Count > 0)
                         {
-                            new UserSchoolManager(_configuration.GetConnectionString("GenialSkillsUsersAPIDBConnection"),
-                                _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                            new UserSchoolManager(AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnection"],
+                                AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                             null).CreateUserSchools(userSchoolModelsToRelateList);
                         }
 
-
+                        lineProcess = "27";
                         if (generalResponseModel.UserErrors != null && generalResponseModel.UserErrors.Count > 0)
                         {
                             return BadRequest(generalResponseModel);
@@ -1649,7 +1774,7 @@ namespace UsersAPI.Controllers
                         generalResponseModel.Messages = new List<string>
                             {
                                 // Send successful
-                                messageManager.GetMessageDetails(_configuration["gus_message_code_users_bulk_uploaded_successfuly"])
+                                messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_message_code_users_bulk_uploaded_successfuly"])
                             };
 
                         return Created("", generalResponseModel);
@@ -1664,13 +1789,13 @@ namespace UsersAPI.Controllers
                 }
                 else
                 {
-                    return BadRequest(ReturnGenericMessageBulk());
+                    return BadRequest(ReturnGenericMessageBulk("Files content form type has an error."));
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 
-                return BadRequest(ReturnGenericMessageBulk());
+                return BadRequest(ReturnGenericMessageBulk(ex.Message + " Line error " + lineProcess));
             }
         }
 

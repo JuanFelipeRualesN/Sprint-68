@@ -521,7 +521,8 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 clientUserSchools.DefaultRequestHeaders.Accept.Clear();
                 clientUserSchools.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 clientUserSchools.DefaultRequestHeaders.Add("Token", token);
-                var responseUserSchools = clientUserSchools.GetAsync(AppConfiguration.Configuration["AppSettings:gus_endpoint_user_same_school"] + "/" + userId).Result;
+                var url = AppConfiguration.Configuration["AppSettings:gus_endpoint_user_same_school"] + userId;
+                var responseUserSchools = clientUserSchools.GetAsync(url).Result;
                 if (responseUserSchools.IsSuccessStatusCode)
                 {
                     string responseStringUserSchools = responseUserSchools.Content.ReadAsStringAsync().Result;
@@ -575,5 +576,97 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
             }
 
         }
-    }
+
+        /// <summary>
+        /// Gets users (id + email only) for Events audience resolution, filtered by a single
+        /// role and/or one or more schools and/or specific user ids. Used exclusively by
+        /// EventAudienceResolver. Calls api/profiles/emails rather than api/users/for-admin,
+        /// which silently caps responses at 200 rows regardless of the requested Limiter. Other
+        /// UserResponse fields (GivenName, Surname, etc.) are left at their default since
+        /// GraphEventsAPI only needs the attendee's email.
+        /// </summary>
+        /// <param name="roleId">A single RoleId to filter by, or null.</param>
+        /// <param name="schoolIds">A list of SchoolIds to filter by, or null.</param>
+        /// <param name="userIds">A list of specific UserIds to filter by, or null.</param>
+        /// <param name="token">User token.</param>
+        /// <param name="pageFrom">The page to fetch (0-based).</param>
+        /// <param name="limiter">How many rows to request.</param>
+        /// <returns>Returns the matching users' id and email.</returns>
+        public static async Task<List<UserResponse>> GetUserEmailsForEvents(string roleId, List<string> schoolIds, List<string> userIds, string token, int pageFrom, int limiter)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:gus_web_service_url"]);
+                client.Timeout = TimeSpan.FromMinutes(5);
+                client.DefaultRequestHeaders.Add("Token", token);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var requestPayload = new
+                {
+                    RoleId = roleId,
+                    SchoolIds = schoolIds,
+                    UserIds = userIds,
+                    PageFrom = pageFrom,
+                    Limiter = limiter,
+                };
+
+                StringContent stringContent = new StringContent(JsonConvert.SerializeObject(requestPayload), Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync(AppConfiguration.Configuration["AppSettings:gus_endpoint_user_id_list_allowed_interaction_emails"], stringContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseString = await response.Content.ReadAsStringAsync();
+
+                    List<UserResponse> modelObject = JsonConvert.DeserializeObject<List<UserResponse>>(responseString,
+                        new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore
+                        });
+
+                    return modelObject ?? new List<UserResponse>();
+                }
+
+                return new List<UserResponse>();
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves a list of school IDs associated with the specified user request.
+        /// </summary>
+        /// <param name="token">The user token required by the web service.</param>
+        /// <returns>A task that represents the asynchronous operation, containing a list of school integers, or an empty list if the request fails.</returns>
+        /// <exception cref="HttpRequestException">Thrown when the network request fails.</exception>
+        public static async Task<List<UserSchoolModel>> GetUserSchoolsAsync(string token)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(baseAddress);
+                client.DefaultRequestHeaders.Add("Token", token);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var response = await client.GetAsync(AppConfiguration.Configuration["AppSettings:gus_endpoint_call_user_schools"]);
+
+                var userSchools = new List<UserSchoolModel>();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseString = await response.Content.ReadAsStringAsync();
+
+                    userSchools = JsonConvert.DeserializeObject<List<UserSchoolModel>>(responseString,
+                      new JsonSerializerSettings
+                      {
+                          NullValueHandling = NullValueHandling.Ignore
+                      });
+
+                    return userSchools;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+}
 }

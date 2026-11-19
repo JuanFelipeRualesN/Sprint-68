@@ -1,0 +1,19 @@
+name: Base API MED Quindio Pipeline
+
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+  # name: 'MSJ-Agents'
+  # demands:
+  #   - Agent.Name -equals ubuntu-dev-agent
+
+extends:
+  template: azure-pipelines-template.yml
+  parameters:
+    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+      azureAppService: 'app-apis-medquindio-prod-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'med-quindio'

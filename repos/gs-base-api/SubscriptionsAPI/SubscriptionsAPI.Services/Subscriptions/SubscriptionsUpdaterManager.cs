@@ -163,7 +163,7 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
             subscriptionModel.UpdatedAt = null;
 
             // Update with stripe
-            /*StripeConfiguration.ApiKey = AppConfiguration.Configuration["AppSettings:subs_stripe_key"];
+            /*StripeConfiguration.ApiKey = AppConfiguration.Configuration["AppSettings:SubsStripeKey"];
             var service = new SubscriptionService();
             Subscription subscription = service.Get(subscriptionModel.PlatformId);
 

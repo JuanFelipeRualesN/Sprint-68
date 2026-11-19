@@ -8,7 +8,6 @@ using MySqlConnector;
 using TeachersAPI.TeachersAPI.Services.FeignAPI;
 using TeachersAPI.Domain.Models.Generals.Responses.APIs;
 using TeachersAPI.TeachersAPI.Infrastructure;
-using TeachersAPI.TeachersAPI.Infrastructure;
 
 
 namespace TeachersAPI.Controllers
@@ -20,12 +19,10 @@ namespace TeachersAPI.Controllers
     [Route("teachersapi/planning-free-content/accommodation")]
     public class AccommodationController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        public AccommodationController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
+        /// <summary>
+        /// To get the accomodation types.
+        /// </summary>
+        /// <returns>Returns a list of types.</returns>
         [HttpGet("types")]
         public async Task<IActionResult> GetAccommodationTypes()
         {
@@ -40,7 +37,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanAccommodationServiceFactory.CreateService(dbConn);
-                    var accommodationTypes = await service.GetAccommodationTypes();
+                    var accommodationTypes = await service.GetAccommodationTypeTranslations(responseSession.LangCode);
                     return Ok(accommodationTypes);
                 }
             }
@@ -89,7 +86,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanAccommodationServiceFactory.CreateService(dbConn);
-                    var teacherPlanAccommodationByTeacherPlanId = await service.GetTeacherPlanAccommodationsByTeacherPlanId(teacherPlanId);
+                    var teacherPlanAccommodationByTeacherPlanId = await service.GetTeacherPlanAccommodationsByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanAccommodationByTeacherPlanId);
                 }
             }
@@ -178,7 +175,7 @@ namespace TeachersAPI.Controllers
 
         private MySqlConnection CreateMySqlConnection()
         {
-            var connStr = _configuration.GetConnectionString("TeacherWebAPIConnectionString");
+            var connStr = AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"];
             MySqlConnection dbConn = new DBConnection(connStr).GetConnection();
             return dbConn;
         }

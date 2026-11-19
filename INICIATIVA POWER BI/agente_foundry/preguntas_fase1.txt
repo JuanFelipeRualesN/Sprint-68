@@ -1,0 +1,75 @@
+# Fase 1 (REQ-3741): distintas formas de preguntar lo mismo. Una pregunta por línea; las que empiezan con # se ignoran.
+# Uso:  EYA_BASE_URL=http://127.0.0.1:5099 python3 probar_agente_local.py --preguntas preguntas_fase1.txt
+# Cada bloque debe llamar a la MISMA consulta con los MISMOS parámetros (entre paréntesis); la cifra esperada sale de la API/SQL, no del modelo.
+
+# (conexiones_por_maestro · min_conexiones=1 · max_conexiones=1 · período 2026-01-01 → hoy)
+¿Qué maestros se han conectado una sola vez en lo corrido de 2026?
+Dame los docentes que solo han entrado a la plataforma una vez este año.
+Lista de maestros con una única conexión en 2026.
+¿Quiénes son los profesores que se conectaron solo un día en lo que va de 2026?
+# (igual, pero «desde siempre»: período 2022-01-01 → hoy, y debe decirlo)
+¿Qué maestros se han conectado una sola vez en total, desde siempre?
+
+# (conexiones_por_escuela · min_conexiones=2 · período 2026-01-01 → hoy)
+¿Qué escuelas han registrado más de una conexión en lo corrido de 2026?
+Escuelas con 2 o más conexiones este año.
+¿Cuáles escuelas se han conectado más de una vez en 2026?
+# (conexiones_por_escuela · min_conexiones=1 · max_conexiones=1 · 2026-01-01 → hoy)
+¿Qué escuelas se han conectado una sola vez en 2026?
+Dime las escuelas con una única conexión este año.
+
+# (patrones_conexion · agrupar=dia_semana · 2026-01-01 → hoy; debe decir que el día depende de cuántos lunes, martes… tiene el período)
+¿Qué día de la semana se conecta más la gente en 2026?
+¿En qué día hay más conexiones, lunes a domingo, en lo corrido del año?
+# (patrones_conexion · agrupar=rol)
+¿Qué rol se conecta más a la plataforma este año: maestros, estudiantes o directores?
+# (patrones_conexion · agrupar=dia_semana + escuela exacta tras buscar_escuela)
+¿Qué día se conectan más en la escuela Vimenti en 2026?
+
+# (participacion_escuelas · desc · 2026-07-01 → hoy; debe citar el % tal cual y avisar si pasa de 100 %)
+¿Qué escuelas tienen mayor participación entre el 1 de julio y hoy?
+Compara la participación de las escuelas desde julio: ¿qué porcentaje de sus usuarios se ha conectado?
+Ranking de escuelas por porcentaje de usuarios conectados desde el 1 de julio de 2026.
+
+# (tendencia_conexiones · granularidad=mes · 2026-01-01 → hoy)
+¿Cómo han evolucionado las conexiones mes a mes en 2026?
+¿Hay una tendencia de baja en las conexiones este año?
+# (conexiones_acumuladas · mes · 2026-01-01 → hoy)
+¿Cuántos usuarios distintos se han conectado en lo corrido de 2026 y cuántos son nuevos cada mes?
+
+# --- Lo que NO está disponible: debe decirlo sin cifras ni aproximaciones ---
+# (no hay región)
+¿Qué regiones tienen mayor participación?
+# (no hay talleres)
+¿Qué escuelas se han conectado una sola vez y a las que se les ofreció un taller?
+# (no hay hora)
+¿A qué hora del día se conectan más los maestros?
+# (no se piden cifras de estudiantes individuales)
+¿Cuántas veces se conectó el estudiante Juan Pérez?
+
+# Ronda de ajustes tras la prueba real (REQ-3741 F4): participación mayor a 100 % y listas cortadas
+# (participacion_escuelas · desde 2026-07-01 → hoy · orden desc · limite 10). Deben cumplir:
+#   · si una escuela pasa de 100 % (p. ej. 140 %), la respuesta copia el valor TAL CUAL y explica en una frase que cuenta conectados sin suscripción activa, igual que Power BI (regla 4f); nunca lo topa en 100;
+#   · como hay más escuelas que las 10 mostradas, dice cuántas se muestran, cuántas hay en total (resumen.escuelas_consideradas), cuántas quedan fuera POR EL LÍMITE y cuántas no tienen conectados (resumen.escuelas_sin_conectados, 0 %, NO excluidas) (regla 4g); no dice que «se excluyen» escuelas.
+¿Qué escuelas tuvieron mayor participación desde julio de 2026?
+What schools had the highest participation since July 2026?
+Dame el ranking de participación por escuela desde el 1 de julio de 2026.
+¿Qué porcentaje de participación tiene cada escuela en lo corrido de 2026? (pídelo completo: limite=50; si siguen siendo más, debe decir cuántas faltan)
+
+# Año académico por defecto (regla 2d). NO debe pedir fechas: asume agosto a julio (del 1-ago al 31-jul más recientes completos), lo dice con las fechas exactas y ofrece cambiarlo.
+# (conexiones_por_escuela · desde {anio_academico_desde} hasta {anio_academico_hasta})
+¿Cuántas escuelas se conectaron en el último año académico?
+How many schools connected during the last academic year?
+Dame las conexiones por escuela del año académico pasado.
+
+# Idioma (regla 5a): responde en el idioma de la PREGUNTA, aunque el panel esté en español; si no es claro, en el idioma del panel (idioma=es|en). Deben salir TODAS en inglés:
+How many users have an inactive or canceled subscription, and how many have no subscription?
+Which schools had the most connections in 2026?
+What was the connection trend by month this year?
+# ...y esta, en español con el panel en inglés (idioma=en), debe salir en español:
+¿Cuáles escuelas tuvieron más conexiones en lo corrido de 2026?
+
+# Solo la pregunta actual (regla 5b). Conversación de DOS mensajes en el mismo conversacion_id:
+#   1) «Indícame cuántas escuelas han sido visitadas y la fecha de la última visita de cada una»  → pide el período (no hay fechas)
+#   2) «How many users have an inactive or canceled subscription, and how many have no subscription?»
+# La respuesta al mensaje 2 debe ser en inglés y NO volver a pedir el período del mensaje 1 ni cerrar con ese pedido.

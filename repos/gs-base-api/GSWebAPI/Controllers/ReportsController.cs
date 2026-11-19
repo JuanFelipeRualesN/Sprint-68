@@ -421,9 +421,9 @@ namespace GSWebAPI.Controllers
 
                 return Ok(userQuizManager.GetUserQuizResultAndReturnByTry(profileId, quizId));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return BadRequest();
+                return BadRequest(ex.ToString());
             }
         }
 
@@ -518,17 +518,18 @@ namespace GSWebAPI.Controllers
         /// To get the Genial Lesson’s quizzes results by profile and userQuizId.
         /// </summary>
         /// <param name="profileId">The student user’s id.</param>
-        /// <param name="userQuizId">The user quiz result’s id.</param>
+        /// <param name="userQuizResultId">The user quiz result’s id.</param>
+        /// <param name="pdfRequired">If PDF required (results)</param>
         /// <returns>Returns the profile’s results details..</returns>
         [HttpGet]
-        [Route("reports/profile/quiz/results/{profileId}/{userQuizId}")]
-        public async Task<IActionResult> GetProfileQuizResultDetails(string profileId, string userQuizId)
+        [Route("reports/profile/quiz/results/{profileId}/{userQuizResultId}")]
+        public async Task<IActionResult> GetProfileQuizResultDetails(string profileId, string userQuizResultId, bool pdfRequired = true)
         {
             try
             {
-                ProfileReportsResponseModel generalResponseModel = new ProfileReportsResponseModel();
+                var generalResponseModel = new ProfileReportsResponseModel();
                 /* Token validation in Users API */
-                ValidationResponseModel responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(
                     HttpContext,
                     "ProfileQuizResultDetailsRead");
 
@@ -555,13 +556,25 @@ namespace GSWebAPI.Controllers
                 }
 
                 // End of related
-                UserQuizService userQuizManager = new UserQuizService(
+                var userQuizManager = new UserQuizService(
                     AppConfiguration.Configuration["ConnectionStrings:GSWebDBConnection"],
                     AppConfiguration.Configuration["ConnectionStrings:GSWebDBConnectionReader"],
                     responseSession.LangCode);
-                UserQuizResponseModel userQuizResponseModel = userQuizManager.GetUserQuizResponse(userQuizId, AppConfiguration.Configuration["AppSettings:web_app_url"]);
+                var userQuizResponseModel = userQuizManager.GetUserQuizResponse(userQuizResultId, AppConfiguration.Configuration["AppSettings:web_app_url"]);
 
-                AthenasJSONQuizResponseModel modelObject = AthenasDetailsHandler.GetQuizById(userQuizResponseModel.UserQuizResult.QuizId, responseSession.Token);
+                var modelObject = AthenasDetailsHandler.GetQuizById(userQuizResponseModel.UserQuizResult.QuizId, responseSession.Token);
+
+                // Get the lesson title
+                string lessonTitle = null;
+                if (!string.IsNullOrWhiteSpace(userQuizResponseModel.UserQuizResult.LessonId))
+                {
+                    var lessonDetails = AthenasDetailsHandler.GetLessonModels(
+                        new List<string> { userQuizResponseModel.UserQuizResult.LessonId });
+
+                    lessonTitle = lessonDetails?.LessonModelList
+                        ?.FirstOrDefault(x => x.Id == userQuizResponseModel.UserQuizResult.LessonId)
+                        ?.LessonTitle;
+                }
 
                 // Now connect the data
                 generalResponseModel.UserQuizFullDetails = new QuizUserResultsCompletedInfoResponseModel
@@ -577,43 +590,73 @@ namespace GSWebAPI.Controllers
                     TotalCorrect = userQuizResponseModel.UserQuizResult.TotalCorrect,
                     TryNo = userQuizResponseModel.UserQuizResult.TryNo,
                     CreatedAt = userQuizResponseModel.UserQuizResult.CreatedAt,
+                    LessonTitle = lessonTitle,
+                    Subject = userQuizResponseModel.UserQuizResult.Subject,
+                    Grade = userQuizResponseModel.UserQuizResult.Level,
                 };
+
+                // Resolve subject code
+                var athenasHandler = new AthenasDetailsHandler();
+                var subjects = athenasHandler.GetAthenasSubjects(responseSession.LangCode);
+                var subjectMatch = subjects?.FirstOrDefault(s => string.Equals(s.Code, userQuizResponseModel.UserQuizResult.Subject, StringComparison.OrdinalIgnoreCase));
+                if (subjectMatch != null)
+                {
+                    generalResponseModel.UserQuizFullDetails.Subject = subjectMatch.Name;
+                }
+
+                // Index all the quiz responses by id. In pairing quizzes the student can pick
+                // a response that belongs to another question, so we search across the whole quiz.
+                var quizResponsesById = new Dictionary<string, string>();
+                foreach (var questionRequestModel in modelObject.QuizRequestModel.QuestionRequestModelList)
+                {
+                    if (questionRequestModel.QuizQuestionResponseModelList == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var quizQuestionResponseModel in questionRequestModel.QuizQuestionResponseModelList)
+                    {
+                        if (!string.IsNullOrWhiteSpace(quizQuestionResponseModel.Id))
+                        {
+                            quizResponsesById.TryAdd(quizQuestionResponseModel.Id, quizQuestionResponseModel.Response);
+                        }
+                    }
+                }
 
                 for (int i = 0; i < modelObject.QuizRequestModel.QuestionRequestModelList.Count; i++)
                 {
-                    QuestionQuiz questionQuizToAdd = new QuestionQuiz()
+                    var questionQuizToAdd = new QuestionQuiz()
                     {
                         QuestionId = modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionModel.Id,
                         Question = modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionModel.Desc,
                         QuestionResponses = new List<QuestionResponse>(),
                     };
 
-                    List<GSWebAPI.Domain.Models.UserQuiz.UserResponseModel> userQuizQuestionsResponsesToFind
+                    var userQuizQuestionsResponsesToFind
                         = userQuizResponseModel.UserResponsesList.FindAll(x => x.QuestionId == modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionModel.Id);
 
                     // Now attach the responses
                     for (int j = 0; j < userQuizQuestionsResponsesToFind.Count; j++)
                     {
-                        // Find the responses details on athenas object
-                        QuizQuestionResponseModel quizQuestionResponseModelToFind
-                            = modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionResponseModelList.Find(x => x.Id == userQuizQuestionsResponsesToFind[j].ResponseId);
-
-                        if (quizQuestionResponseModelToFind != null)
+                        // Find the response text on athenas object, keep the response even if it is not found
+                        string? responseText = null;
+                        if (!string.IsNullOrWhiteSpace(userQuizQuestionsResponsesToFind[j].ResponseId))
                         {
-                            // Attach the responses
-                            QuestionResponse questionResponse = new QuestionResponse
-                            {
-                                ResponseId = userQuizQuestionsResponsesToFind[j].ResponseId,
-                                Response = quizQuestionResponseModelToFind.Response,
-                                ResponseUserId = userQuizQuestionsResponsesToFind[j].Id,
-                                Correct = userQuizQuestionsResponsesToFind[j].Correct == "1",
-                            };
-                            questionQuizToAdd.QuestionResponses.Add(questionResponse);
-
-                            // Then add to the main question holder
-                            generalResponseModel.UserQuizFullDetails.QuestionQuizList.Add(questionQuizToAdd);
+                            quizResponsesById.TryGetValue(userQuizQuestionsResponsesToFind[j].ResponseId, out responseText);
                         }
+
+                        var questionResponse = new QuestionResponse
+                        {
+                            ResponseId = userQuizQuestionsResponsesToFind[j].ResponseId,
+                            Response = responseText ?? string.Empty,
+                            ResponseUserId = userQuizQuestionsResponsesToFind[j].Id,
+                            Correct = userQuizQuestionsResponsesToFind[j].Correct == "1",
+                        };
+                        questionQuizToAdd.QuestionResponses.Add(questionResponse);
                     }
+
+                    // Add every question of the quiz, answered correctly or not
+                    generalResponseModel.UserQuizFullDetails.QuestionQuizList.Add(questionQuizToAdd);
                 }
 
                 List<UserResponse> userSharedDetails = GetUserDetails.GetSharedDetails(responseSession.Token, new List<string>() { userQuizResponseModel.UserQuizResult.UserId }, responseSession.IpAddress);
@@ -626,12 +669,25 @@ namespace GSWebAPI.Controllers
                     generalResponseModel.StudentName = string.Empty;
                 }
 
-                generalResponseModel.PDFLocation = await PDFResultGenerator.GeneratePDF(generalResponseModel, AppConfiguration.Configuration["AppSettings:generate_pdf_in_cloud_storage"] == "true");
-
+                try
+                {
+                    if (pdfRequired)
+                    {
+                        generalResponseModel.PDFLocation = await PDFResultGenerator.GeneratePDF(generalResponseModel, AppConfiguration.Configuration["AppSettings:generate_pdf_in_cloud_storage"] == "true");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Continue and return at least the results without the PDF. 
+                    Console.WriteLine(ex);
+                    Console.Error.WriteLine($"Exception: {ex}");
+                }
                 return Ok(generalResponseModel);
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Error results GSWeb", ex.ToString());
+                Console.Error.WriteLine($"Exception: {ex}");
                 return BadRequest(ex.ToString());
             }
         }

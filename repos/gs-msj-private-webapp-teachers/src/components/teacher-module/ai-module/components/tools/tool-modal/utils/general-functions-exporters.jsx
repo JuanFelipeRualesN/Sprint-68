@@ -99,6 +99,12 @@ export function stripEditorMetadata(text = '') {
         .trim();
 }
 
+// Title the exporter prints above the content, empty when the document already opens with its own heading, so the title doesn't appear twice
+export function documentHeaderTitle(markdown = '', title = '') {
+    const firstLine = stripEditorMetadata(markdown).split('\n').find((line) => line.trim()) || '';
+    return /^\s*#{1,2}\s+\S/.test(firstLine) ? '' : title;
+}
+
 export function addWrappedText(doc, text, x, y, maxWidth, lineHeight) {
     const safeText = sanitizePdfText(text);
     if (!safeText.trim()) return y;

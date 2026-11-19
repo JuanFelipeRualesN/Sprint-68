@@ -55,12 +55,12 @@ namespace DataAnalysisAPI.Utils
 
         public static string GetStorageAccountKey()
         {
-            return AppConfiguration.Configuration["AppSettings:azure_storage_account_key"];
+            return AppConfiguration.Configuration["AppSettings:AzureStorageAccountKey"];
         }
 
         public static string GetStorageContainerName()
         {
-            return AppConfiguration.Configuration["AppSettings:azure_storage_container_name"];
+            return AppConfiguration.Configuration["AppSettings:azure_storage_container_name_data_analysis"];
         }
 
         public static List<TextTranslationModel> GetPDFTextTranslations()

@@ -309,7 +309,7 @@ namespace GSWebAPI.GSWebAPI.Services.GameUserRewards
         /// <returns>Returns the user reward.</returns>
         public UserRewardModel GenerateRewardForUser(string userId, int priceNo, bool diamondUnlocked, int tryNo)
         {
-            UserRewardModel userRewardModel = new UserRewardModel
+            var userRewardModel = new UserRewardModel
             {
                 UserId = userId,
                 DiamondsTotal = "0",

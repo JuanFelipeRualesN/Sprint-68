@@ -19,13 +19,6 @@ namespace SchoolsAPI.Controllers
     [Route("schoolsapi")]
     public class RegionController : ControllerBase
     {
-        private readonly IConfiguration _config;
-
-        public RegionController(IConfiguration config)
-        {
-            _config = config;
-        }
-
         /// <summary>
         /// Returns the school's regions available by country (academic regions, not country admin regions).
         /// </summary>
@@ -43,7 +36,7 @@ namespace SchoolsAPI.Controllers
                     GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "SubscriptionAdvanceRead");
 
                 var reader = new SchoolsReader(
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     langCode: null);
 
                 List<RegionModel> regions;
@@ -89,6 +82,45 @@ namespace SchoolsAPI.Controllers
             {
                 var ids = SchoolsAPI.Infrastructure.Repositories.DapperHandler.OreDetails.GetORESchoolsIds(oreId);
                 return Ok(ids);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves school ORE (address) models for the specified list of school IDs
+        /// after validating the user's session and permissions.
+        /// </summary>
+        /// <param name="schoolIds">A list of school identifiers to retrieve records for.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the address models if successful, or a BadRequest/Unauthorized result upon failure.</returns>
+        [HttpGet("schools/ores")]
+        public async Task<IActionResult> GetSchoolOres([FromQuery] List<int> schoolIds)
+        {
+            try
+            {
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "SchoolEntitiesRead");
+
+                if (responseSession == null || !responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+                {
+                    return Unauthorized();
+                }
+
+                if (schoolIds == null || schoolIds.Count == 0)
+                {
+                    return Ok(new List<AddressModel>());
+                }
+
+                var addressToCalls = new List<AddressModel>();
+                foreach (var id in schoolIds)
+                {
+                    addressToCalls.Add(new AddressModel { EntityId = id.ToString() });
+                }
+
+                var reader = new SchoolsReader(AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"], langCode: null);
+
+                return Ok(reader.GetAddressModels(addressToCalls) ?? new List<AddressModel>());
             }
             catch
             {

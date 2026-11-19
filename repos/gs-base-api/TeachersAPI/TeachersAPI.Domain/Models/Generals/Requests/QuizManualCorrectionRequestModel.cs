@@ -30,5 +30,12 @@ namespace TeachersAPI.Domain.Models.Generals.Requests
         /// Gets or sets the teacher feedback.
         /// </summary>
         public string Feedback { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the quiz is auto-corrected. When true, the score was already
+        /// calculated at submission time, so only the teacher feedback is persisted; otherwise
+        /// the quiz is treated as open and the teacher assigns the value per response.
+        /// </summary>
+        public bool AutoCorrect { get; set; }
     }
 }

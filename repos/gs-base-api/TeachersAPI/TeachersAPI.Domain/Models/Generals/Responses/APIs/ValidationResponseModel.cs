@@ -66,5 +66,10 @@ namespace TeachersAPI.Domain.Models.Generals.Responses.APIs
         /// Gets or sets the user's email.
         /// </summary>
         public string Email { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's ORE ID.
+        /// </summary>
+        public string OreId { get; set; }
     }
 }

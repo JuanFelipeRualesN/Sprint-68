@@ -19,11 +19,39 @@ namespace SchoolsAPI.Controllers
     [Route("schoolsapi/academics")]
     public class AcademicDetailsController : ControllerBase
     {
-        private readonly IConfiguration _config;
-
-        public AcademicDetailsController(IConfiguration config)
+        /// <summary>
+        /// To get the academic periods that include today's date, by school ids.
+        /// </summary>
+        /// <param name="schoolIds">The school ids, comma separated.</param>
+        /// <returns>Returns the current academic periods.</returns>
+        [HttpGet("periods/current")]
+        public async Task<IActionResult> GetCurrentAcademicPeriods([FromQuery] string schoolIds)
         {
-            _config = config;
+            try
+            {
+                // Validate permission
+                var session = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext,
+                    "AcademicYearDetails");
+
+                if (!session.SessionValid || string.IsNullOrWhiteSpace(session.UserId))
+                    return Unauthorized();
+
+                if (string.IsNullOrWhiteSpace(schoolIds))
+                {
+                    return BadRequest();
+                }
+
+                // Parse the comma separated school ids.
+                var schoolIdList = schoolIds.Split(',')
+                    .Select(x => int.Parse(x.Trim()))
+                    .ToList();
+
+                return Ok(AcademicDetails.GetCurrentAcademicPeriods(schoolIdList));
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
         }
 
         /// <summary>
@@ -107,7 +135,7 @@ namespace SchoolsAPI.Controllers
         public async Task<IActionResult> GetActiveAcademicYears()
         {
             var apiKey = Request.Headers.TryGetValue("X-API-KEY", out var keyVals) ? keyVals.FirstOrDefault() : null;
-            var internalKey = AppConfiguration.Configuration["AppSettings:INTERNAL_API_KEY"];
+            var internalKey = AppConfiguration.Configuration["AppSettings:InternalApiKey"];
 
             if (!string.IsNullOrWhiteSpace(apiKey) && apiKey == internalKey)
                 return Ok(AcademicDetails.GetActiveAcademicPeriodIds());
@@ -208,7 +236,7 @@ namespace SchoolsAPI.Controllers
             try
             {
                 var reader = new SchoolsReader(
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 return Ok(reader.GetAcademicPeriodModels(academicPeriodModels));
@@ -252,7 +280,7 @@ namespace SchoolsAPI.Controllers
                     },
                     isEdit: true,
                     includeEntitySubscriptionId: false,
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 if (!validateHeader.Valid)
@@ -278,7 +306,7 @@ namespace SchoolsAPI.Controllers
                         toInsert,
                         false,
                          false,
-                        _config.GetConnectionString("SchoolDBConnectionReader"),
+                        AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                         RequestHandler.GetLanguage(HttpContext));
                     if (!v.Valid) return BadRequest(v.Messages);
                 }
@@ -289,15 +317,15 @@ namespace SchoolsAPI.Controllers
                         toUpdate,
                          true,
                          true,
-                        _config.GetConnectionString("SchoolDBConnectionReader"),
+                        AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                         RequestHandler.GetLanguage(HttpContext));
                     if (!v.Valid) return BadRequest(v.Messages);
                 }
 
                 // Persist
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 modifier.UpdateEntityAcademicDetails(new EntityAcademicDetailModel
@@ -362,7 +390,7 @@ namespace SchoolsAPI.Controllers
                     },
                      false,
                      false,
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 if (!validateHeader.Valid)
@@ -373,14 +401,14 @@ namespace SchoolsAPI.Controllers
                     model.AcademicPeriods,
                      false,
                      false,
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
                 if (!validatePeriods.Valid)
                     return BadRequest(validatePeriods);
 
                 var modifier = new SchoolModifierManager(
-                    _config.GetConnectionString("SchoolDBConnection"),
-                    _config.GetConnectionString("SchoolDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnection"],
+                    AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
                     RequestHandler.GetLanguage(HttpContext));
 
                 var created = modifier.CreateEntityAcademicDetails(new EntityAcademicDetailModel
@@ -406,17 +434,16 @@ namespace SchoolsAPI.Controllers
                         modifier.CreateAcademicPeriods(model.AcademicPeriods, session.UserId);
                     }
                 }
-
-                var okMsg = new MessageManager(
-                        _config.GetConnectionString("SchoolDBConnectionReader"),
-                        RequestHandler.GetLanguage(HttpContext))
-                    .GetMessageDetails(_config["sch_entity_success"]);
-
-                return StatusCode(201, new ResponseModel
+                created.Valid = true;
+                created.Messages = new List<string>()
                 {
-                    Valid = true,
-                    Messages = new List<string> { okMsg }
-                });
+                    new MessageManager(
+                        AppConfiguration.Configuration["ConnectionStrings:SchoolDBConnectionReader"],
+                        RequestHandler.GetLanguage(HttpContext))
+                    .GetMessageDetails(AppConfiguration.Configuration["AppSettings:sch_entity_success"])
+                };
+
+                return StatusCode(201, created);
             }
             catch
             {

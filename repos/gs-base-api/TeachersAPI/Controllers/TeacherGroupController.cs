@@ -7,6 +7,7 @@ using TeachersAPI.CustomClasses;
 using TeachersAPI.TeachersAPI.Services.Teachers;
 using TeachersAPI.TeachersAPI.Services.FeignAPI;
 using TeachersAPI.TeachersAPI.Infrastructure.DapperHandler;
+using TeachersAPI.TeachersAPI.Infrastructure.Repositories.Teachers;
 using TeachersAPI.Domain.Models.Teachers;
 using TeachersAPI.Domain.Models.Generals.Responses;
 using TeachersAPI.Domain.Models.Generals.Responses.APIs;
@@ -20,6 +21,37 @@ namespace TeachersAPI.Controllers
     [Route("teachersapi/teacher-groups")]
     public class TeacherGroupController : ControllerBase
     {
+        /// <summary>
+        /// To get the teachers groups total according to the user that is making the request.
+        /// </summary>
+        /// <returns>The total of teacher groups. </returns>
+        [HttpGet("total")]
+        public async Task<IActionResult> GetTeacherGroupsTotal()
+        {
+            try
+            {
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "TeacherGroup");
+                if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+                {
+                    return Unauthorized();
+                }
+
+                // Get the teacher groups with Dapper.
+                var teacherGroupsTotal = new TeacherGroupDAO().Read(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], new TeacherGroupModel()
+                    {
+                        TeacherId = responseSession.UserId,
+                        Available = "1"
+                    }, false, false).Count();
+
+                return Ok(teacherGroupsTotal);
+            }
+            catch (Exception)
+            {
+                // Return error about invalid request
+                return BadRequest();
+            }
+        }
+
         [HttpGet("{fromPage}/{limit}")]
         public async Task<IActionResult> GetTeacherGroups(int fromPage, int limit)
         {
@@ -67,6 +99,82 @@ namespace TeachersAPI.Controllers
                 teacherGroupResponse.TotalPages = int.Parse(Math.Ceiling((double)teacherGroupResponse.TeacherGroupModelList.Count() / limit).ToString());
                 teacherGroupResponse.TeacherGroupModelList = teacherGroupResponse.TeacherGroupModelList != null && teacherGroupResponse.TeacherGroupModelList.Count() > 0 ? teacherGroupResponse.TeacherGroupModelList.Skip(fromPage * limit).Take(limit).ToList() : teacherGroupResponse.TeacherGroupModelList.ToList();
                 return Ok(teacherGroupResponse);
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
+        }
+        /// <summary>
+        /// Lists the groups created by the director's teachers
+        /// </summary>
+        [HttpGet("director/{fromPage}/{limit}")]
+        public async Task<IActionResult> GetDirectorTeacherGroups(int fromPage, int limit)
+        {
+            try
+            {
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "ReadTeacherGroup");
+                if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+                {
+                    return Unauthorized();
+                }
+
+                // The director's teachers, scoped to the director's school
+                var teachersResponse = GetUserDetails.GetStudentsThatCanBeHandled(new UserRequestModel
+                {
+                    PageFrom = fromPage,
+                    Limiter = limit,
+                    SameSchoolRequired = true,
+                    IsDirector = true,
+                    RoleId = "5"
+                }, responseSession.Token);
+
+                var response = new DirectorTeacherGroupsResponseModel();
+
+                if (teachersResponse == null || teachersResponse.UserInfo == null || teachersResponse.UserInfo.Count == 0)
+                {
+                    return Ok(response);
+                }
+
+                response.TotalPages = teachersResponse.PageTotals;
+
+                // One query for every teacher's groups on this page
+                var teacherIds = teachersResponse.UserInfo.Select(teacher => teacher.UserId).ToList();
+                var groupRows = TeacherGroups.GetTeacherGroupsByTeachers(teacherIds);
+
+                foreach (var teacher in teachersResponse.UserInfo)
+                {
+                    var teacherModel = new Domain.Models.Generals.Responses.DirectorTeacherModel
+                    {
+                        TeacherId = teacher.UserId,
+                        TeacherName = $"{teacher.GivenName} {teacher.Surname}".Trim(),
+                    };
+
+                    var teacherRows = groupRows.FindAll(row => row.TeacherId == teacher.UserId);
+                    foreach (var groupId in teacherRows.Select(row => row.GroupId).Distinct())
+                    {
+                        var rowsForGroup = teacherRows.FindAll(row => row.GroupId == groupId);
+                        var studentIds = rowsForGroup
+                            .Where(row => !string.IsNullOrWhiteSpace(row.StudentId))
+                            .Select(row => row.StudentId)
+                            .Distinct()
+                            .ToList();
+
+                        teacherModel.Groups.Add(new Domain.Models.Generals.Responses.DirectorTeacherGroupModel
+                        {
+                            Id = rowsForGroup[0].GroupId,
+                            Name = rowsForGroup[0].GroupName,
+                            SubjectCode = rowsForGroup[0].SubjectCode,
+                            LevelCode = rowsForGroup[0].LevelCode,
+                            TotalStudents = studentIds.Count,
+                            StudentIds = studentIds,
+                        });
+                    }
+
+                    response.Teachers.Add(teacherModel);
+                }
+
+                return Ok(response);
             }
             catch (Exception)
             {
