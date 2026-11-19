@@ -380,8 +380,18 @@ public sealed class AsistenteFoundry
     /// El modelo cierra con «Referencias: …» (útil en el arnés de pruebas); en el panel se muestran las de la API, así que NINGÚN bloque de
     /// referencias puede quedar en la respuesta (ni al final, ni en medio, ni en línea con el texto) y el texto debe salir UNA sola vez.
     /// </summary>
-    static readonly Regex BloqueReferencias = new(@"Referencias:\s*consulta=.*?(?:generado=\S+|(?=\n\s*\n)|\z)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    static readonly Regex LineaReferencias = new(@"(?im)^[ \t]*Referencias:.*(?:\n|\z)", RegexOptions.Compiled);
+    // Independiente del idioma y del formato: la rótulo (Referencias/References/Fuentes/Sources, con o sin markdown: **, _, #, >, viñeta, `, con los dos puntos dentro
+    // o fuera de la negrita, en la misma línea o en la anterior) es opcional; lo que identifica el bloque es el patrón «consulta=…; fuente=…» (o «query=…; source=…»)
+    // hasta «generado=…»/«generated=…», el fin del párrafo o del texto.
+    const string Marca = @"[*_`#>•\-]";
+    static readonly Regex BloqueReferencias = new(
+        @"(?:(?:" + Marca + @"+[ \t]*)*(?:referencias?|references?|fuentes?|sources?)[ \t]*" + Marca + @"*[ \t]*:?[ \t]*" + Marca + @"*\s*)?" +
+        @"(?:consulta|query)[ \t]*=[^;\n]{0,200};\s*(?:fuente|source)[ \t]*=.*?(?:(?:generado|generated)[ \t]*=[^\s]*|(?=\n[ \t]*\n)|\z)" + Marca + @"*[.]?" + Marca + @"*",
+        RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    // Un rótulo suelto («Referencias:» / «References:» al inicio de línea) quita toda la línea; «Fuentes:»/«Sources:» solo si la línea trae pares clave=valor.
+    static readonly Regex LineaReferencias = new(
+        @"(?im)^[ \t]*(?:" + Marca + @"+[ \t]*)*(?:(?:referencias?|references?)[ \t]*" + Marca + @"*[ \t]*:|(?:fuentes?|sources?)[ \t]*" + Marca + @"*[ \t]*:(?=[^\n]*\w[\w ]*=))[^\n]*(?:\n|\z)",
+        RegexOptions.Compiled);
     static string QuitarBloqueReferencias(string texto)
     {
         var t = BloqueReferencias.Replace(texto, " ");
