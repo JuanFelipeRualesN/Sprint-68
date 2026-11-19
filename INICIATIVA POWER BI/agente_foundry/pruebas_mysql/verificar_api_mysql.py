@@ -703,6 +703,9 @@ igual("instrucciones: regla de porcentajes > 100 (no topar, explicar en una fras
 igual("instrucciones: regla de listas cortadas (cuántas se muestran, cuántas hay, cuántas quedan fuera y por qué; sin «excluidas» falsas)",
       ("cuántas filas muestras" in INSTR, "cuántas existen en total" in INSTR, "POR QUÉ" in INSTR, "escuelas_sin_conectados" in INSTR, "NO se excluyen" in INSTR), (True,) * 5)
 
+igual("instrucciones: regla 2d del año académico por defecto (agosto a julio, decirlo y ofrecer cambiarlo)",
+      ("{anio_academico_desde}" in INSTR, "agosto a julio" in INSTR, "SIEMPRE dilo" in INSTR, "ofrece cambiarlo" in INSTR), (True,) * 4)
+
 # tipos de celda y tildes
 _, _, hojas, _ = exportar("uso-por-area", **D)
 datos = hojas["Datos"]
@@ -977,6 +980,10 @@ if AUTH:
         igual("asistente: la respuesta normal no se toca", pregunta("tok-ore2", "hola")[1]["respuesta"], "Listo.")
         igual("asistente: la API manda a Foundry las reglas del agente (porcentajes > 100 y listas cortadas)",
               ("4f." in enviadas and "pasa de 100" in enviadas, "4g." in enviadas and "POR QUÉ" in enviadas), (True, True))
+        _hoy = (dt.datetime.utcnow() - dt.timedelta(hours=4)).date()           # el servicio lee el día en hora de Puerto Rico
+        _ini = _hoy.year if _hoy.month >= 8 else _hoy.year - 1
+        igual("asistente: año académico por defecto (agosto a julio) con las fechas calculadas y sin marcadores sin reemplazar",
+              (f"del {_ini - 1}-08-01 al {_ini}-07-31" in enviadas, f"del {_ini}-08-01 a hoy" in enviadas, "{anio_academico" in enviadas), (True, True, False))
         igual("conversaciones: otra persona con tu conversacion_id empieza una nueva; tú continúas la tuya",
               (r2["conversacion_id"] != r1["conversacion_id"], r3["conversacion_id"] == r1["conversacion_id"]), (True, True))
 

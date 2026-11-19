@@ -217,7 +217,9 @@ public sealed class AsistenteFoundry
         var instrucciones = _plantilla.Replace("{hoy}", hoy)
             .Replace("{trimestre_desde}", mesActual.AddMonths(-3).ToString("yyyy-MM-dd")).Replace("{trimestre_hasta}", mesActual.AddDays(-1).ToString("yyyy-MM-dd"))
             .Replace("{mes_pasado_desde}", mesActual.AddMonths(-1).ToString("yyyy-MM-dd")).Replace("{mes_pasado_hasta}", mesActual.AddDays(-1).ToString("yyyy-MM-dd"))
-            .Replace("{inicio_anio}", new DateOnly(h.Year, 1, 1).ToString("yyyy-MM-dd"));
+            .Replace("{inicio_anio}", new DateOnly(h.Year, 1, 1).ToString("yyyy-MM-dd"))
+            .Replace("{anio_academico_desde}", AnioAcademico(h).Desde.ToString("yyyy-MM-dd")).Replace("{anio_academico_hasta}", AnioAcademico(h).Hasta.ToString("yyyy-MM-dd"))
+            .Replace("{anio_academico_actual_desde}", AnioAcademico(h).ActualDesde.ToString("yyyy-MM-dd"));
 
         var referencias = new List<JsonNode>(); var consultas = new List<JsonNode>();
         var descargas = new List<JsonNode>(); var graficas = new List<JsonNode>(); var vistas = new HashSet<string>();
@@ -294,6 +296,16 @@ public sealed class AsistenteFoundry
         return new RespuestaAsistente(visible, conversacion, referencias, avisos,
             Verificar(pregunta, contexto, visible, salidas, argumentos, hoy, previas), consultas,
             Descargas: descargas.Count > 0 ? descargas : null, Graficas: graficas.Count > 0 ? graficas : null);
+    }
+
+    /// <summary>
+    /// Año académico por defecto (SUPUESTO documentado: agosto a julio). «El último año académico» = el año académico COMPLETO más reciente;
+    /// «este año académico» = desde el 1 de agosto vigente hasta hoy. El asistente lo dice en la respuesta y ofrece cambiarlo.
+    /// </summary>
+    public static (DateOnly Desde, DateOnly Hasta, DateOnly ActualDesde) AnioAcademico(DateOnly hoy)
+    {
+        var inicio = hoy.Month >= 8 ? hoy.Year : hoy.Year - 1;          // el año académico en curso empezó el 1-ago de este año
+        return (new DateOnly(inicio - 1, 8, 1), new DateOnly(inicio, 7, 31), new DateOnly(inicio, 8, 1));
     }
 
     // ── Utilidades ─────────────────────────────────────────────────────────────────────────────────────────────

@@ -35,6 +35,8 @@ No se toca el chatbot de planeación, `AI_BOT_AVAILABLE`, `AI_DASHBOARD_AVAILABL
 
 **Contexto de Power BI:** el panel lee la **página activa** del informe (`getActivePage()` y el evento `pageChanged`) y la manda como *orientación*; las instrucciones prohíben usarla como dato o período.
 
+**Año académico por defecto (regla 2d, supuesto):** «el último año académico» / «el año académico pasado» sin fechas = el año académico COMPLETO más reciente de **agosto a julio** (p. ej. hoy 2026-11-19 → 2025-08-01 a 2026-07-31); «este año académico» = desde el último 1 de agosto hasta hoy. El asistente dice el rango asumido y ofrece cambiarlo. Las fechas las calcula el código (`Asistente.AnioAcademico`), no el modelo. Si la plataforma usa otro calendario, se cambia ahí y en la regla 2d.
+
 ## Cómo correrlo
 1. **API real con el asistente** (VPN activa; `az login` vigente): `correr_api_mysql.sh` ya exporta `Asistente__Habilitado=true`, `Asistente__Credencial=azcli`, `ASPNETCORE_ENVIRONMENT=Development`, `Auth__Modo=local` (sin validación, solo loopback) y `Cors__Origenes=http://localhost:3000`.
 2. **Front** (otra terminal; entras con tu usuario administrador):

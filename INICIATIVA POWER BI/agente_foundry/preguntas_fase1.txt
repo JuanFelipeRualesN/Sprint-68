@@ -55,3 +55,9 @@ Ranking de escuelas por porcentaje de usuarios conectados desde el 1 de julio de
 What schools had the highest participation since July 2026?
 Dame el ranking de participación por escuela desde el 1 de julio de 2026.
 ¿Qué porcentaje de participación tiene cada escuela en lo corrido de 2026? (pídelo completo: limite=50; si siguen siendo más, debe decir cuántas faltan)
+
+# Año académico por defecto (regla 2d). NO debe pedir fechas: asume agosto a julio (del 1-ago al 31-jul más recientes completos), lo dice con las fechas exactas y ofrece cambiarlo.
+# (conexiones_por_escuela · desde {anio_academico_desde} hasta {anio_academico_hasta})
+¿Cuántas escuelas se conectaron en el último año académico?
+How many schools connected during the last academic year?
+Dame las conexiones por escuela del año académico pasado.
