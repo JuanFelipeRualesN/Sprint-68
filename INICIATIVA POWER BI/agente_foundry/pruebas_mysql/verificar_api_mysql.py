@@ -84,7 +84,7 @@ def igual(nombre, obtenido, esperado):
     total += 1
     if obtenido != esperado:
         fallos.append(nombre)
-        print(f"  ✗ {nombre}\n      API      : {json.dumps(obtenido, ensure_ascii=False)[:400]}\n      ESPERADO : {json.dumps(esperado, ensure_ascii=False)[:400]}")
+        print(f"  ✗ {nombre}\n      API      : {json.dumps(obtenido, ensure_ascii=False, default=str)[:400]}\n      ESPERADO : {json.dumps(esperado, ensure_ascii=False, default=str)[:400]}")
     else:
         print(f"  ✓ {nombre}")
 
@@ -588,8 +588,28 @@ CASOS = [
 ]
 print("  (promedio-full-quiz: no se prueba aquí; el esquema sintético no tiene result_generic.total_percent_full_quiz)")
 
+def esperado_data_grafica(ruta, filas, tipo, col_cat, series, todas=False, orden="desc", ceros=False, limite=10):
+    """(data esperada, total_categorias, categorias_en_cero) de una gráfica a partir de TODAS las filas de la consulta.
+    Barras: sin categorías en 0 (salvo ceros), de mayor a menor por la serie principal (empate por nombre), vista previa de 10. Líneas y «día de la semana»: tal cual."""
+    ordena = tipo[0] == "bar" and ruta != "patrones-conexion"
+    en_cero, sel = 0, list(filas)
+    if ordena:
+        principal = "pruebas_completadas" if ruta == "uso-por-area" else series[0]
+        cero = lambda f: all((f.get(k) or 0) == 0 for k in series)
+        en_cero = sum(1 for f in filas if cero(f))
+        sel = [f for f in filas if ceros or not cero(f)]
+        sel.sort(key=lambda f: ((f.get(principal) or 0) * (1 if orden == "asc" else -1), f[col_cat]))
+    total = len(sel)
+    if ordena and not todas:
+        sel = sel[:limite]
+    etiquetas = [f[col_cat] for f in sel]
+    if ruta == "uso-docentes" and len(set(etiquetas)) != len(etiquetas):
+        etiquetas = [f"{f['escuela']} ({f['periodo_desde']})" for f in sel]
+    return [{"categoria": e, **{k: f.get(k) for k in series}} for e, f in zip(etiquetas, sel)], total, en_cero
+
+
 for ruta, q, archivo, tipo, col_cat, series in CASOS:
-    _, r = api("/" + ruta, **q)
+    _, r = api("/" + ruta, **q, limite=50)
     st, h, hojas, formulas = exportar(ruta, **q)
     igual(f"{ruta}: xlsx → 200, content-type xlsx y nombre de archivo {archivo}.xlsx",
           (st, h.get("Content-Type"), f"filename={archivo}.xlsx" in h.get("Content-Disposition", ""), formulas), (200, TIPO_XLSX, True, 0))
@@ -600,13 +620,12 @@ for ruta, q, archivo, tipo, col_cat, series in CASOS:
     igual(f"{ruta}: hojas = Datos y Referencias", list(hojas), ["Datos", "Referencias"])
     # gráfica
     st, g = grafica(ruta, **q)
-    filas = r["resultados"]
-    etiquetas = [f[col_cat] for f in filas]
-    if ruta == "uso-docentes" and len(set(etiquetas)) != len(etiquetas):
-        etiquetas = [f"{f['escuela']} ({f['periodo_desde']})" for f in filas]
-    igual(f"{ruta}: gráfica {tipo[0]}/{tipo[1]}: data (objetos planos) y series = resultados",
-          (st, (g.get("tipo"), g.get("layout")), g["eje_x"]["clave"], [s["clave"] for s in g["series"]], g["data"], g["filas"], g["consulta"], "categorias" in g["eje_x"]),
-          (200, tipo, "categoria", series, [{"categoria": e, **{k: f.get(k) for k in series}} for e, f in zip(etiquetas, filas)], len(filas), r["consulta"], False))
+    esp_data, esp_total, esp_cero = esperado_data_grafica(ruta, r["resultados"], tipo, col_cat, series)
+    igual(f"{ruta}: gráfica {tipo[0]}/{tipo[1]}: data (objetos planos), series y total_categorias = recálculo (barras: mayor a menor, sin ceros, 10)",
+          (st, (g.get("tipo"), g.get("layout")), g["eje_x"]["clave"], [s["clave"] for s in g["series"]], g["data"], (g["filas"], g["categorias_mostradas"], g["total_categorias"]), g["consulta"], "categorias" in g["eje_x"]),
+          (200, tipo, "categoria", series, esp_data, (len(esp_data), len(esp_data), esp_total), r["consulta"], False))
+    igual(f"{ruta}: gráfica: categorias_en_cero / orden solo en barras ordenables", (g.get("categorias_en_cero"), g.get("orden")),
+          (esp_cero, "desc") if tipo[0] == "bar" and ruta != "patrones-conexion" else (None, None))
 
 # exportación = lista completa, contrastada con la fuerza bruta
 a, b = rango("2026-01-01", "2026-11-10")
@@ -697,9 +716,9 @@ esp_u = {f["nombre"]: f.get("ultima_conexion") for f in esperado_escuelas(D["des
 i_u = cab.index("Última conexión")
 igual("Excel de conexiones-por-escuela: columna «Última conexión» = fuerza bruta", {f[0]: f[i_u] for f in filas}, esp_u)
 cab, filas, ref = datos_exportados("conexiones-por-maestro", **D)
-esp_m = {(f["nombre"], f["escuela"]): f.get("ultima_conexion") for f in esperado_maestros(D["desde"], D["hasta"], True, 5000)}
+esp_m = {(f["nombre"], f["escuela"]): f.get("ultima_conexion") for f in esperado_maestros(D["desde"], D["hasta"], True, 5000)}   # (nombre, escuela) es único en los datos de prueba
 i_m = cab.index("Última conexión")
-igual("Excel de conexiones-por-maestro: columna «Última conexión» = fuerza bruta", {(f[0], f[1]): f[i_m] for f in filas}, esp_m)
+igual("Excel de conexiones-por-maestro: columna «Última conexión» = fuerza bruta", sorted(((f[0], f[1]), f[i_m]) for f in filas), sorted(esp_m.items()))
 _, rm = api("/conexiones-por-maestro", **D, limite=50)
 igual("ultima_conexion de cada maestro (JSON) = fuerza bruta", [f.get("ultima_conexion") for f in rm["resultados"]],
       [f.get("ultima_conexion") for f in esperado_maestros(D["desde"], D["hasta"], True, 50)])
@@ -751,8 +770,36 @@ _, r = api("/tendencia-conexiones", **D)
 igual("gráfica de tendencia: la suma de 'conexiones' en data = resumen.total_conexiones", sum(p["conexiones"] for p in g["data"]), r["resumen"]["total_conexiones"])
 igual("gráfica de tendencia: título, ejes y hay_mas_filas", (g["titulo"], g["eje_x"]["titulo"], g["eje_y"]["unidad"], g["hay_mas_filas"]),
       ("Conexiones por mes", "Período", "conexiones", False))
-st, g = grafica("conexiones-por-maestro", **D, limite=3)
-igual("gráfica de maestros con limite=3: 3 barras y hay_mas_filas=true", (g["filas"], g["hay_mas_filas"]), (3, True))
+# parámetros de la gráfica: todas, orden, incluir_ceros, limite (vista previa de 10 por defecto, sin ceros, mayor a menor)
+_, rm = api("/conexiones-por-escuela", **D, limite=50)
+col_esc, ser_esc = "nombre", ["conexiones"]
+for nombre, params in (("vista previa (por defecto)", {}), ("todas", dict(todas="true")), ("orden=asc", dict(orden="asc")),
+                       ("todas + incluir_ceros", dict(todas="true", incluir_ceros="true")), ("incluir_ceros (10 primeras)", dict(incluir_ceros="true")),
+                       ("todas + asc + incluir_ceros", dict(todas="true", orden="asc", incluir_ceros="true")), ("limite=3", dict(limite=3)), ("limite=3 + asc", dict(limite=3, orden="asc"))):
+    st, g = grafica("conexiones-por-escuela", **D, **params)
+    esp, tot, cero = esperado_data_grafica("conexiones-por-escuela", rm["resultados"], ("bar", "vertical"), col_esc, ser_esc,
+                                           todas=params.get("todas") == "true", orden=params.get("orden", "desc"), ceros=params.get("incluir_ceros") == "true", limite=params.get("limite", 10))
+    igual(f"gráfica de escuelas, {nombre}: data = recálculo; mostradas/total/en cero; orden e incluir_ceros declarados",
+          (st, g["data"], g["categorias_mostradas"], g["total_categorias"], g["categorias_en_cero"], g["orden"], g["incluir_ceros"], g["todas"]),
+          (200, esp, len(esp), tot, cero, params.get("orden", "desc"), params.get("incluir_ceros") == "true", params.get("todas") == "true"))
+st, g = grafica("conexiones-por-escuela", **D)
+vals = [p["conexiones"] for p in g["data"]]
+igual("gráfica de escuelas por defecto: a lo más 10, de mayor a menor, ninguna en 0 y total mayor que las mostradas",
+      (len(vals) <= 10, vals == sorted(vals, reverse=True), all(v > 0 for v in vals), g["total_categorias"] >= g["categorias_mostradas"]), (True,) * 4)
+st, g = grafica("conexiones-por-escuela", **D, todas="true", incluir_ceros="true", orden="asc")
+igual("gráfica de escuelas todas + ceros + asc: aparecen las escuelas sin conexiones (en 0) y van primero", (g["data"][0]["conexiones"], g["total_categorias"] == len(rm["resultados"])), (0, True))
+st, g = grafica("patrones-conexion", **D, orden="asc", incluir_ceros="false")
+igual("gráfica de día de la semana: siempre los 7 días en su orden natural (no se ordena ni se filtra)", ([p["categoria"] for p in g["data"]], g["total_categorias"]),
+      (["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"], 7))
+for params, texto in ((dict(todas="quizas"), "'todas' debe ser true o false"), (dict(incluir_ceros="2"), "'incluir_ceros' debe ser true o false"), (dict(orden="zig"), "'orden' debe ser")):
+    st, _, cuerpo = api_bin("/exportar/conexiones-por-escuela", formato="grafica", **D, **params)
+    igual(f"gráfica con parámetro inválido {params} → 400", (st, texto in json.loads(cuerpo)["mensaje"]), (400, True))
+st, _, cuerpo = api_bin("/exportar/conexiones-por-escuela", formato="grafica", **D, limite=5001)
+igual("gráfica con limite=5001 → 400", st, 400)
+st, g = grafica("conexiones-por-escuela", desde="2026-12-01", hasta="2026-12-31", min_conexiones=1)
+igual("gráfica sin categorías (sin ceros y nada que mostrar) → 422 sin_grafica", (st, g.get("error")), (422, "sin_grafica"))
+st, g = grafica("tendencia-conexiones", **D, todas="true", orden="asc")
+igual("gráfica de líneas: orden natural del tiempo aunque pidan orden (sin campos de orden)", ([p["categoria"] for p in g["data"]] == sorted(p["categoria"] for p in g["data"]), "orden" in g, g["total_categorias"] == g["categorias_mostradas"]), (True, False, True))
 st, g = grafica("participacion-escuelas", **D)
 igual("gráfica de participación: unidad %", (g["eje_y"]["unidad"], g["datos_hasta"], g["filtros"]["cuentas_de_prueba"]),
       ("%", api("/salud")[1]["datos_hasta_conexiones"], "excluidas" if EXCL else "incluidas"))
@@ -987,6 +1034,19 @@ if AUTH:
               (http("GET", d["url"], "tok-ore1")[0], http("GET", "/asistente/descargas/inventado", "tok-ore2")[0], json.loads(http("GET", d["url"], "tok-ore1")[2])["error"]),
               (404, 404, "descarga_expirada"))
         igual("la descarga sin Token → 401", http("GET", d["url"])[0], 401)
+        # gráfica del chat: sale de /exportar?formato=grafica (ordenada, sin ceros, vista previa) y se puede ampliar por id (mismo dueño, mismo alcance)
+        gr = (r.get("graficas") or [{}])[0]
+        igual("asistente: graficas[] trae id, url de ampliación y los totales de categorías (vista previa)",
+              (gr.get("id") == d.get("id"), gr.get("url") == "/asistente/graficas/" + d.get("id", "?"), gr.get("categorias_mostradas") == len(gr.get("data", [])),
+               gr.get("total_categorias", 0) >= gr.get("categorias_mostradas", 1), gr.get("orden")), (True, True, True, True, "desc"))
+        esp_maestros_ore2 = [f for f in esperado_maestros(CON["desde"], CON["hasta"], True, 5000) if f["escuela"] in ESC_ORE2]
+        st, h, cuerpo = http("GET", gr["url"], "tok-ore2", None, None, todas="true", incluir_ceros="true", orden="asc")
+        ga = json.loads(cuerpo)
+        igual("asistente: GET /asistente/graficas/{id}?todas&incluir_ceros&orden=asc → TODOS los maestros de su ORE (solo los suyos), de menor a mayor",
+              (st, ga["total_categorias"], ga["categorias_mostradas"], [p["conexiones"] for p in ga["data"]] == sorted(p["conexiones"] for p in ga["data"]), ga["orden"], ga["id"] == d["id"]),
+              (200, len(esp_maestros_ore2), len(esp_maestros_ore2), True, "asc", True))
+        igual("asistente: la gráfica ampliada de otra persona → 404; sin Token → 401; parámetro inválido → 400",
+              (http("GET", gr["url"], "tok-ore1")[0], http("GET", gr["url"])[0], http("GET", gr["url"], "tok-ore2", None, None, todas="quizas")[0]), (404, 401, 400))
         st, r = pregunta("tok-ore2", "AJENA dime los maestros de la escuela A")
         igual("asistente: el admin-ore pregunta por una escuela de otro ORE → la consulta falla (400) y no recibe datos ni descargas",
               (st, [c["estado"] for c in r["consultas"]], r.get("descargas")), (200, [400], None))

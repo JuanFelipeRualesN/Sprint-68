@@ -6,7 +6,15 @@
 - Los parámetros y sus validaciones son **los mismos** que los de la ruta JSON (mismos mensajes 400/503).
 - `formato=xlsx` (por defecto): libro `.xlsx` con la hoja `Datos` y la hoja `Referencias` (consulta, fuente, columna de fecha, período, filtros, cuentas de prueba, datos hasta, filas exportadas, nota completa, resumen). Sin `limite` trae **todas** las filas (hasta 5000; `limite` admite 1–5000). El nombre viene en `Content-Disposition`: `{consulta}_{desde}_{hasta}.xlsx`.
 - Hoja `Datos` vacía: si el período pedido empieza después de «Datos hasta», dice la causa («No hay datos de pruebas después del 2026-04-23; el período pedido empieza el 2026-07-01»); si no, el mensaje genérico. En `Referencias` los valores numéricos (filtros como `limite`, filas exportadas, cifras del resumen) son números, no texto.
-- `formato=grafica`: JSON listo para Recharts (`tipo` `line`|`bar`, `layout`, `data`, `series`, `eje_x`, `eje_y`, `titulo`, referencias). Usa el `limite` normal (≤ 50). Menos de 2 filas → 422 `sin_grafica`.
+- `formato=grafica`: JSON listo para Recharts (`tipo` `line`|`bar`, `layout`, `data`, `series`, `eje_x`, `eje_y`, `titulo`, referencias). Trabaja con **todas** las filas de la consulta (hasta 5000) y devuelve una **vista previa**. Menos de 2 categorías → 422 `sin_grafica`. Parámetros de la gráfica (además de los filtros de la consulta):
+  | Parámetro | Valores | Por defecto | Efecto |
+  |---|---|---|---|
+  | `todas` | `true` / `false` | `false` | `false` = vista previa de `limite` categorías; `true` = todas. |
+  | `orden` | `desc` / `asc` | `desc` | Barras ordenadas por la serie principal (mayor a menor o al revés; empate por nombre). |
+  | `incluir_ceros` | `true` / `false` | `false` | Por defecto se omiten las categorías cuyos valores son todos 0 o vacíos. |
+  | `limite` | 1–5000 | `10` | Categorías de la vista previa (en la gráfica NO es el límite de filas de la consulta). |
+
+  Campos nuevos en la respuesta (barras): `total_categorias` (las que hay con esas opciones; para «10 de 47»), `categorias_mostradas` (las de `data`), `categorias_en_cero` (las de valor 0, estén o no incluidas), `orden`, `incluir_ceros`, `todas`. Las **líneas** (tendencia, acumuladas) y `patrones-conexion` por día de la semana mantienen su orden natural y todas sus categorías (sin esos campos de orden). En el chat, `graficas[]` trae además `id` y `url` (`/asistente/graficas/{id}?todas=&orden=&incluir_ceros=&limite=`, mismo dueño y alcance que la descarga) para pedir la versión ampliada.
 - Errores: 404 `consulta_desconocida`, 400 `parametros_invalidos` (formato, fechas, límite, escuela), 422 `sin_grafica`, 503 `base_no_disponible`.
 
 ## Seguridad (Fase 4 · A1–A3; diseño en `DISENO_AUTH.md`)

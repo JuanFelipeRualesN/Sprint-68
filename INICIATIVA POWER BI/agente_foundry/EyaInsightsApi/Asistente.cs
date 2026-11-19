@@ -168,6 +168,33 @@ public sealed class AsistenteFoundry
     public EntradaDescarga? BuscarDescarga(string id, Usuario u) =>
         _descargas.TryGetValue(id, out var e) && e.Expira > DateTime.UtcNow && e.Usuario == ClaveUsuario(u) ? e : null;
 
+    static readonly string[] ParamsDeGrafica = ["formato", "limite", "todas", "incluir_ceros"];
+
+    /// <summary>
+    /// Query de la gráfica de una consulta del chat: los mismos filtros, sin 'limite' (la consulta del chat trae pocas filas) y con formato=grafica.
+    /// Si el modelo pidió un 'limite' de 1 a 10 se respeta como nº de categorías de la vista previa; 'orden' se conserva (si no, mayor a menor).
+    /// </summary>
+    public static string QueryDeGrafica(string query)
+    {
+        var partes = query.Split('&', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var lim = partes.FirstOrDefault(x => x.StartsWith("limite=", StringComparison.Ordinal));
+        var salida = partes.Where(x => !ParamsDeGrafica.Any(k => x.StartsWith(k + "=", StringComparison.Ordinal))).ToList();
+        if (lim is not null && int.TryParse(lim[7..], out var n) && n is >= 1 and <= OpcionesGrafica.LimiteVistaPrevia) salida.Add("limite=" + n);
+        salida.Add("formato=grafica");
+        return string.Join("&", salida);
+    }
+
+    /// <summary>Query de la gráfica de una descarga registrada, con las opciones de la persona (todas, orden, incluir_ceros, limite) por encima de las del chat.</summary>
+    public static string QueryDeGraficaAmpliada(string queryDescarga, IQueryCollection pedido)
+    {
+        var sustituye = new[] { "todas", "orden", "incluir_ceros", "limite" }.Where(k => pedido.ContainsKey(k)).ToHashSet();
+        var partes = queryDescarga.Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(x => !ParamsDeGrafica.Any(k => x.StartsWith(k + "=", StringComparison.Ordinal)) && !sustituye.Any(k => x.StartsWith(k + "=", StringComparison.Ordinal))).ToList();
+        foreach (var k in sustituye) partes.Add($"{k}={Uri.EscapeDataString(pedido[k].ToString())}");
+        partes.Add("formato=grafica");
+        return string.Join("&", partes);
+    }
+
     /// <summary>Query de la descarga: la de la consulta del chat SIN 'limite' (el Excel trae la lista completa, hasta 5000 filas) y con formato=xlsx.</summary>
     public static string QueryDeExcel(string query)
     {
@@ -199,7 +226,9 @@ public sealed class AsistenteFoundry
     }
 
     // ── La pregunta ────────────────────────────────────────────────────────────────────────────────────────────
-    public async Task<RespuestaAsistente> PreguntarAsync(PreguntaAsistente p, Usuario usuario, Func<string, JsonObject, Task<ResultadoHerramienta>> ejecutar, CancellationToken ct)
+    /// <param name="pedir">GET por loopback (con la identidad de quien pregunta) a una ruta relativa de esta API: se usa para pedir la gráfica ya ordenada, sin ceros y con su total.</param>
+    public async Task<RespuestaAsistente> PreguntarAsync(PreguntaAsistente p, Usuario usuario, Func<string, JsonObject, Task<ResultadoHerramienta>> ejecutar,
+        Func<string, Task<(int Estado, string Cuerpo)>> pedir, CancellationToken ct)
     {
         var pregunta = (p.Pregunta ?? "").Trim();
         if (pregunta.Length > 1000) pregunta = pregunta[..1000];
@@ -275,7 +304,17 @@ public sealed class AsistenteFoundry
                         var id = RegistrarDescarga(consulta, QueryDeExcel(query), usuario);
                         descargas.Add(new JsonObject { ["id"] = id, ["nombre"] = Columnas.NombreArchivo(nodo), ["consulta"] = consulta,
                             ["url"] = "/asistente/descargas/" + id, ["destacar"] = pideExcel });
-                        if (Graficas.Desde(nodo) is JsonObject spec) { spec["destacar"] = pideGrafica; graficas.Add(spec); }
+                        // La gráfica sale de /exportar/{consulta}?formato=grafica (todas las filas: ordenada, sin ceros, vista previa de 10 y con su total),
+                        // no de las filas del chat. Con el id de la descarga el panel pide después la versión ampliada (GET /asistente/graficas/{id}).
+                        if (Graficas.Graficable(consulta))
+                        {
+                            var (eg, cg) = await pedir($"/exportar/{Uri.EscapeDataString(consulta)}?{QueryDeGrafica(query)}");
+                            if (eg == 200 && JsonNode.Parse(cg) is JsonObject spec)
+                            {
+                                spec["id"] = id; spec["url"] = "/asistente/graficas/" + id; spec["destacar"] = pideGrafica;
+                                graficas.Add(spec);
+                            }
+                        }
                     }
                 }
                 resultados.Add(new JsonObject { ["type"] = "function_call_output", ["call_id"] = callId, ["output"] = salida });
