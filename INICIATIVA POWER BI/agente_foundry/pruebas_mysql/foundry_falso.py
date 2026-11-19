@@ -6,6 +6,8 @@ recibe su resultado, contesta «Listo.». NO prueba la calidad del modelo ni la 
 Palabras clave:  AJENA  → conexiones_por_maestro de «Escuela Prueba A» (una escuela del ORE 1)
                  TENDENCIA → tendencia_conexiones por mes
                  DUP   → conexiones_por_maestro DOS veces con los mismos argumentos (prueba la deduplicación)
+                 DOBLE → como (otra) pero la respuesta final trae DOS mensajes idénticos, cada uno con su «Referencias: …» (caso real: texto repetido y referencias filtradas)
+                 EN_LINEA → respuesta final de UN mensaje con «Referencias: …» pegado en medio del texto y el texto repetido después
                  (otra) → conexiones_por_maestro de todas las escuelas, limite 5
 GET /instrucciones devuelve las `instructions` de la última petición (para comprobar que la API manda las reglas del agente).
 Uso:  python3 foundry_falso.py [puerto]    (por defecto 5198)
@@ -31,6 +33,14 @@ def llamadas_para(pregunta):
 
 
 ULTIMAS = {"instructions": ""}
+PREGUNTAS = {}      # id de respuesta → pregunta (la segunda llamada solo trae previous_response_id)
+REFS = ("Referencias: consulta=conexiones_por_escuela; fuente=mysql:gs_data_analysis; fecha filtrada=connected_date.connected_date; "
+        "período=2026-01-01 a 2026-11-19; escuela=todas; cuentas de prueba=excluidas; orden/limite=asc/50; datos hasta=2026-11-18; filas=47; generado=2026-11-19T17:00:58.549583Z.")
+TEXTO = "Desde el 1 de enero hay conexiones en varias escuelas."
+
+
+def mensaje(texto):
+    return {"type": "message", "content": [{"type": "output_text", "text": texto}]}
 
 
 class H(BaseHTTPRequestHandler):
@@ -47,12 +57,21 @@ class H(BaseHTTPRequestHandler):
         d = json.loads(self.rfile.read(n) or b"{}")
         ULTIMAS["instructions"] = d.get("instructions") or ""
         entrada = d.get("input")
+        rid = "resp_" + uuid.uuid4().hex
         if isinstance(entrada, str):
+            PREGUNTAS[rid] = entrada
             salida = [{"type": "function_call", "name": nombre, "arguments": json.dumps(args), "call_id": f"c{i}"}
                       for i, (nombre, args) in enumerate(llamadas_para(entrada))]
         else:
-            salida = [{"type": "message", "content": [{"type": "output_text", "text": "Listo."}]}]
-        cuerpo = json.dumps({"id": "resp_" + uuid.uuid4().hex, "output": salida}).encode()
+            pregunta = PREGUNTAS.get(d.get("previous_response_id"), "")
+            PREGUNTAS[rid] = pregunta
+            if "DOBLE" in pregunta:
+                salida = [mensaje(f"{TEXTO}\n\n{REFS}"), mensaje(f"{TEXTO}\n\n{REFS}")]
+            elif "EN_LINEA" in pregunta:
+                salida = [mensaje(f"{TEXTO} {REFS} {TEXTO}")]
+            else:
+                salida = [mensaje("Listo.")]
+        cuerpo = json.dumps({"id": rid, "output": salida}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(cuerpo)))

@@ -968,6 +968,13 @@ if AUTH:
         st, r3 = pregunta("tok-ore2", "tercera", r1["conversacion_id"])
         with urllib.request.urlopen(os.environ.get("FOUNDRY_FALSO", "http://127.0.0.1:5198") + "/instrucciones", timeout=10) as _r:
             enviadas = json.loads(_r.read())["instructions"]
+        TEXTO_FALSO = "Desde el 1 de enero hay conexiones en varias escuelas."
+        for caso in ("DOBLE dos mensajes", "EN_LINEA referencias en medio"):
+            st, r = pregunta("tok-ore2", caso)
+            igual(f"asistente ({caso.split()[0]}): la respuesta sale UNA vez y sin «Referencias:» (van solo en referencias[])",
+                  (st, r["respuesta"].count(TEXTO_FALSO), "Referencias" in r["respuesta"], "consulta=" in r["respuesta"], len(r["referencias"]) >= 1),
+                  (200, 1, False, False, True))
+        igual("asistente: la respuesta normal no se toca", pregunta("tok-ore2", "hola")[1]["respuesta"], "Listo.")
         igual("asistente: la API manda a Foundry las reglas del agente (porcentajes > 100 y listas cortadas)",
               ("4f." in enviadas and "pasa de 100" in enviadas, "4g." in enviadas and "POR QUÉ" in enviadas), (True, True))
         igual("conversaciones: otra persona con tu conversacion_id empieza una nueva; tú continúas la tuya",
