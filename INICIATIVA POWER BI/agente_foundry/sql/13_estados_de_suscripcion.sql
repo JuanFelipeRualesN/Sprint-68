@@ -1,4 +1,5 @@
 -- REQ-3741 · Definición de «usuario activo» y estados de suscripción (SOLO LECTURA; correr en gs_data_analysis con la cuenta de solo lectura).
+-- (Confirmado el 19-nov: solo existen 'active' y 'canceled'; la tabla no tiene columna id, solo la clave invisible my_row_id.)
 -- 1) ¿Qué valores reales tiene subscription_profile_history.status y cuántos usuarios hay en cada uno?
 SELECT COALESCE(sph.status, '(NULL)') AS status, COUNT(*) AS filas, COUNT(DISTINCT sph.user_id) AS usuarios,
        MIN(sph.cancellation_date) AS cancelacion_minima, MAX(sph.cancellation_date) AS cancelacion_maxima

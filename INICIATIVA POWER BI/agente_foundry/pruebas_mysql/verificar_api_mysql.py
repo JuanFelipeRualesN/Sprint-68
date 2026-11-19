@@ -299,7 +299,7 @@ def esperado_patron_rol(desde, hasta, escuela=None):
 def esperado_suscripcion(agrupar, escuela=None, solo_escuelas=None):
     """Usuarios por estado de suscripción por fuerza bruta. Universo = rol ≠ client, fuera de cuentas de prueba (con exclusión, los sin escuela quedan fuera como en SQL),
     opcionalmente solo de ciertas escuelas (alcance). Categoría: alguna 'active' → activa; si no, alguna con «cancel» → cancelada; si no, con filas → inactiva; sin filas → sin.
-    Devuelve (filas por grupo [nombre, activas, inactivas, canceladas, sin, total], totales (a, i, c, s), estados_originales)."""
+    Devuelve (filas por grupo [nombre, activas, inactivas, canceladas, sin, total], totales (a, i, c, s), estados_originales). Con los datos reales (solo active/canceled) inactivas = 0."""
     filas_sub = {}
     for u, st in dp.suscripciones(USUARIOS):
         filas_sub.setdefault(u, []).append(st)
@@ -764,20 +764,21 @@ for agr in ("total", "escuela", "rol"):
     esp_f, esp_t, esp_e = esperado_suscripcion(agr)
     if agr == "total":
         obt = [(f["nombre"], f["usuarios"]) for f in r["resultados"]]
-        igual("usuarios por suscripción, total: 4 estados (activas, inactivas, canceladas, sin suscripción) = recálculo", (st, obt),
-              (200, [("Activas", esp_t[0]), ("Inactivas", esp_t[1]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])]))
+        igual("usuarios por suscripción, total: 3 estados (activas, canceladas, sin suscripción; «inactivas» no sale porque vale 0) = recálculo", (st, obt),
+              (200, [("Activas", esp_t[0]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])]))
     else:
-        obt = sorted((f["nombre"], f["activas"], f["inactivas"], f["canceladas"], f["sin_suscripcion"], f["total_usuarios"]) for f in r["resultados"])
-        igual(f"usuarios por suscripción, por {agr}: una fila por grupo = recálculo", (st, obt), (200, sorted(tuple(x) for x in esp_f)))
+        igual(f"usuarios por suscripción, por {agr}: sin la clave «inactivas» (vale 0)", any("inactivas" in f for f in r["resultados"]), False)
+        obt = sorted((f["nombre"], f["activas"], f["canceladas"], f["sin_suscripcion"], f["total_usuarios"]) for f in r["resultados"])
+        igual(f"usuarios por suscripción, por {agr}: una fila por grupo = recálculo", (st, obt), (200, sorted((x[0], x[1], x[3], x[4], x[5]) for x in esp_f)))
         orden_ok = [f["total_usuarios"] for f in r["resultados"]] == sorted((f["total_usuarios"] for f in r["resultados"]), reverse=True)
         igual(f"usuarios por suscripción, por {agr}: ordenado de más a menos usuarios", orden_ok, True)
     rs = r["resumen"]
     igual(f"usuarios por suscripción ({agr}): resumen = totales del recálculo, estados originales y suma = total",
-          (rs["activas"], rs["inactivas"], rs["canceladas"], rs["sin_suscripcion"], rs["total_usuarios"], rs["estados_originales"],
+          (rs["activas"], rs.get("inactivas"), rs["canceladas"], rs["sin_suscripcion"], rs["total_usuarios"], rs["estados_originales"],
            rs["porcentaje_activas"], rs["activas_con_fecha_de_cancelacion_vencida"]),
-          (esp_t[0], esp_t[1], esp_t[2], esp_t[3], sum(esp_t), esp_e, round(100.0 * esp_t[0] / sum(esp_t), 1), 0))
+          (esp_t[0], None, esp_t[2], esp_t[3], sum(esp_t), esp_e, round(100.0 * esp_t[0] / sum(esp_t), 1), 0))
 _, rt = api("/usuarios-por-suscripcion")
-igual("usuarios por suscripción: hay de los cuatro estados en los datos de prueba (la prueba no pasa vacía)",
+igual("usuarios por suscripción: hay de los tres estados en los datos de prueba (la prueba no pasa vacía)",
       all(f["usuarios"] > 0 for f in rt["resultados"]), True)
 igual("usuarios por suscripción: referencia sin período (período «no aplica», sin datos_hasta) y las cuentas de prueba declaradas",
       (rt["periodo"], "datos_hasta" in rt, rt["filtros"]["cuentas_de_prueba"], rt["filtros"]["agrupar"]), ("no aplica", False, "excluidas" if EXCL else "incluidas", "total"))
@@ -795,20 +796,20 @@ for agr in ("escuela", "rol", "total"):
     cab, filas, ref = datos_exportados("usuarios-por-suscripcion", agrupar=agr)
     esp_f, esp_t, _ = esperado_suscripcion(agr)
     if agr == "total":
-        igual("Excel de usuarios por suscripción (total): 4 estados = recálculo", [(f[0], f[1]) for f in filas],
-              [("Activas", esp_t[0]), ("Inactivas", esp_t[1]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])])
+        igual("Excel de usuarios por suscripción (total): 3 estados = recálculo", [(f[0], f[1]) for f in filas],
+              [("Activas", esp_t[0]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])])
     else:
         igual(f"Excel de usuarios por suscripción (por {agr}): todas las filas = recálculo, con encabezados legibles",
-              (cab[:6], sorted(tuple(f[:6]) for f in filas)), (["Nombre", "Activas", "Inactivas", "Canceladas", "Sin suscripción", "Total de usuarios"], sorted(tuple(x) for x in esp_f)))
+              (cab[:5], sorted(tuple(f[:5]) for f in filas)), (["Nombre", "Activas", "Canceladas", "Sin suscripción", "Total de usuarios"], sorted((x[0], x[1], x[3], x[4], x[5]) for x in esp_f)))
     igual(f"Excel de usuarios por suscripción ({agr}): Referencias dice «no aplica» en datos hasta y el número de filas es número", (ref["Datos hasta"], isinstance(ref["Filas exportadas"], int)), ("no aplica", True))
 st, g = grafica("usuarios-por-suscripcion", agrupar="rol")
 esp_f, _, _ = esperado_suscripcion("rol")
-igual("gráfica de usuarios por suscripción (por rol): barras agrupadas con las 4 series, de más a menos usuarios, = recálculo",
-      (st, [s["clave"] for s in g["series"]], [(p["categoria"], p["activas"], p["inactivas"], p["canceladas"], p["sin_suscripcion"]) for p in g["data"]]),
-      (200, ["activas", "inactivas", "canceladas", "sin_suscripcion"], [(f[0], f[1], f[2], f[3], f[4]) for f in sorted(esp_f, key=lambda f: (-f[5], f[0]))]))
+igual("gráfica de usuarios por suscripción (por rol): barras agrupadas con las 3 series (sin «inactivas»), de más a menos usuarios, = recálculo",
+      (st, [s["clave"] for s in g["series"]], [(p["categoria"], p["activas"], p["canceladas"], p["sin_suscripcion"]) for p in g["data"]]),
+      (200, ["activas", "canceladas", "sin_suscripcion"], [(f[0], f[1], f[3], f[4]) for f in sorted(esp_f, key=lambda f: (-f[5], f[0]))]))
 st, g = grafica("usuarios-por-suscripcion")
 esp_t = esperado_suscripcion("total")[1]
-estados = [("Activas", esp_t[0]), ("Inactivas", esp_t[1]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])]
+estados = [("Activas", esp_t[0]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])]
 igual("dona de usuarios por suscripción (total): tipo pie / variante dona, estados en su orden natural con su valor, = recálculo",
       (st, g["tipo"], g.get("variante"), "layout" not in g, "agrupar" not in g, [(p["categoria"], p["usuarios"]) for p in g["data"]], g["eje_x"]["titulo"]),
       (200, "pie", "dona", True, True, [e for e in estados if e[1] > 0], "Estado"))
@@ -820,9 +821,9 @@ igual("dona: mostradas = total_categorias = las de valor no cero; categorias_en_
       (g["categorias_mostradas"], g["total_categorias"], g["categorias_en_cero"], g["incluir_ceros"], "orden" in g, "todas" in g),
       (len([e for e in estados if e[1] > 0]), len([e for e in estados if e[1] > 0]), len([e for e in estados if e[1] == 0]), False, False, False))
 st, g0 = grafica("usuarios-por-suscripcion", incluir_ceros="true")
-igual("dona con incluir_ceros=true: las 4 porciones, hasta las de valor 0", (st, g0["tipo"], [p["categoria"] for p in g0["data"]]), (200, "pie", [e[0] for e in estados]))
+igual("dona con incluir_ceros=true: las 3 porciones (no existe «Inactivas» cuando vale 0)", (st, g0["tipo"], [p["categoria"] for p in g0["data"]]), (200, "pie", [e[0] for e in estados]))
 st, gr = grafica("usuarios-por-suscripcion", agrupar="rol")
-igual("usuarios por suscripción por rol NO es dona: barras agrupadas con 4 series (varias medidas)", (gr["tipo"], gr.get("agrupar"), len(gr["series"]), gr.get("variante")), ("bar", "grouped", 4, None))
+igual("usuarios por suscripción por rol NO es dona: barras agrupadas con 3 series (varias medidas)", (gr["tipo"], gr.get("agrupar"), len(gr["series"]), gr.get("variante")), ("bar", "grouped", 3, None))
 
 # hoja Referencias
 _, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10")

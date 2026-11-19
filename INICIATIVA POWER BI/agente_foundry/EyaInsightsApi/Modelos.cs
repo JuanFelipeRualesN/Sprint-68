@@ -26,6 +26,8 @@ public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsig
 
 /// <summary>Usuarios por estado de suscripción: una fila por escuela o por rol (activas + inactivas + canceladas + sin suscripción = total_usuarios).</summary>
 public record FilaSuscripcion(string Nombre, int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int TotalUsuarios);
+/// <summary>Como <see cref="FilaSuscripcion"/> pero «inactivas» solo viaja si hay usuarios en ese estado (en la plataforma real no existe: solo active y canceled).</summary>
+public record FilaSuscripcionVista(string Nombre, int Activas, int? Inactivas, int Canceladas, int SinSuscripcion, int TotalUsuarios);
 /// <summary>Con agrupar=total: una fila por estado.</summary>
 public record FilaEstadoSuscripcion(string Nombre, int Usuarios, double? PorcentajeDelTotal = null);
 /// <param name="ActivasConFechaDeCancelacionVencida">Usuarios «activos» (status active) cuya cancellation_date ya pasó o está vacía: la diferencia entre las dos definiciones de «activo». null si la columna de cancelación no existe.</param>

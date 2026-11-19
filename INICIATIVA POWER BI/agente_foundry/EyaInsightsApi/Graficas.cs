@@ -74,6 +74,10 @@ static class Graficas
         var filtros = respuesta["filtros"];
         List<JsonNode> filas = crudas.Select(f => f!).ToList();
 
+        // Una serie que no trae ningún dato en estas filas (p. ej. «inactivas» cuando no hay usuarios en ese estado) no se dibuja ni sale en la leyenda.
+        var conDatos = molde.Series.Where(s => filas.Any(f => f[s.Clave] is not null)).ToArray();
+        if (conDatos.Length == 0) return null;
+        if (conDatos.Length != molde.Series.Length) molde = molde with { Series = conDatos };
         var dona = molde.Variante == "dona";
         var ordena = (molde.Tipo == "bar" || dona) && !(consulta == "patrones_conexion" && Texto(filtros, "agrupar", "dia_semana") == "dia_semana");
         var enCero = 0;
