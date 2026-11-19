@@ -25,6 +25,17 @@ arrancar() {   # $1 = modo de datos, $2 = local|plataforma
   echo "La API no arrancó (ver /tmp/eya_api.log)"; exit 1
 }
 fallo=0
+# Arranque: «local» no puede escuchar fuera de loopback (ni por ASPNETCORE_HTTP_PORTS ni por Kestrel:Endpoints) y Production exige «plataforma».
+revisar() { # $1 = descripción; el resto = variables de entorno; la API debe NO arrancar (salir con error)
+  local d="$1"; shift
+  if ( cd "$API" && env "$@" timeout 15 dotnet bin/Debug/net8.0/EyaInsightsApi.dll >/tmp/eya_arranque.log 2>&1 ); then echo "arranque ✗ $d (arrancó y no debía)"; else echo "arranque ✓ $d"; fi
+}
+revisar "local con ASPNETCORE_HTTP_PORTS no arranca" ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_HTTP_PORTS=5110 Auth__Modo=local
+revisar "local con Kestrel:Endpoints en 0.0.0.0 no arranca" ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__X__Url=http://0.0.0.0:5111 Auth__Modo=local
+revisar "local en 0.0.0.0 no arranca" ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://0.0.0.0:5112 Auth__Modo=local
+revisar "Production con local no arranca" ASPNETCORE_ENVIRONMENT=Production ASPNETCORE_URLS=http://127.0.0.1:5113 Auth__Modo=local
+revisar "Production sin Auth__UsersApiUrl no arranca" ASPNETCORE_ENVIRONMENT=Production ASPNETCORE_URLS=http://127.0.0.1:5114 Auth__Modo=plataforma
+revisar "Production con Cors__Origenes=* no arranca" ASPNETCORE_ENVIRONMENT=Production ASPNETCORE_URLS=http://127.0.0.1:5115 Auth__Modo=plataforma Auth__UsersApiUrl=https://u.invalid Cors__Origenes='*'
 for modo in paridad dominio incluir; do
   arrancar $modo local;       echo "local/$modo:      $(python3 "$AQUI/verificar_api_mysql.py" http://127.0.0.1:5101 0 $modo 2>&1 | tail -1)"
   arrancar $modo plataforma;  echo "plataforma/$modo: $(EYA_API_KEY=clave-de-servicio-de-prueba python3 "$AQUI/verificar_api_mysql.py" http://127.0.0.1:5101 0 $modo auth 2>&1 | tail -1)"

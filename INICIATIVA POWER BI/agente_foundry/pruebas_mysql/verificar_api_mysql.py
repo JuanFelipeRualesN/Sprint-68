@@ -796,7 +796,10 @@ if AUTH:
     igual("admin-ore: tendencia suma lo mismo que conexiones-por-escuela de su ORE",
           sum(f["conexiones"] for f in rt["resultados"]), jget("/conexiones-por-escuela", "tok-ore2", limite=50, **CON)[1]["resumen"]["total_conexiones"])
     st, r = jget("/promedio-full-quiz", "tok-ore2", agrupar="escuela", limite=50, **CON)
-    igual("admin-ore: promedio-full-quiz (si la fuente lo calcula) solo de sus escuelas", sorted({f["escuela"] for f in r.get("resultados", [])} - ESC_ORE2), [])
+    if st == 200:
+        igual("admin-ore: promedio-full-quiz solo de sus escuelas", sorted({f["escuela"] for f in r["resultados"]} - ESC_ORE2), [])
+    else:      # el esquema de prueba no trae result_generic.total_percent_full_quiz: la ruta da base_no_disponible y el alcance de esa consulta NO se prueba aquí
+        print(f"  · promedio-full-quiz da {st} con el esquema de prueba (sin columna de % Full Quiz): su alcance no se prueba")
     for ruta in ("/patrones-conexion", "/conexiones-acumuladas"):
         st, r = jget(ruta, "tok-ore2", **CON)
         igual(f"admin-ore: {ruta[1:]} responde 200 con alcance de su ORE", (st, r.get("alcance")), (200, "ORE MUNICIPIO SEGUNDO"))
@@ -808,10 +811,16 @@ if AUTH:
     # ORE 1 no ve el ORE 2
     st, r = jget("/conexiones-por-escuela", "tok-ore1", limite=50, **CON)
     igual("admin-ore del ORE 1: nada de las escuelas del ORE 2", sorted({f["nombre"] for f in r["resultados"]} & ESC_ORE2), [])
-    # director: solo su escuela
+    # director: solo su escuela, en todas las consultas con nombre de escuela
     st, r = jget("/conexiones-por-maestro", "tok-director-1", limite=50, **CON)
     igual("director (user 1): solo maestros de su escuela y alcance «escuela …»", (st, {f["escuela"] for f in r["resultados"]}, r["alcance"]),
           (200, {"Escuela Prueba A"}, "escuela Escuela Prueba A"))
+    for ruta, campo, extra in (("/conexiones-por-escuela", "nombre", CON), ("/participacion-escuelas", "nombre", CON), ("/uso-docentes", "escuela", dict(fecha="2026-10-01")),
+                               ("/buscar-escuela", "nombre", dict(texto="Prueba"))):
+        st, r = jget(ruta, "tok-director-1", limite=50, **extra)
+        igual(f"director: {ruta[1:]} solo trae su escuela", (st, sorted({f[campo] for f in r["resultados"]} - {"Escuela Prueba A"})), (200, []))
+    st, r = jget("/conexiones-por-maestro", "tok-director-1", escuela="Escuela Prueba B", **CON)
+    igual("director pide otra escuela → 400 «no existe»", (st, r.get("error")), (400, "parametros_invalidos"))
 
     # 4) exportaciones con alcance: xlsx y gráfica
     _, h, cuerpo = http("GET", "/exportar/conexiones-por-maestro", "tok-ore2", None, None, **CON)
@@ -849,6 +858,15 @@ if AUTH:
     igual("UsersAPI caída (Token sin caché) → 503 autenticacion_no_disponible", (st, r.get("error")), (503, "autenticacion_no_disponible"))
     st, r = jget("/conexiones-por-escuela", "tok-admin-" + uuid.uuid4().hex, **CON)
     igual("UsersAPI repuesta → vuelve a responder 200 (el 503 no se cachea)", st, 200)
+    import time
+    stub("POST", "/colgar")
+    try:
+        t0 = time.time()
+        st, r = jget("/conexiones-por-escuela", "tok-admin-" + uuid.uuid4().hex, **CON)
+        seg = time.time() - t0
+    finally:
+        stub("POST", "/levantar")
+    igual("UsersAPI que no responde → 503 en ~5 s (timeout), no se queda colgada", (st, r.get("error"), 4 <= seg < 8), (503, "autenticacion_no_disponible", True))
 
     # 7) CORS
     st, h, _ = http("OPTIONS", "/exportar/uso-por-area", None, {"Origin": ORIGEN, "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "token"})

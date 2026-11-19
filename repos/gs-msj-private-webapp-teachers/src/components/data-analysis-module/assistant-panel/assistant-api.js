@@ -63,6 +63,10 @@ export function leerAdjuntos(d) {
   return { descargas, graficas };
 }
 
+function origenDe(u) {
+  try { return new URL(u).origin; } catch (_) { return ""; }
+}
+
 function nombreDeContentDisposition(cd) {
   if (!cd) return "";
   const utf = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cd);
@@ -80,6 +84,12 @@ function nombreDeContentDisposition(cd) {
  */
 export async function descargarArchivo(url, nombreRespaldo, signal) {
   const destino = /^https?:\/\//i.test(url) ? url : `${ASSISTANT_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  // El Token de la sesión solo viaja al servicio del asistente: una URL absoluta de OTRO origen (p. ej. en una respuesta alterada) se rechaza.
+  if (origenDe(destino) !== origenDe(ASSISTANT_URL)) {
+    const err = new Error("url de descarga no permitida");
+    err.codigo = "url_no_permitida";
+    throw err;
+  }
   let r;
   try {
     r = await fetch(destino, { method: "GET", headers: getAuthHeaders(), signal });

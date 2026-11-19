@@ -86,15 +86,29 @@ public sealed class AuthOpciones
         }
         else
         {
+            // Kestrel también escucha por HTTP_PORTS/HTTPS_PORTS (las imágenes de .NET 8 traen ASPNETCORE_HTTP_PORTS=8080) y por Kestrel:Endpoints:*,
+            // y en esos casos lo hace en TODAS las interfaces: con «local» no se admite. (Además, Auth.VigilarLoopback comprueba las direcciones reales al arrancar.)
+            foreach (var clave in new[] { "HTTP_PORTS", "HTTPS_PORTS", "ASPNETCORE_HTTP_PORTS", "ASPNETCORE_HTTPS_PORTS", "DOTNET_HTTP_PORTS", "DOTNET_HTTPS_PORTS" })
+                if (!string.IsNullOrWhiteSpace(cfg[clave]))
+                    throw new InvalidOperationException($"Auth:Modo=local no valida a nadie y {clave} hace que Kestrel escuche en todas las interfaces. Usa ASPNETCORE_URLS=http://127.0.0.1:<puerto> o Auth__Modo=plataforma.");
+            foreach (var ep in cfg.GetSection("Kestrel:Endpoints").GetChildren())
+                if (!EsLoopback(ep["Url"] ?? ""))
+                    throw new InvalidOperationException($"Auth:Modo=local solo admite Kestrel:Endpoints en loopback; «{ep.Key}» usa «{ep["Url"]}». Usa Auth__Modo=plataforma.");
             var urls = cfg["urls"] ?? cfg["ASPNETCORE_URLS"] ?? cfg["DOTNET_URLS"] ?? "";
             foreach (var t in urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                var sinEsquema = t.Contains("://") ? t[(t.IndexOf("://", StringComparison.Ordinal) + 3)..] : t;
-                var host = sinEsquema.StartsWith('[') ? sinEsquema[..(sinEsquema.IndexOf(']') + 1)] : sinEsquema.Split(':', '/')[0];
-                if (host is not ("localhost" or "127.0.0.1" or "[::1]"))
+                if (!EsLoopback(t))
                     throw new InvalidOperationException($"Auth:Modo=local no valida a nadie, así que la API solo puede escuchar en loopback (localhost/127.0.0.1); recibió «{t}». Usa Auth__Modo=plataforma.");
-            }
         }
+    }
+
+    /// <summary>¿La dirección (URL o host:puerto) es de loopback? Vacía = no (para Kestrel:Endpoints sin Url).</summary>
+    public static bool EsLoopback(string direccion)
+    {
+        var t = direccion.Trim();
+        if (t.Length == 0) return false;
+        var sinEsquema = t.Contains("://") ? t[(t.IndexOf("://", StringComparison.Ordinal) + 3)..] : t;
+        var host = sinEsquema.StartsWith('[') ? sinEsquema[..(sinEsquema.IndexOf(']') + 1)] : sinEsquema.Split(':', '/')[0];
+        return host is "localhost" or "127.0.0.1" or "[::1]";
     }
 }
 
@@ -107,6 +121,8 @@ public sealed class ValidadorSesion
     readonly HttpClient _http;
     readonly Func<string, int?> _escuelaDeUsuario;
     readonly ConcurrentDictionary<string, Entrada> _cache = new();
+    const int MaxEntradas = 2000;
+    DateTime _ultimaPoda = DateTime.MinValue;
 
     public ValidadorSesion(AuthOpciones opciones, HttpClient http, Func<string, int?> escuelaDeUsuario)
     {
@@ -122,7 +138,14 @@ public sealed class ValidadorSesion
         var clave = Huella(token) + "|" + _o.Permiso;
         var ahora = DateTime.UtcNow;
         if (_cache.TryGetValue(clave, out var e) && e.Expira > ahora) return await e.Tarea;
-        if (_cache.Count > 2000) foreach (var k in _cache.Where(kv => kv.Value.Expira <= ahora).Select(kv => kv.Key).ToList()) _cache.TryRemove(k, out _);
+        // Tope duro: la poda de vencidas corre como mucho cada 5 s (no en cada fallo) y, si aun así la caché está llena (p. ej. Tokens aleatorios
+        // a ritmo sostenido), este Token NO se guarda: la memoria no crece y cada petición cuesta una llamada a UsersAPI, no un recorrido del diccionario.
+        if (_cache.Count >= MaxEntradas && ahora - _ultimaPoda > TimeSpan.FromSeconds(5))
+        {
+            _ultimaPoda = ahora;
+            foreach (var k in _cache.Where(kv => kv.Value.Expira <= ahora).Select(kv => kv.Key).ToList()) _cache.TryRemove(k, out _);
+        }
+        if (_cache.Count >= MaxEntradas) return await ConsultarAsync(token, ip);
         // La llamada a UsersAPI no se cancela con la petición que la inició: otras peticiones con el mismo token esperan el mismo resultado.
         var tarea = ConsultarAsync(token, ip);
         var nueva = new Entrada(tarea, ahora.AddYears(1));          // mientras está en vuelo, otras peticiones la comparten
@@ -202,6 +225,25 @@ public static class Auth
     }
 
     public const string ClaveItem = "eya.usuario";
+
+    /// <summary>
+    /// Autoridad final de la regla «local solo en loopback»: al arrancar lee las direcciones REALES en las que escucha Kestrel (cualquiera sea su origen:
+    /// urls, HTTP_PORTS, Kestrel:Endpoints…) y, si alguna no es loopback con Auth:Modo=local, detiene la aplicación.
+    /// </summary>
+    public static void VigilarLoopback(this WebApplication app, AuthOpciones o)
+    {
+        if (o.EsPlataforma) return;
+        app.Lifetime.ApplicationStarted.Register(() =>
+        {
+            var dirs = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features
+                .Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses ?? [];
+            var ajena = dirs.FirstOrDefault(d => !AuthOpciones.EsLoopback(d.Replace("://*", "://0.0.0.0").Replace("://+", "://0.0.0.0")));
+            if (ajena is null) return;
+            Console.WriteLine($"ERROR: Auth:Modo=local no valida a nadie y la API escucha en «{ajena}» (no es loopback). Se detiene. Usa Auth__Modo=plataforma.");
+            Environment.ExitCode = 1;
+            app.Lifetime.StopApplication();
+        });
+    }
 
     /// <summary>El usuario autenticado de esta petición (lo deja el middleware; nunca null tras él).</summary>
     public static Usuario Usuario(HttpContext ctx) => (Usuario)ctx.Items[ClaveItem]!;

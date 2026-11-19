@@ -2,13 +2,14 @@
 
 Imita POST /usersapi/accounts/get_user_by_token de UsersAPI: 200 con {SessionValid, UserId, RoleId, OreId, ...} si el token está en la
 tabla fija de abajo (o empieza por «tok-admin-», que se toma como admin: sirve para tokens nuevos); 401 si no. Cuenta las llamadas
-(GET /llamadas) para comprobar la caché; POST /reiniciar las pone en 0. POST /caer simula UsersAPI caída (responde 500); POST /levantar la repone.
+(GET /llamadas) para comprobar la caché; POST /reiniciar las pone en 0. POST /caer simula UsersAPI caída (responde 500); POST /colgar la deja sin responder (8 s: prueba el timeout de 5 s); POST /levantar repone ambas.
 
 Uso:  python3 usersapi_falso.py [puerto]     (por defecto 5199, solo en 127.0.0.1)
       y arrancar la API con  Auth__Modo=plataforma  Auth__UsersApiUrl=http://127.0.0.1:5199
 """
 import json
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # token → (UserId, RoleId, OreId)   (RoleId 2 admin · 5 teacher · 6 director · 8 admin-ore, como en el front)
@@ -21,7 +22,7 @@ TOKENS = {
     "tok-director-1":  ("1", "6", None),       # user_id 1 = director de la escuela 1
     "tok-director-x":  ("999999", "6", None),  # director cuyo user_id no está en la base → 403
 }
-llamadas = {"n": 0, "caida": False}
+llamadas = {"n": 0, "caida": False, "colgada": False}
 
 
 class H(BaseHTTPRequestHandler):
@@ -44,14 +45,17 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/reiniciar":
             llamadas["n"] = 0
             return self._json(200, {"llamadas": 0})
-        if self.path in ("/caer", "/levantar"):
+        if self.path in ("/caer", "/colgar", "/levantar"):
             llamadas["caida"] = self.path == "/caer"
-            return self._json(200, {"caida": llamadas["caida"]})
+            llamadas["colgada"] = self.path == "/colgar"
+            return self._json(200, {"caida": llamadas["caida"], "colgada": llamadas["colgada"]})
         if self.path != "/usersapi/accounts/get_user_by_token":
             return self._json(404, {})
         llamadas["n"] += 1
         if llamadas["caida"]:
             return self._json(500)
+        if llamadas["colgada"]:
+            time.sleep(8)
         try:
             d = json.loads(cuerpo)
         except ValueError:

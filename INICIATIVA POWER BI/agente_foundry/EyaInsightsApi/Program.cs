@@ -60,7 +60,7 @@ else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 var asistenteOn = string.Equals(builder.Configuration["Asistente:Habilitado"], "true", StringComparison.OrdinalIgnoreCase);
 if (asistenteOn)
 {
-    builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration));
+    builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration, builder.Environment.IsProduction()));
 }
 
 // CORS (A3): orígenes del front por ambiente en Cors:Origenes (variable Cors__Origenes, separados por coma). Aplica a TODAS las rutas
@@ -85,6 +85,7 @@ if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
 var consultasRaiz = app.Services.GetRequiredService<IConsultasUso>();
 var validador = auth.EsPlataforma ? new ValidadorSesion(auth, new HttpClient(), consultasRaiz.EscuelaDeUsuario) : null;
 app.UsarAutenticacion(auth, validador);
+app.VigilarLoopback(auth);
 Console.WriteLine(auth.EsPlataforma
     ? $"Autenticación: plataforma (UsersAPI {new Uri(auth.UsersApiUrl).Host}, permiso «{auth.Permiso}», caché {auth.CacheSegundos} s)."
     : "Autenticación: LOCAL (sin validación; solo desarrollo, la API solo escucha en loopback).");

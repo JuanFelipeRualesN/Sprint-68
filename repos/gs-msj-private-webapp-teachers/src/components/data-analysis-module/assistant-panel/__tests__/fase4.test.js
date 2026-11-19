@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { leerAdjuntos, descargarArchivo, descargarExportacion, preguntar } from "../assistant-api";
 import { mensajeDeError } from "../index";
 import { textosPara } from "../textos";
+import { ASSISTANT_URL } from "../config";
 import Grafica from "../grafica";
 
 // A5: la sesión de la plataforma (header Token) sale de getAuthHeaders(); aquí se simula para no cargar axios/SweetAlert/imágenes.
@@ -137,6 +138,16 @@ describe("sesión (Fase 4 · A5)", () => {
     const e2 = await descargarArchivo("/x").catch((e) => e);
     expect(e2.codigo).toBe(codigo);
     expect(mensajeDeError(e2, t)).toBe(t[texto]);
+  });
+  test("no manda el Token a una URL absoluta de otro origen; sí a una absoluta del propio servicio", async () => {
+    global.fetch = jest.fn(async () => resp(200, "x"));
+    const e = await descargarArchivo("https://otro-host.invalid/x").catch((err) => err);
+    expect(e.codigo).toBe("url_no_permitida");
+    expect(global.fetch).not.toHaveBeenCalled();
+    jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    URL.createObjectURL = jest.fn(() => "blob:x"); URL.revokeObjectURL = jest.fn();
+    await descargarArchivo(`${ASSISTANT_URL}/asistente/descargas/abc`, "a.xlsx");
+    expect(cabeceras().Token).toBe("tok-sesion");
   });
   test("textos de sesión: 401 y 403 (sin código de la API) y en inglés", () => {
     const es = textosPara("es"), en = textosPara("en");

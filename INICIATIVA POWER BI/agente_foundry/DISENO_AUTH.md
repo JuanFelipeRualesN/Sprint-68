@@ -200,6 +200,6 @@ Pendiente del usuario en Azure: (a) URL de UsersAPI por ambiente; (b) dominios d
 5. Los usuarios sin escuela quedan fuera cuando hay alcance (admin-ore y director); el admin los sigue viendo como hoy.
 
 ### 7.4 Qué se probó y qué no
-- **Probado** (MySQL 8 local con datos sintéticos, UsersAPI y Foundry **falsos**): `pruebas_mysql/correr_pruebas_auth.sh` → local **190/190** y plataforma **234/234** en `paridad`, `dominio` e `incluir`; pruebas del panel (jest) 19/19.
+- **Probado** (MySQL 8 local con datos sintéticos, UsersAPI y Foundry **falsos**): `pruebas_mysql/correr_pruebas_auth.sh` → local **190/190** y plataforma **239/239** en `paridad`, `dominio` e `incluir`; pruebas del panel (jest) 20/20; 6 comprobaciones de arranque (loopback / Production) en el script.
 - **No probado:** UsersAPI real (el formato de la respuesta se tomó del código de gs-base-api), Foundry real (identidad administrada, modelo, instrucciones), el despliegue en Azure, el navegador con la sesión real y la prueba de los roles reales (OreId / director).
 - **Hallazgo de §6 sin cambios:** `LoginProcessSSO` con `ValidateIssuer = false`; fuera de alcance.

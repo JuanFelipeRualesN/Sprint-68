@@ -63,7 +63,7 @@ public sealed class AsistenteFoundry
     static readonly Regex PideGrafica = new(@"gr[aá]fic|chart|graph|plot", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     AccessToken _token;
 
-    public AsistenteFoundry(IConfiguration cfg)
+    public AsistenteFoundry(IConfiguration cfg, bool produccion)
     {
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
         _endpoint = (cfg["Foundry:Endpoint"] ?? "https://chatbotaipowerbi.services.ai.azure.com/api/projects/proj-default").TrimEnd('/');
@@ -75,8 +75,7 @@ public sealed class AsistenteFoundry
         _credencial = cred switch
         {
             "azcli" => new AzureCliCredential(),
-            "prueba" when !string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase)
-                => new CredencialDePrueba(),
+            "prueba" when !produccion => new CredencialDePrueba(),      // produccion = IHostEnvironment.IsProduction() (también cuando no hay variable de entorno)
             _ => new DefaultAzureCredential(new DefaultAzureCredentialOptions
             {
                 ExcludeInteractiveBrowserCredential = true,
