@@ -11,6 +11,7 @@ USERSAPI_FALSA (por defecto http://127.0.0.1:5199). Si la API tiene el asistente
 """
 import datetime as dt
 import json
+import os
 import sys
 import unicodedata
 from functools import cmp_to_key
@@ -618,7 +619,7 @@ for rg, min_max in [(D, {}), (dict(desde="2026-10-01", hasta="2026-10-07"), dict
           [(f["nombre"], f["escuela"], f["conexiones"], round(100.0 * f["conexiones"] / total_c, 1)) for f in todos])
 cab, filas, ref = datos_exportados("conexiones-por-maestro", **D, min_conexiones=9999)
 igual("exportar sin resultados → hoja Datos con el aviso «Sin resultados» y Referencias intacta", (cab, filas, ref["Filas exportadas"]),
-      (["Sin resultados para este filtro (ver la hoja Referencias)."], [], "0"))
+      (["Sin resultados para este filtro (ver la hoja Referencias)."], [], 0))
 _, r = api("/conexiones-por-maestro", **D, limite=3)
 igual("exportar sin 'limite' trae TODAS las filas (> las 3 del JSON y = maestros_considerados del resumen)",
       (len(datos_exportados("conexiones-por-maestro", **D)[1]) > 3, len(datos_exportados("conexiones-por-maestro", **D)[1])),
@@ -637,6 +638,44 @@ cab, filas, ref = datos_exportados("tendencia-conexiones", **D)
 igual("fuerza bruta: exportar tendencia mensual (período, conexiones)", [(f[0], f[1]) for f in filas],
       [(f["periodo"], f["conexiones"]) for f in esperado_tendencia(D["desde"], D["hasta"], "mes")])
 
+# Excel vacío por falta de datos: si el período pedido empieza DESPUÉS de «Datos hasta», la hoja Datos dice la causa (también en comparaciones)
+_, rs = api("/salud")
+dh_conex, dh_pruebas = rs["datos_hasta_conexiones"], rs["datos_hasta_pruebas"]
+fin = (dt.date.fromisoformat(dh_conex) + dt.timedelta(days=30)).isoformat()
+ini = (dt.date.fromisoformat(dh_conex) + dt.timedelta(days=1)).isoformat()
+for ruta, q in (("conexiones-por-maestro", dict(desde=ini, hasta=fin, min_conexiones=1)), ("conexiones-por-escuela", dict(desde=ini, hasta=fin, min_conexiones=1))):
+    cab, filas, ref = datos_exportados(ruta, **q)
+    igual(f"Excel vacío de {ruta} con el período después de los datos: la hoja dice la causa",
+          (cab, filas), ([f"No hay datos de conexiones después del {dh_conex}; el período pedido empieza el {ini} (ver la hoja Referencias)."], []))
+cab, filas, ref = datos_exportados("comparar-escuelas", desde_a=ini, hasta_a=fin, desde_b=fin, hasta_b=(dt.date.fromisoformat(fin) + dt.timedelta(days=10)).isoformat())
+igual("Excel vacío de una comparación con los dos períodos después de los datos: dice la causa con los dos inicios",
+      (len(cab), cab[0].startswith(f"No hay datos de conexiones después del {dh_conex}; los períodos pedidos empiezan el {ini} y el {fin}"), filas), (1, True, []))
+cab, filas, ref = datos_exportados("conexiones-por-maestro", desde=D["desde"], hasta=ini, min_conexiones=9999)
+igual("Excel vacío con un período que SÍ tiene datos (filtro imposible): sigue el mensaje genérico, sin inventar causa",
+      cab, ["Sin resultados para este filtro (ver la hoja Referencias)."])
+
+# Referencias: los valores numéricos van como número (sin el triángulo verde de «número guardado como texto»)
+_, _, hojas, _ = exportar("conexiones-por-maestro", **D, limite=7)
+ref = tabla_referencias(hojas)
+igual("Referencias: «Filtro · limite» y «Filas exportadas» son números", (ref["Filtro · limite"], ref["Filas exportadas"], type(ref["Filtro · limite"]).__name__, type(ref["Filas exportadas"]).__name__),
+      (7, 7, "int", "int"))
+import re as _re
+for ruta, q in (("conexiones-por-maestro", dict(D, min_conexiones=1, max_conexiones=3)), ("participacion-escuelas", D), ("uso-por-area", D), ("tendencia-conexiones", D)):
+    _, _, hojas, _ = exportar(ruta, **q)
+    como_texto = [(k, v) for k, v in tabla_referencias(hojas).items() if isinstance(v, str) and _re.fullmatch(r"-?\d+([.,]\d+)?", v.strip())]
+    igual(f"Referencias de {ruta}: ningún número guardado como texto", como_texto, [])
+_, _, hojas, _ = exportar("conexiones-por-maestro", **D, min_conexiones=1, max_conexiones=3)
+ref = tabla_referencias(hojas)
+igual("Referencias: min_conexiones y max_conexiones también son números", (ref["Filtro · min conexiones"], ref["Filtro · max conexiones"]), (1, 3))
+
+# la participación NO se topa en 100 % (como Power BI) y la nota de corte da las cifras claras
+_, r = api("/participacion-escuelas", **D, limite=2)
+esp = ordenar_participacion(esperado_participacion(D["desde"], D["hasta"]), True)
+igual("participación: el porcentaje más alto sale tal cual (sin tope en 100) y = fuerza bruta", r["resultados"][0]["porcentaje_participacion"], esp[0]["porcentaje_participacion"])
+igual("participación: la nota de corte dice cuántas se muestran, cuántas hay, cuántas quedan fuera y por qué",
+      (f"se muestran 2 de {len(esp)} escuelas" in r["nota"], f"las otras {len(esp) - 2} quedan fuera por el límite pedido" in r["nota"],
+       f"{sum(1 for f in esp if f['usuarios_conectados'] == 0)} de las {len(esp)} no tienen usuarios conectados" in r["nota"]), (True, True, True))
+
 # hoja Referencias
 _, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10")
 _, _, hojas, _ = exportar("uso-por-area", desde="2026-09-01", hasta="2026-11-10")
@@ -646,14 +685,23 @@ igual("Referencias: consulta, período, cuentas de prueba y datos hasta",
       ("uso_por_area", "2026-09-01", "2026-11-10", "excluidas" if EXCL else "incluidas", r["datos_hasta"], r["fuente"], r["columna_fecha"]))
 igual("Referencias: el AVISO de datos hasta 19-oct y la nota completa viajan con el archivo", (ref["Nota"] == r["nota"], "AVISO" in ref["Nota"]), (True, True))
 igual("Referencias: filas exportadas, lista completa y generado en", (ref["Filas exportadas"], ref["Lista completa"].startswith("Sí"), ref["Generado en (UTC)"][:10].count("-")),
-      (str(len(r["resultados"])), True, 2))
-igual("Referencias: cada clave del resumen, una por una", [ref[k.replace("_", " ")] for k in r["resumen"] if r["resumen"][k] is not None],
-      [txt(v) for v in r["resumen"].values() if v is not None])
+      (len(r["resultados"]), True, 2))
+igual("Referencias: cada clave del resumen, una por una (los números como número)", [ref[k.replace("_", " ")] for k in r["resumen"] if r["resumen"][k] is not None],
+      [v if isinstance(v, (int, float)) and not isinstance(v, bool) else txt(v) for v in r["resumen"].values() if v is not None])
 _, r = api("/comparar-escuelas", **CMP)
 _, _, hojas, _ = exportar("comparar-escuelas", **CMP)
 ref = tabla_referencias(hojas)
 igual("Referencias: comparación trae los dos períodos (a y b)", (ref["Período · a.desde"], ref["Período · a.hasta"], ref["Período · b.desde"], ref["Período · b.hasta"]),
       ("2026-09-01", "2026-09-30", "2026-10-01", "2026-10-31"))
+
+# Instrucciones del agente (fuente única: EyaInsightsApi/instrucciones.txt): reglas de % > 100 y de listas cortadas
+print("\n[instrucciones del agente]")
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "EyaInsightsApi", "instrucciones.txt"), encoding="utf-8") as _f:
+    INSTR = _f.read()
+igual("instrucciones: regla de porcentajes > 100 (no topar, explicar en una frase: conectados sin suscripción activa, como Power BI)",
+      ("pasa de 100" in INSTR, "NO lo topes" in INSTR, "tengan o no suscripción activa" in INSTR, "igual que Power BI" in INSTR), (True, True, True, True))
+igual("instrucciones: regla de listas cortadas (cuántas se muestran, cuántas hay, cuántas quedan fuera y por qué; sin «excluidas» falsas)",
+      ("cuántas filas muestras" in INSTR, "cuántas existen en total" in INSTR, "POR QUÉ" in INSTR, "escuelas_sin_conectados" in INSTR, "NO se excluyen" in INSTR), (True,) * 5)
 
 # tipos de celda y tildes
 _, _, hojas, _ = exportar("uso-por-area", **D)
@@ -918,6 +966,10 @@ if AUTH:
         st, r1 = pregunta("tok-ore2", "primera")
         st, r2 = pregunta("tok-ore1", "segunda", r1["conversacion_id"])
         st, r3 = pregunta("tok-ore2", "tercera", r1["conversacion_id"])
+        with urllib.request.urlopen(os.environ.get("FOUNDRY_FALSO", "http://127.0.0.1:5198") + "/instrucciones", timeout=10) as _r:
+            enviadas = json.loads(_r.read())["instructions"]
+        igual("asistente: la API manda a Foundry las reglas del agente (porcentajes > 100 y listas cortadas)",
+              ("4f." in enviadas and "pasa de 100" in enviadas, "4g." in enviadas and "POR QUÉ" in enviadas), (True, True))
         igual("conversaciones: otra persona con tu conversacion_id empieza una nueva; tú continúas la tuya",
               (r2["conversacion_id"] != r1["conversacion_id"], r3["conversacion_id"] == r1["conversacion_id"]), (True, True))
 

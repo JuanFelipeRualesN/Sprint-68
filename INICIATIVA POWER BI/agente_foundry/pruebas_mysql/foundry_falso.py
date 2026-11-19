@@ -7,6 +7,7 @@ Palabras clave:  AJENA  → conexiones_por_maestro de «Escuela Prueba A» (una 
                  TENDENCIA → tendencia_conexiones por mes
                  DUP   → conexiones_por_maestro DOS veces con los mismos argumentos (prueba la deduplicación)
                  (otra) → conexiones_por_maestro de todas las escuelas, limite 5
+GET /instrucciones devuelve las `instructions` de la última petición (para comprobar que la API manda las reglas del agente).
 Uso:  python3 foundry_falso.py [puerto]    (por defecto 5198)
       y arrancar la API con  Foundry__Endpoint=http://127.0.0.1:5198/api/projects/p  Asistente__Habilitado=true  Asistente__Credencial=prueba
 """
@@ -29,10 +30,22 @@ def llamadas_para(pregunta):
     return [("conexiones_por_maestro", {**PERIODO, "limite": 5})]
 
 
+ULTIMAS = {"instructions": ""}
+
+
 class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        cuerpo = json.dumps({"instructions": ULTIMAS["instructions"]}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(cuerpo)))
+        self.end_headers()
+        self.wfile.write(cuerpo)
+
     def do_POST(self):
         n = int(self.headers.get("Content-Length") or 0)
         d = json.loads(self.rfile.read(n) or b"{}")
+        ULTIMAS["instructions"] = d.get("instructions") or ""
         entrada = d.get("input")
         if isinstance(entrada, str):
             salida = [{"type": "function_call", "name": nombre, "arguments": json.dumps(args), "call_id": f"c{i}"}

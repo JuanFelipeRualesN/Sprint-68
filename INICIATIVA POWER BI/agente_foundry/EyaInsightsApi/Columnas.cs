@@ -83,6 +83,31 @@ static class Columnas
         return double.Parse(v.ToJsonString(), CultureInfo.InvariantCulture);
     }
 
+    /// <summary>
+    /// Texto de la hoja «Datos» cuando no hay filas. Si el período pedido empieza DESPUÉS del último día con datos, dice esa causa
+    /// (consultas con «datos_hasta»: pruebas o conexiones); si no, el mensaje genérico.
+    /// </summary>
+    public static string MensajeSinResultados(JsonNode respuesta)
+    {
+        const string generico = "Sin resultados para este filtro (ver la hoja Referencias).";
+        if (respuesta["datos_hasta"]?.GetValue<string>() is not { } hasta
+            || !DateOnly.TryParseExact(hasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var limite)) return generico;
+        // Un período (desde/hasta) o dos (a y b, comparaciones): la causa solo vale si TODOS empiezan después de los datos.
+        var inicios = new List<DateOnly>();
+        void Inicio(JsonNode? p)
+        {
+            if (p?["desde"]?.GetValue<string>() is { } s && DateOnly.TryParseExact(s, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)) inicios.Add(d);
+        }
+        var periodo = respuesta["periodo"];
+        if (periodo?["desde"] is not null) Inicio(periodo); else { Inicio(periodo?["a"]); Inicio(periodo?["b"]); }
+        if (inicios.Count == 0 || inicios.Any(d => d <= limite)) return generico;
+        var consulta = respuesta["consulta"]?.GetValue<string>() ?? "";
+        var tipo = consulta is "uso_por_area" or "comparar_areas" or "promedio_full_quiz" ? "pruebas" : "conexiones";
+        var empieza = inicios.Count == 1 ? $"el período pedido empieza el {inicios[0]:yyyy-MM-dd}"
+                                         : $"los períodos pedidos empiezan el {inicios[0]:yyyy-MM-dd} y el {inicios[1]:yyyy-MM-dd}";
+        return $"No hay datos de {tipo} después del {limite:yyyy-MM-dd}; {empieza} (ver la hoja Referencias).";
+    }
+
     /// <summary>¿El resultado quedó cortado (hay más filas que las devueltas)? Lo dice la nota o el resumen de la consulta.</summary>
     public static bool HayMasFilas(JsonNode respuesta)
     {

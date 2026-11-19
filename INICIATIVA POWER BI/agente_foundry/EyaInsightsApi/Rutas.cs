@@ -266,7 +266,9 @@ static class Rutas
         return new Respuesta("participacion_escuelas", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
             new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, todas.Take(limite).ToList(),
             P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), P.Unir(c.NotaParticipacion,
-                todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} escuelas; el 'resumen' trae el total de todas. Los empates se ordenan alfabéticamente, así que la lista no es exhaustiva si el último valor se repite." : null)),
+                todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} escuelas; las otras {todas.Count - limite} quedan fuera por el límite pedido, NO por falta de datos ni porque se excluyan. " +
+                    (escuela is null ? $"{todasLas.Count(f => f.UsuariosConectados == 0)} de las {todas.Count} no tienen usuarios conectados en el período (0 %): no se excluyen, ocupan los últimos lugares cuando el orden es de mayor a menor. " : "") +
+                    "Los empates se ordenan alfabéticamente, así que la lista no es exhaustiva si el último valor se repite." : null)),
             new { escuelas_consideradas = todasLas.Count, total_usuarios_activos = act, total_usuarios_conectados = con, porcentaje_participacion_global = P.Pct(con, act),
                   escuelas_sin_conectados = todasLas.Count(f => f.UsuariosConectados == 0), escuelas_con_100_o_mas = todasLas.Count(f => f.PorcentajeParticipacion >= 100) });
     }

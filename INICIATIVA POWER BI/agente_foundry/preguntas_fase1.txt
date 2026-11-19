@@ -46,3 +46,12 @@ Ranking de escuelas por porcentaje de usuarios conectados desde el 1 de julio de
 ¿A qué hora del día se conectan más los maestros?
 # (no se piden cifras de estudiantes individuales)
 ¿Cuántas veces se conectó el estudiante Juan Pérez?
+
+# Ronda de ajustes tras la prueba real (REQ-3741 F4): participación mayor a 100 % y listas cortadas
+# (participacion_escuelas · desde 2026-07-01 → hoy · orden desc · limite 10). Deben cumplir:
+#   · si una escuela pasa de 100 % (p. ej. 140 %), la respuesta copia el valor TAL CUAL y explica en una frase que cuenta conectados sin suscripción activa, igual que Power BI (regla 4f); nunca lo topa en 100;
+#   · como hay más escuelas que las 10 mostradas, dice cuántas se muestran, cuántas hay en total (resumen.escuelas_consideradas), cuántas quedan fuera POR EL LÍMITE y cuántas no tienen conectados (resumen.escuelas_sin_conectados, 0 %, NO excluidas) (regla 4g); no dice que «se excluyen» escuelas.
+¿Qué escuelas tuvieron mayor participación desde julio de 2026?
+What schools had the highest participation since July 2026?
+Dame el ranking de participación por escuela desde el 1 de julio de 2026.
+¿Qué porcentaje de participación tiene cada escuela en lo corrido de 2026? (pídelo completo: limite=50; si siguen siendo más, debe decir cuántas faltan)

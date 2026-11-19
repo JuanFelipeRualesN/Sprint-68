@@ -5,6 +5,7 @@
 - `{consulta}` = la ruta de consulta sin `/`: `uso-por-area`, `conexiones-por-escuela`, `conexiones-por-maestro`, `comparar-areas`, `comparar-escuelas`, `promedio-full-quiz`, `tendencia-conexiones`, `conexiones-acumuladas`, `uso-docentes`, `patrones-conexion`, `participacion-escuelas`. (`buscar-escuela` no se exporta.)
 - Los parámetros y sus validaciones son **los mismos** que los de la ruta JSON (mismos mensajes 400/503).
 - `formato=xlsx` (por defecto): libro `.xlsx` con la hoja `Datos` y la hoja `Referencias` (consulta, fuente, columna de fecha, período, filtros, cuentas de prueba, datos hasta, filas exportadas, nota completa, resumen). Sin `limite` trae **todas** las filas (hasta 5000; `limite` admite 1–5000). El nombre viene en `Content-Disposition`: `{consulta}_{desde}_{hasta}.xlsx`.
+- Hoja `Datos` vacía: si el período pedido empieza después de «Datos hasta», dice la causa («No hay datos de pruebas después del 2026-04-23; el período pedido empieza el 2026-07-01»); si no, el mensaje genérico. En `Referencias` los valores numéricos (filtros como `limite`, filas exportadas, cifras del resumen) son números, no texto.
 - `formato=grafica`: JSON listo para Recharts (`tipo` `line`|`bar`, `layout`, `data`, `series`, `eje_x`, `eje_y`, `titulo`, referencias). Usa el `limite` normal (≤ 50). Menos de 2 filas → 422 `sin_grafica`.
 - Errores: 404 `consulta_desconocida`, 400 `parametros_invalidos` (formato, fechas, límite, escuela), 422 `sin_grafica`, 503 `base_no_disponible`.
 
