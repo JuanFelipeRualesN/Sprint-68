@@ -614,9 +614,12 @@ CASOS = [
     ("conexiones-acumuladas", D, "conexiones_acumuladas_2026-01-01_2026-11-10", ("line", None), "periodo", ["conexiones_acumuladas", "usuarios_acumulados"]),
     ("uso-docentes", dict(fecha="2026-11-18"), "uso_docentes_2026-11-18", ("bar", "horizontal"), "escuela", ["maestros", "con_conexiones", "con_asignaciones"]),
     ("patrones-conexion", D, "patrones_conexion_2026-01-01_2026-11-10", ("bar", "horizontal"), "nombre", ["conexiones"]),
-    ("participacion-escuelas", D, "participacion_escuelas_2026-01-01_2026-11-10", ("bar", "vertical"), "nombre", ["porcentaje_participacion"]),
+    ("participacion-escuelas", D, "participacion_escuelas_2026-01-01_2026-11-10", ("bar", "vertical"), "nombre", ["usuarios_activos", "usuarios_conectados"]),
+    ("promedio-full-quiz", dict(D, agrupar="escuela"), "promedio_full_quiz_2026-01-01_2026-11-10", ("bar", "vertical"), "escuela", ["pruebas_asignadas", "pruebas_completadas"]),
 ]
-print("  (promedio-full-quiz: no se prueba aquí; el esquema sintético no tiene result_generic.total_percent_full_quiz)")
+# criterio de orden y medida «extra» (otra escala: va en el tooltip y la etiqueta, no como serie) de cada gráfica
+PRINCIPAL = {"uso-por-area": "pruebas_completadas", "participacion-escuelas": "porcentaje_participacion", "promedio-full-quiz": "promedio_solo_realizadas"}
+EXTRA = {"participacion-escuelas": "porcentaje_participacion", "promedio-full-quiz": "promedio_solo_realizadas"}
 
 def esperado_data_grafica(ruta, filas, tipo, col_cat, series, todas=False, orden="desc", ceros=False, limite=10):
     """(data esperada, total_categorias, categorias_en_cero) de una gráfica a partir de TODAS las filas de la consulta.
@@ -624,7 +627,7 @@ def esperado_data_grafica(ruta, filas, tipo, col_cat, series, todas=False, orden
     ordena = tipo[0] == "bar" and ruta != "patrones-conexion"
     en_cero, sel = 0, list(filas)
     if ordena:
-        principal = "pruebas_completadas" if ruta == "uso-por-area" else series[0]
+        principal = PRINCIPAL.get(ruta, series[0])
         cero = lambda f: all((f.get(k) or 0) == 0 for k in series)
         en_cero = sum(1 for f in filas if cero(f))
         sel = [f for f in filas if ceros or not cero(f)]
@@ -635,7 +638,7 @@ def esperado_data_grafica(ruta, filas, tipo, col_cat, series, todas=False, orden
     etiquetas = [f[col_cat] for f in sel]
     if ruta == "uso-docentes" and len(set(etiquetas)) != len(etiquetas):
         etiquetas = [f"{f['escuela']} ({f['periodo_desde']})" for f in sel]
-    return [{"categoria": e, **{k: f.get(k) for k in series}} for e, f in zip(etiquetas, sel)], total, en_cero
+    return [{"categoria": e, **{k: f.get(k) for k in series}, **({EXTRA[ruta]: f.get(EXTRA[ruta])} if ruta in EXTRA else {})} for e, f in zip(etiquetas, sel)], total, en_cero
 
 
 for ruta, q, archivo, tipo, col_cat, series in CASOS:
@@ -804,7 +807,22 @@ igual("gráfica de usuarios por suscripción (por rol): barras agrupadas con las
       (st, [s["clave"] for s in g["series"]], [(p["categoria"], p["activas"], p["inactivas"], p["canceladas"], p["sin_suscripcion"]) for p in g["data"]]),
       (200, ["activas", "inactivas", "canceladas", "sin_suscripcion"], [(f[0], f[1], f[2], f[3], f[4]) for f in sorted(esp_f, key=lambda f: (-f[5], f[0]))]))
 st, g = grafica("usuarios-por-suscripcion")
-igual("gráfica de usuarios por suscripción (total): una barra por estado", (st, [p["categoria"] for p in g["data"]], g["eje_x"]["titulo"]), (200, [p["categoria"] for p in g["data"]], "Estado"))
+esp_t = esperado_suscripcion("total")[1]
+estados = [("Activas", esp_t[0]), ("Inactivas", esp_t[1]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])]
+igual("dona de usuarios por suscripción (total): tipo pie / variante dona, estados en su orden natural con su valor, = recálculo",
+      (st, g["tipo"], g.get("variante"), "layout" not in g, "agrupar" not in g, [(p["categoria"], p["usuarios"]) for p in g["data"]], g["eje_x"]["titulo"]),
+      (200, "pie", "dona", True, True, [e for e in estados if e[1] > 0], "Estado"))
+igual("dona: total_valor (el total del centro) = suma de las porciones y el % de cada una viaja en `extra`",
+      (g["total_valor"], sum(p["usuarios"] for p in g["data"]), g["extra"], [p["porcentaje_del_total"] for p in g["data"]]),
+      (sum(e[1] for e in estados if e[1] > 0), sum(p["usuarios"] for p in g["data"]), {"clave": "porcentaje_del_total", "nombre": "% del total", "unidad": "%"},
+       [round(100.0 * e[1] / sum(esp_t), 1) for e in estados if e[1] > 0]))
+igual("dona: mostradas = total_categorias = las de valor no cero; categorias_en_cero y incluir_ceros declarados; sin orden/todas (una dona no se ordena)",
+      (g["categorias_mostradas"], g["total_categorias"], g["categorias_en_cero"], g["incluir_ceros"], "orden" in g, "todas" in g),
+      (len([e for e in estados if e[1] > 0]), len([e for e in estados if e[1] > 0]), len([e for e in estados if e[1] == 0]), False, False, False))
+st, g0 = grafica("usuarios-por-suscripcion", incluir_ceros="true")
+igual("dona con incluir_ceros=true: las 4 porciones, hasta las de valor 0", (st, g0["tipo"], [p["categoria"] for p in g0["data"]]), (200, "pie", [e[0] for e in estados]))
+st, gr = grafica("usuarios-por-suscripcion", agrupar="rol")
+igual("usuarios por suscripción por rol NO es dona: barras agrupadas con 4 series (varias medidas)", (gr["tipo"], gr.get("agrupar"), len(gr["series"]), gr.get("variante")), ("bar", "grouped", 4, None))
 
 # hoja Referencias
 _, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10")
@@ -885,8 +903,53 @@ igual("gráfica sin categorías (sin ceros y nada que mostrar) → 422 sin_grafi
 st, g = grafica("tendencia-conexiones", **D, todas="true", orden="asc")
 igual("gráfica de líneas: orden natural del tiempo aunque pidan orden (sin campos de orden)", ([p["categoria"] for p in g["data"]] == sorted(p["categoria"] for p in g["data"]), "orden" in g, g["total_categorias"] == g["categorias_mostradas"]), (True, False, True))
 st, g = grafica("participacion-escuelas", **D)
-igual("gráfica de participación: unidad %", (g["eje_y"]["unidad"], g["datos_hasta"], g["filtros"]["cuentas_de_prueba"]),
-      ("%", api("/salud")[1]["datos_hasta_conexiones"], "excluidas" if EXCL else "incluidas"))
+igual("gráfica de participación: barras agrupadas (activos y conectados lado a lado), el % en `extra` y datos hasta / cuentas de prueba",
+      (g["tipo"], g.get("agrupar"), g["eje_y"]["unidad"], g["extra"], [s["clave"] for s in g["series"]], g["datos_hasta"], g["filtros"]["cuentas_de_prueba"]),
+      ("bar", "grouped", "usuarios", {"clave": "porcentaje_participacion", "nombre": "% de participación", "unidad": "%"}, ["usuarios_activos", "usuarios_conectados"],
+       api("/salud")[1]["datos_hasta_conexiones"], "excluidas" if EXCL else "incluidas"))
+_, rp = api("/participacion-escuelas", **D, limite=50)
+igual("gráfica de participación: ordenada por % de participación (el valor de la escuela con más % va primero y el % es el de la consulta)",
+      (g["data"][0]["porcentaje_participacion"], g["data"][0]["porcentaje_participacion"] == max(f["porcentaje_participacion"] or 0 for f in rp["resultados"])), (g["data"][0]["porcentaje_participacion"], True))
+st, gl = grafica("tendencia-conexiones", **D)
+st, gs = grafica("conexiones-por-escuela", **D)
+st, gc = grafica("conexiones-acumuladas", **D)
+igual("especificación: `agrupar: grouped` solo en barras con varias series; `serie_temporal` solo en líneas; sin `extra` donde no hay otra escala",
+      (g.get("agrupar"), gs.get("agrupar"), gl.get("serie_temporal"), gc.get("serie_temporal"), gs.get("serie_temporal"), gs.get("extra"), gl.get("agrupar")),
+      ("grouped", None, True, True, None, None, None))
+st, gu = grafica("uso-por-area", desde="2026-01-01", hasta="2026-11-10")
+igual("especificación: uso-por-area (2 series) también va agrupada", (gu["tipo"], gu.get("agrupar"), gu.get("extra")), ("bar", "grouped", None))
+
+# promedio-full-quiz (el esquema sintético ahora trae result_generic.total_percent_full_quiz): fuerza bruta por escuela y por materia
+def esperado_promedio(agrupar, desde, hasta):
+    a, b = rango(desde, hasta)
+    grupos = {}
+    pct = {}
+    for u, m, asig, tom in RES:
+        if ROL.get(u) != 3 or ESC_DE[u] is None or not visible(u) or not (a <= asig < b):
+            continue
+        clave = NOM_ESC[ESC_DE[u]] if agrupar == "escuela" else NOM_MAT.get(m, m)
+        p = float(dp.porcentaje_quiz(u, asig, tom)) if tom is not None else None
+        g = grupos.setdefault(clave, [0, 0, [], 0.0])
+        g[0] += 1
+        if tom is not None:
+            g[1] += 1
+            g[2].append(p)
+            g[3] += p
+    return {k: (g[0], g[1], round(sum(g[2]) / len(g[2]), 2) if g[2] else None, round(g[3] / g[0], 2)) for k, g in grupos.items()}
+
+
+for agr, col in (("escuela", "escuela"), ("materia", "materia")):
+    st, rq = api("/promedio-full-quiz", **D, agrupar=agr, limite=50)
+    esp = esperado_promedio(agr, D["desde"], D["hasta"])
+    obt = {f[col]: (f["pruebas_asignadas"], f["pruebas_completadas"], f.get("promedio_solo_realizadas"), f["promedio_todas_las_asignadas"]) for f in rq["resultados"]}
+    cerca = lambda x, y: (x is None and y is None) or (x is not None and y is not None and abs(x - y) <= 0.011)
+    igual(f"promedio-full-quiz por {agr}: asignadas, realizadas y promedios = fuerza bruta",
+          (st, sorted(obt) == sorted(esp), all(obt[k][0] == esp[k][0] and obt[k][1] == esp[k][1] and cerca(obt[k][2], esp[k][2]) and cerca(obt[k][3], esp[k][3]) for k in esp if k in obt)), (200, True, True))
+st, gq = grafica("promedio-full-quiz", **D, agrupar="escuela")
+igual("gráfica de promedio-full-quiz: barras agrupadas (asignadas y completadas) con el promedio % en `extra`",
+      (st, gq["tipo"], gq.get("agrupar"), [s["clave"] for s in gq["series"]], gq["extra"]["clave"], gq["extra"]["unidad"], all("promedio_solo_realizadas" in p for p in gq["data"])),
+      (200, "bar", "grouped", ["pruebas_asignadas", "pruebas_completadas"], "promedio_solo_realizadas", "%", True))
+
 
 # errores
 st, _, _ = api_bin("/exportar/buscar-escuela", texto="prueba")

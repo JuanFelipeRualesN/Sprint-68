@@ -166,6 +166,13 @@ def docentes(usuarios):
     return filas
 
 
+def porcentaje_quiz(user, asignada, tomada):
+    """% Full Quiz sintético y determinista (solo de las pruebas ya realizadas; NULL si no): 0.00-100.00 con dos decimales. Lo usa el verificador de promedio-full-quiz."""
+    if tomada is None:
+        return "NULL"
+    return f"{((user * 31 + asignada.day * 7 + asignada.hour * 3 + asignada.month) % 101) + (user % 4) * 0.25:.2f}"
+
+
 def a_sql(usuarios, conexiones, resultados):
     q = lambda s: "NULL" if s is None else "'" + str(s).replace("'", "''") + "'"
     f = lambda d: "NULL" if d is None else f"'{d:%Y-%m-%d %H:%M:%S}'"
@@ -182,7 +189,7 @@ def a_sql(usuarios, conexiones, resultados):
            "CREATE TABLE connected_date (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, connected_date TIMESTAMP NULL, subscription_status VARCHAR(25));",
            "CREATE TABLE subject (id INT PRIMARY KEY, subject_code VARCHAR(15), subject_name VARCHAR(100));",
            "CREATE TABLE result_generic (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subject_code VARCHAR(15),"
-           " quiz_assigned_to_plan_date TIMESTAMP NULL, quiz_taken_date TIMESTAMP NULL, quiz_title VARCHAR(1000));",
+           " quiz_assigned_to_plan_date TIMESTAMP NULL, quiz_taken_date TIMESTAMP NULL, quiz_title VARCHAR(1000), total_percent_full_quiz DECIMAL(6,2) NULL);",
            "CREATE TABLE etl_last_date (id INT PRIMARY KEY, etl_last_date DATETIME(6));",
            "CREATE TABLE subscription_profile_history (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subscription_id INT, status VARCHAR(25), cancellation_date DATETIME NULL);",
            # En producción es una VISTA que cruza otras bases; aquí una tabla con las mismas columnas.
@@ -200,8 +207,8 @@ def a_sql(usuarios, conexiones, resultados):
         out.append("INSERT INTO connected_date (user_id, connected_date, subscription_status) VALUES "
                    + ",".join(f"({u},{f(h)},'active')" for u, h in conexiones[i:i + 500]) + ";")
     for i in range(0, len(resultados), 500):
-        out.append("INSERT INTO result_generic (user_id, subject_code, quiz_assigned_to_plan_date, quiz_taken_date, quiz_title) VALUES "
-                   + ",".join(f"({u},{q(m)},{f(a)},{f(t)},'Prueba sintetica')" for u, m, a, t in resultados[i:i + 500]) + ";")
+        out.append("INSERT INTO result_generic (user_id, subject_code, quiz_assigned_to_plan_date, quiz_taken_date, quiz_title, total_percent_full_quiz) VALUES "
+                   + ",".join(f"({u},{q(m)},{f(a)},{f(t)},'Prueba sintetica',{porcentaje_quiz(u, a, t)})" for u, m, a, t in resultados[i:i + 500]) + ";")
     out.append("INSERT INTO etl_last_date VALUES (1, '2026-11-12 03:00:00.000000');")
     out.append("INSERT INTO subscription_profile_history (user_id, subscription_id, status, cancellation_date) VALUES "
                + ",".join(f"({u},1,{q(st)},'2027-06-30 00:00:00')" for u, st in suscripciones(usuarios)) + ";")
