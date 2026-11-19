@@ -46,3 +46,30 @@ Ranking de escuelas por porcentaje de usuarios conectados desde el 1 de julio de
 ¿A qué hora del día se conectan más los maestros?
 # (no se piden cifras de estudiantes individuales)
 ¿Cuántas veces se conectó el estudiante Juan Pérez?
+
+# Ronda de ajustes tras la prueba real (REQ-3741 F4): participación mayor a 100 % y listas cortadas
+# (participacion_escuelas · desde 2026-07-01 → hoy · orden desc · limite 10). Deben cumplir:
+#   · si una escuela pasa de 100 % (p. ej. 140 %), la respuesta copia el valor TAL CUAL y explica en una frase que cuenta conectados sin suscripción activa, igual que Power BI (regla 4f); nunca lo topa en 100;
+#   · como hay más escuelas que las 10 mostradas, dice cuántas se muestran, cuántas hay en total (resumen.escuelas_consideradas), cuántas quedan fuera POR EL LÍMITE y cuántas no tienen conectados (resumen.escuelas_sin_conectados, 0 %, NO excluidas) (regla 4g); no dice que «se excluyen» escuelas.
+¿Qué escuelas tuvieron mayor participación desde julio de 2026?
+What schools had the highest participation since July 2026?
+Dame el ranking de participación por escuela desde el 1 de julio de 2026.
+¿Qué porcentaje de participación tiene cada escuela en lo corrido de 2026? (pídelo completo: limite=50; si siguen siendo más, debe decir cuántas faltan)
+
+# Año académico por defecto (regla 2d). NO debe pedir fechas: asume agosto a julio (del 1-ago al 31-jul más recientes completos), lo dice con las fechas exactas y ofrece cambiarlo.
+# (conexiones_por_escuela · desde {anio_academico_desde} hasta {anio_academico_hasta})
+¿Cuántas escuelas se conectaron en el último año académico?
+How many schools connected during the last academic year?
+Dame las conexiones por escuela del año académico pasado.
+
+# Idioma (regla 5a): responde en el idioma de la PREGUNTA, aunque el panel esté en español; si no es claro, en el idioma del panel (idioma=es|en). Deben salir TODAS en inglés:
+How many users have an inactive or canceled subscription, and how many have no subscription?
+Which schools had the most connections in 2026?
+What was the connection trend by month this year?
+# ...y esta, en español con el panel en inglés (idioma=en), debe salir en español:
+¿Cuáles escuelas tuvieron más conexiones en lo corrido de 2026?
+
+# Solo la pregunta actual (regla 5b). Conversación de DOS mensajes en el mismo conversacion_id:
+#   1) «Indícame cuántas escuelas han sido visitadas y la fecha de la última visita de cada una»  → pide el período (no hay fechas)
+#   2) «How many users have an inactive or canceled subscription, and how many have no subscription?»
+# La respuesta al mensaje 2 debe ser en inglés y NO volver a pedir el período del mensaje 1 ni cerrar con ese pedido.

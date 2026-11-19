@@ -54,7 +54,7 @@ static class Excel
         }
         if (claves.Count == 0)
         {
-            Texto(ws.Cell(1, 1), "Sin resultados para este filtro (ver la hoja Referencias).");
+            Texto(ws.Cell(1, 1), Columnas.MensajeSinResultados(respuesta));
             ws.Column(1).Width = 60;
         }
         else
@@ -76,6 +76,17 @@ static class Excel
             ws.Cell(fila, 1).Style.Alignment.Vertical = ws.Cell(fila, 2).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
             fila++;
         }
+        // Los valores numéricos (límite, filas exportadas, cifras del resumen…) van como NÚMERO, no como texto (sin el triángulo verde de Excel).
+        void LineaV(string concepto, JsonNode? v)
+        {
+            if (Columnas.Numero(v) is not { } n) { Linea(concepto, Columnas.Texto(v)); return; }
+            Texto(ws.Cell(fila, 1), concepto); ws.Cell(fila, 1).Style.Font.Bold = true;
+            var c = ws.Cell(fila, 2);
+            c.Value = n; c.Style.NumberFormat.Format = n % 1 == 0 ? "0" : "0.0##";
+            c.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+            ws.Cell(fila, 1).Style.Alignment.Vertical = c.Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+            fila++;
+        }
         void Titulo(string t)
         {
             Texto(ws.Cell(fila, 1), t);
@@ -92,10 +103,10 @@ static class Excel
         Linea("Columna de fecha", Columnas.Texto(r["columna_fecha"]));
         foreach (var (k, v) in Columnas.Aplanar(r["periodo"], "")) Linea(k.Length == 0 ? "Período" : "Período · " + Rotulo(k), Columnas.Texto(v));
         foreach (var (k, v) in Columnas.Aplanar(r["filtros"]))
-            Linea(k == "cuentas_de_prueba" ? "Cuentas de prueba" : "Filtro · " + Rotulo(k), Columnas.Texto(v));
+            if (k == "cuentas_de_prueba") Linea("Cuentas de prueba", Columnas.Texto(v)); else LineaV("Filtro · " + Rotulo(k), v);
         if (r["alcance"] is { } alc) Linea("Alcance", Columnas.Texto(alc));
         Linea("Datos hasta", r["datos_hasta"] is { } dh ? Columnas.Texto(dh) : "no aplica");
-        Linea("Filas exportadas", nFilas.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        LineaV("Filas exportadas", JsonValue.Create(nFilas));
         Linea("Lista completa", cortado
             ? "NO: hay más filas que las exportadas (ver la nota). No presentes la lista como completa."
             : "Sí: están todas las filas que cumplen el filtro.");
@@ -104,7 +115,7 @@ static class Excel
         if (r["resumen"] is JsonObject)
         {
             Titulo("Resumen de la consulta");
-            foreach (var (k, v) in Columnas.Aplanar(r["resumen"])) Linea(Rotulo(k), Columnas.Texto(v));
+            foreach (var (k, v) in Columnas.Aplanar(r["resumen"])) LineaV(Rotulo(k), v);
         }
         ws.Column(1).Width = 34; ws.Column(2).Width = 100;
     }

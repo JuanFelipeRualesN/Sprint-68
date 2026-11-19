@@ -22,6 +22,7 @@ static class Rutas
         ["uso-docentes"] = UsoDocentes,
         ["patrones-conexion"] = PatronesConexion,
         ["participacion-escuelas"] = ParticipacionEscuelas,
+        ["usuarios-por-suscripcion"] = UsuariosPorSuscripcion,
     };
 
     // Topes internos de las consultas «completas» (la lista entera se trae para dar totales, % y empates exactos).
@@ -36,15 +37,30 @@ static class Rutas
         ? $"HAY MÁS FILAS: existen más de {tope} {que}; solo se consideran los primeros {tope} (los de más conexiones), así que la lista, los totales y los porcentajes NO son completos. No presentes la lista como completa."
         : null;
 
-    /// <summary>Ejecuta una acción y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base).</summary>
-    public static IResult Intentar(Func<IResult> accion)
+    /// <summary>
+    /// Ejecuta una acción y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base). Cuando la base falla, el servidor escribe en el log
+    /// la causa (nombre de la consulta, tipo de excepción, código y mensaje de MySQL, y el comienzo del SQL) SIN parámetros, datos ni Token; al cliente solo
+    /// le llega el error genérico.
+    /// </summary>
+    public static IResult Intentar(string nombre, Func<IResult> accion)
     {
         try { return accion(); }
         catch (ErrorConsulta e) { return Results.Json(new { error = "parametros_invalidos", mensaje = e.Message }, statusCode: 400); }
-        catch (MySqlException) { return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503); }
+        catch (MySqlException e)
+        {
+            RegistrarFallo(nombre, e);
+            return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503);
+        }
     }
 
-    public static IResult Ejecutar(Func<Respuesta> consulta) => Intentar(() => Results.Ok(consulta()));
+    public static IResult Ejecutar(string nombre, Func<Respuesta> consulta) => Intentar(nombre, () => Results.Ok(consulta()));
+
+    /// <summary>Una línea de log por fallo de base: consulta_fallida consulta=… tipo=MySqlException mysql_codigo=1054 sql_estado=42S22 mensaje="Unknown column …" sql="SELECT …".</summary>
+    public static void RegistrarFallo(string nombre, MySqlException e)
+    {
+        static string Limpio(string? t, int max) { var s = System.Text.RegularExpressions.Regex.Replace(t ?? "", @"\s+", " ").Trim(); return s.Length > max ? s[..max] + "…" : s; }
+        Console.WriteLine($"consulta_fallida consulta={nombre} tipo={e.GetType().Name} mysql_codigo={e.Number} sql_estado={e.SqlState} mensaje=\"{Limpio(e.Message, 300)}\" sql=\"{Limpio(e.Data["sql_inicio"] as string, 80)}\"");
+    }
 
     /// <summary>
     /// Ejecuta una consulta con el alcance de quien llama (A2): usa la vista filtrada de <see cref="IConsultasUso.Para"/> y declara
@@ -254,6 +270,32 @@ static class Rutas
                   menos_conexiones = menor?.Nombre, conexiones_del_menor = menor?.Conexiones });
     }
 
+    static Respuesta UsuariosPorSuscripcion(HttpRequest r, IConsultasUso c)
+    {
+        var agrupar = r.Query["agrupar"].FirstOrDefault() ?? "total";
+        if (agrupar is not ("total" or "escuela" or "rol")) throw new ErrorConsulta("'agrupar' debe ser 'total', 'escuela' o 'rol'.");
+        var (desc, limite) = P.OrdenLimite(r);
+        var escuela = P.Escuela(r, c);
+        var (todas, tot) = c.UsuariosPorSuscripcion(agrupar, escuela);
+        var orden = (desc ? todas.OrderByDescending(f => f.TotalUsuarios).ThenBy(f => f.Nombre, StringComparer.Ordinal)
+                          : todas.OrderBy(f => f.TotalUsuarios).ThenBy(f => f.Nombre, StringComparer.Ordinal)).ToList();
+        // «Inactivas» es solo un respaldo para estados futuros (la base real tiene únicamente active y canceled): si vale 0, no aparece en filas, resumen ni gráfica.
+        var hayInactivas = tot.Inactivas > 0;
+        var porEstado = new List<FilaEstadoSuscripcion> { new("Activas", tot.Activas, P.Pct(tot.Activas, tot.Total)) };
+        if (hayInactivas) porEstado.Add(new("Inactivas", tot.Inactivas, P.Pct(tot.Inactivas, tot.Total)));
+        porEstado.Add(new("Canceladas", tot.Canceladas, P.Pct(tot.Canceladas, tot.Total)));
+        porEstado.Add(new("Sin suscripción", tot.SinSuscripcion, P.Pct(tot.SinSuscripcion, tot.Total)));
+        object filas = agrupar == "total"
+            ? porEstado
+            : orden.Take(limite).Select(f => new FilaSuscripcionVista(f.Nombre, f.Activas, hayInactivas ? f.Inactivas : null, f.Canceladas, f.SinSuscripcion, f.TotalUsuarios)).ToList();
+        return new Respuesta("usuarios_por_suscripcion", c.Fuente, "subscription_profile_history.status (estado actual; no depende de un período)", "no aplica",
+            new { agrupar, escuela = escuela ?? "todas", orden = agrupar == "total" ? null : P.Texto(desc), limite = agrupar == "total" ? (int?)null : limite, cuentas_de_prueba = P.Cp(c) }, null, filas,
+            P.Unir(c.NotaSuscripcion, agrupar != "total" && orden.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {orden.Count} {(agrupar == "escuela" ? "escuelas" : "roles")}; el 'resumen' trae el total de todos." : null),
+            new { total_usuarios = tot.Total, activas = tot.Activas, inactivas = hayInactivas ? tot.Inactivas : (int?)null, canceladas = tot.Canceladas, sin_suscripcion = tot.SinSuscripcion,
+                  porcentaje_activas = P.Pct(tot.Activas, tot.Total), activas_con_fecha_de_cancelacion_vencida = tot.ActivasConFechaDeCancelacionVencida,
+                  grupos_considerados = agrupar == "total" ? (int?)null : todas.Count, estados_originales = tot.EstadosOriginales });
+    }
+
     static Respuesta ParticipacionEscuelas(HttpRequest r, IConsultasUso c)
     {
         var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
@@ -266,7 +308,9 @@ static class Rutas
         return new Respuesta("participacion_escuelas", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
             new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, todas.Take(limite).ToList(),
             P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), P.Unir(c.NotaParticipacion,
-                todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} escuelas; el 'resumen' trae el total de todas. Los empates se ordenan alfabéticamente, así que la lista no es exhaustiva si el último valor se repite." : null)),
+                todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} escuelas; las otras {todas.Count - limite} quedan fuera por el límite pedido, NO por falta de datos ni porque se excluyan. " +
+                    (escuela is null ? $"{todasLas.Count(f => f.UsuariosConectados == 0)} de las {todas.Count} no tienen usuarios conectados en el período (0 %): no se excluyen, ocupan los últimos lugares cuando el orden es de mayor a menor. " : "") +
+                    "Los empates se ordenan alfabéticamente, así que la lista no es exhaustiva si el último valor se repite." : null)),
             new { escuelas_consideradas = todasLas.Count, total_usuarios_activos = act, total_usuarios_conectados = con, porcentaje_participacion_global = P.Pct(con, act),
                   escuelas_sin_conectados = todasLas.Count(f => f.UsuariosConectados == 0), escuelas_con_100_o_mas = todasLas.Count(f => f.PorcentajeParticipacion >= 100) });
     }

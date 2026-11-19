@@ -210,11 +210,24 @@
 }
 
 /* ---- Fase 4: gráficas y descarga de Excel ---- */
-.asst-grafica { margin: 10px 0 0; padding: 8px 6px 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+.asst-grafica { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; margin: 10px 0 0; padding: 8px 6px 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
 .asst-grafica--destacada { border-color: #1A7BAA; }
-.asst-grafica-titulo { margin: 0 4px 4px; font-size: 0.78rem; font-weight: 600; color: #0f172a; }
-.asst-grafica-lienzo { width: 100%; min-width: 0; }
+.asst-grafica-cab { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 0 2px 2px 4px; }
+.asst-grafica-titulo { margin: 0; min-width: 0; font-size: 0.78rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asst-grafica-ampliar { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #334155; cursor: pointer; }
+.asst-grafica-ampliar:hover { background: #e2e8f0; }
+.asst-grafica-lienzo { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
+.asst-grafica-nota { margin: 2px 4px 4px; font-size: 0.7rem; color: #475569; }
+.asst-enlace { padding: 0; border: none; background: none; font: inherit; font-weight: 600; color: #1A7BAA; text-decoration: underline; cursor: pointer; }
 .asst-grafica .asst-aviso-dato { margin: 4px 4px 4px; }
+.asst-grafica .recharts-wrapper, .asst-grafica svg { max-width: 100%; }
+
+/* Sin scroll horizontal en el panel: los mensajes con gráfica ocupan TODO el ancho (no «se ajustan al contenido», que hacía que el gráfico
+   conservara el ancho que midió antes de que apareciera la barra de scroll vertical) y nada puede desbordar. */
+.asst-mensajes { overflow-x: hidden; }
+.asst-msg { box-sizing: border-box; min-width: 0; }
+.asst-msg--ancho { align-self: stretch; width: 100%; max-width: 100%; }
+.asst-msg--ancho > * { min-width: 0; max-width: 100%; }
 
 .asst-descarga-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .asst-descarga-fila--destacada .asst-descarga { box-shadow: 0 0 0 2px rgba(26, 123, 170, 0.3); }
@@ -244,3 +257,48 @@
 .asst-exportar-fechas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .asst-exportar-form .asst-descarga { align-self: flex-start; }
 .asst-panel select:focus-visible, .asst-panel input:focus-visible { outline: 2px solid #1A7BAA; outline-offset: 2px; }
+
+/* ---- Fase 4: ventana ampliada de la gráfica (se pinta en <body>, fuera del panel) ---- */
+.asst-modal-fondo { position: fixed; inset: 0; z-index: 10050; display: flex; align-items: center; justify-content: center; padding: 2vh 2vw; background: rgba(15, 23, 42, 0.55); font-family: 'Poppins', Arial, Helvetica, sans-serif; }
+.asst-modal { box-sizing: border-box; display: flex; flex-direction: column; width: 80vw; height: 80vh; max-width: 100%; max-height: 100%; background: #fff; color: #0f172a; border-radius: 12px; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35); overflow: hidden; }
+.asst-modal-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
+.asst-modal-titulo { margin: 0; font-size: 1rem; font-weight: 600; }
+.asst-modal-cerrar { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: none; border-radius: 8px; background: transparent; color: #334155; cursor: pointer; }
+.asst-modal-cerrar:hover { background: #e2e8f0; }
+.asst-modal-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 16px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; font-size: 0.8rem; }
+.asst-segmentos { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; }
+.asst-segmentos button { padding: 6px 12px; border: none; background: #fff; font-family: inherit; font-size: 0.78rem; color: #334155; cursor: pointer; }
+.asst-segmentos button + button { border-left: 1px solid #cbd5e1; }
+.asst-segmentos button.activo { background: #1A7BAA; color: #fff; font-weight: 600; }
+.asst-modal-orden { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-family: inherit; font-size: 0.78rem; color: #334155; cursor: pointer; }
+.asst-modal-ceros { display: inline-flex; align-items: center; gap: 6px; color: #334155; cursor: pointer; }
+.asst-modal-cuenta { margin-left: auto; color: #475569; }
+.asst-modal-cuerpo { position: relative; flex: 1; min-height: 0; overflow: auto; padding: 12px 16px; }
+.asst-modal-lienzo { width: 100%; transition: opacity .15s ease; }
+.asst-modal-cargando { position: absolute; top: 14px; right: 20px; z-index: 2; padding: 4px 10px; font-size: 0.74rem; color: #334155; background: #f1f5f9; border-radius: 999px; }
+.asst-modal .asst-advertencia { margin: 0 0 8px; }
+.asst-modal-pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+.asst-descarga--sec { background: #fff; color: #1A7BAA; box-shadow: inset 0 0 0 1px #1A7BAA; }
+.asst-descarga--sec:hover:not(:disabled) { background: #e8f3f9; }
+.asst-modal button:focus-visible, .asst-modal input:focus-visible { outline: 2px solid #1A7BAA; outline-offset: 2px; }
+@media (max-width: 767px) { .asst-modal { width: 96vw; height: 92vh; } .asst-modal-cuenta { margin-left: 0; } }
+
+/* ---- Fase 4 (ronda 3): tooltip con la medida extra, dona y colores que siguen el tema ---- */
+.asst-grafica, .asst-modal { color: #0f172a; }
+.asst-tooltip { box-sizing: border-box; max-width: 260px; padding: 7px 10px; font-size: 0.74rem; line-height: 1.4; color: #0f172a; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); }
+.asst-tooltip-titulo { margin-bottom: 3px; font-weight: 700; overflow-wrap: anywhere; }
+.asst-tooltip-fila { display: flex; align-items: center; gap: 6px; }
+.asst-tooltip-punto { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; }
+.asst-tooltip-extra { margin-top: 3px; padding-top: 3px; border-top: 1px solid #e2e8f0; color: #334155; }
+.asst-grafica .recharts-legend-item-text, .asst-modal .recharts-legend-item-text { color: inherit !important; }
+.asst-segmentos button:disabled { opacity: .45; cursor: not-allowed; text-decoration: line-through; }
+@media (prefers-color-scheme: dark) {
+    .asst-tooltip { color: #e2e8f0; background: #1e293b; border-color: #475569; }
+    .asst-tooltip-extra { color: #cbd5e1; border-top-color: #475569; }
+}
+.asst-grafica-fila { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.asst-grafica-fila .asst-grafica-lienzo { flex: 0 0 46%; width: 46%; }
+.asst-dona-leyenda { flex: 1 1 0; min-width: 0; margin: 0; padding: 0; list-style: none; font-size: 0.72rem; line-height: 1.35; }
+.asst-dona-leyenda li { display: block; margin-bottom: 5px; overflow-wrap: anywhere; }
+.asst-dona-leyenda b { font-weight: 600; white-space: nowrap; }
+.asst-dona-punto { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 2px; }

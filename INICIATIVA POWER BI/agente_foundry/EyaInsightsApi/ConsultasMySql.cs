@@ -29,6 +29,9 @@ public class ConsultasMySql : IConsultasUso
     readonly string _cadena;
     readonly int _offsetMin;
     readonly ExclusionCuentas _excl;
+    readonly int _timeoutSeg;
+    readonly string _colEstado, _colCancelacion;       // columnas de subscription_profile_history (configurables)
+    bool _sinFechaCancelacion;                          // la columna de cancelación no existe: se detectó una vez y no se vuelve a probar
     readonly object _candado = new();
     DateTime _expira = DateTime.MinValue;
     DateOnly? _hastaPruebas, _hastaConexiones;
@@ -37,17 +40,26 @@ public class ConsultasMySql : IConsultasUso
     readonly Alcance _alc = Alcance.Todo;
     string? _descAlcance;
 
-    public ConsultasMySql(string cadena, int offsetUtcMinutos, ExclusionCuentas exclusion)
+    public ConsultasMySql(string cadena, int offsetUtcMinutos, ExclusionCuentas exclusion, int timeoutSegundos = 30,
+        string colEstado = "status", string colCancelacion = "cancellation_date")
     {
         _cadena = cadena;
         _offsetMin = offsetUtcMinutos;
         _excl = exclusion;
+        _timeoutSeg = timeoutSegundos;
+        _colEstado = Identificador(colEstado);
+        _colCancelacion = Identificador(colCancelacion);
         _raiz = this;
     }
+
+    /// <summary>Un nombre de columna de la configuración va dentro del SQL: solo letras, números y guion bajo.</summary>
+    static string Identificador(string nombre) =>
+        System.Text.RegularExpressions.Regex.IsMatch(nombre, @"^[A-Za-z_][A-Za-z0-9_]*$") ? nombre : throw new InvalidOperationException($"Nombre de columna no válido: «{nombre}».");
 
     ConsultasMySql(ConsultasMySql raiz, Alcance alcance)
     {
         _cadena = raiz._cadena; _offsetMin = raiz._offsetMin; _excl = raiz._excl;
+        _timeoutSeg = raiz._timeoutSeg; _colEstado = raiz._colEstado; _colCancelacion = raiz._colCancelacion;
         _raiz = raiz; _alc = alcance;
     }
 
@@ -191,16 +203,27 @@ public class ConsultasMySql : IConsultasUso
         return c;
     }
 
-    List<T> Leer<T>(string sql, Action<MySqlParameterCollection> parametros, Func<MySqlDataReader, T> mapa)
+    List<T> Leer<T>(string sql, Action<MySqlParameterCollection> parametros, Func<MySqlDataReader, T> mapa, int? timeoutSeg = null)
     {
-        using var c = Abrir();
-        using var cmd = new MySqlCommand(sql, c) { CommandTimeout = 30 };
-        parametros(cmd.Parameters);
-        using var r = cmd.ExecuteReader();
-        var filas = new List<T>();
-        while (r.Read()) filas.Add(mapa(r));
-        return filas;
+        try
+        {
+            using var c = Abrir();
+            using var cmd = new MySqlCommand(sql, c) { CommandTimeout = timeoutSeg ?? _timeoutSeg };
+            parametros(cmd.Parameters);
+            using var r = cmd.ExecuteReader();
+            var filas = new List<T>();
+            while (r.Read()) filas.Add(mapa(r));
+            return filas;
+        }
+        catch (MySqlException e)
+        {
+            e.Data["sql_inicio"] = sql;        // el log (Rutas.RegistrarFallo) escribe solo el comienzo del SQL: texto fijo con nombres de parámetros, nunca valores
+            throw;
+        }
     }
+
+    /// <summary>Instante UTC de la columna i → día en la hora local de la consulta (null si la columna es NULL).</summary>
+    DateOnly? DiaLocal(MySqlDataReader r, int i) => r.IsDBNull(i) ? null : DateOnly.FromDateTime(r.GetDateTime(i).AddMinutes(_offsetMin));
 
     static int Entero(MySqlDataReader r, int i) => r.IsDBNull(i) ? 0 : Convert.ToInt32(r.GetValue(i), CultureInfo.InvariantCulture);
 
@@ -339,9 +362,9 @@ public class ConsultasMySql : IConsultasUso
     // ── Conexiones ──────────────────────────────────────────────────────────────────────
     public List<FilaEscuela> ConexionesPorEscuela(DateOnly desde, DateOnly hasta, bool desc, int limite)
     {
-        var sql = $@"SELECT sh.school_name, COALESCE(x.n, 0) AS conexiones, COALESCE(x.u, 0) AS usuarios
+        var sql = $@"SELECT sh.school_name, COALESCE(x.n, 0) AS conexiones, COALESCE(x.u, 0) AS usuarios, x.ult
             FROM school sh
-            LEFT JOIN (SELECT us.school_id, COUNT(*) AS n, COUNT(DISTINCT dt.user_id) AS u
+            LEFT JOIN (SELECT us.school_id, COUNT(*) AS n, COUNT(DISTINCT dt.user_id) AS u, MAX(dt.connected_date) AS ult
                        FROM connected_date dt JOIN user us ON us.user_id = dt.user_id AND us.role_id <> {RolCliente}
                        WHERE dt.connected_date >= @a AND dt.connected_date < @b {FD("us")}
                        GROUP BY us.school_id) x ON x.school_id = sh.school_id
@@ -354,17 +377,17 @@ public class ConsultasMySql : IConsultasUso
         {
             p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta)); p.AddWithValue("@l", limite);
             ParamsExcl(p);
-        }, r => new FilaEscuela(r.GetString(0), Entero(r, 1), Entero(r, 2)));
+        }, r => new FilaEscuela(r.GetString(0), Entero(r, 1), Entero(r, 2), UltimaConexion: DiaLocal(r, 3)));
     }
 
     public List<FilaMaestro> ConexionesPorMaestro(DateOnly desde, DateOnly hasta, bool desc, int limite, string? escuela)
     {
         var sql = $@"SELECT TRIM(CONCAT_WS(' ', us.first_name, us.last_name)) AS maestro,
                             COALESCE(sh.school_name, '(sin escuela)') AS escuela,
-                            COALESCE(x.n, 0) AS conexiones
+                            COALESCE(x.n, 0) AS conexiones, x.ult
             FROM user us
             LEFT JOIN school sh ON sh.school_id = us.school_id
-            LEFT JOIN (SELECT dt.user_id, COUNT(*) AS n FROM connected_date dt
+            LEFT JOIN (SELECT dt.user_id, COUNT(*) AS n, MAX(dt.connected_date) AS ult FROM connected_date dt
                        WHERE dt.connected_date >= @a AND dt.connected_date < @b
                        GROUP BY dt.user_id) x ON x.user_id = us.user_id
             WHERE us.role_id = @rol AND us.school_id IS NOT NULL AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
@@ -375,7 +398,7 @@ public class ConsultasMySql : IConsultasUso
             p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta));
             p.AddWithValue("@rol", RolDocente); p.AddWithValue("@l", limite);
             p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); ParamsExcl(p);
-        }, r => new FilaMaestro(r.GetString(0), r.GetString(1), Entero(r, 2)));
+        }, r => new FilaMaestro(r.GetString(0), r.GetString(1), Entero(r, 2), UltimaConexion: DiaLocal(r, 3)));
     }
 
     public List<FilaTendencia> Tendencia(DateOnly desde, DateOnly hasta, string granularidad, string? escuela)
@@ -535,6 +558,71 @@ public class ConsultasMySql : IConsultasUso
         return Leer(sql, p => { p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta)); ParamsExcl(p); },
             r => { int a = Entero(r, 1), c = Entero(r, 2); return new FilaParticipacion(r.GetString(0), a, c, a == 0 ? null : Math.Round(100.0 * c / a, 1)); });
     }
+
+    // ── Usuarios por estado de suscripción ──────────────────────────────────────────────
+    // Universo = el de la tarjeta «Activos»: usuarios con rol ≠ client, fuera de las cuentas de prueba (FU) y dentro del alcance (FA). Cada usuario cae en UNA categoría:
+    //  · activa: alguna fila de subscription_profile_history con status 'active' (SIN mirar cancellation_date: definición A de SEMANTICA_REPORTES.md §11, la del tablero);
+    //  · cancelada: sin fila activa y alguna con un status que contiene «cancel» (canceled, cancelled…);
+    //  · inactiva: tiene filas pero ninguna activa ni cancelada (inactive, NULL u otro valor);
+    //  · sin suscripción: ninguna fila.
+    // Los valores REALES de status salen en el resumen (estados_originales) para no depender de suponerlos.
+    // UNA sola pasada: primero se agrega subscription_profile_history POR USUARIO (sin tocar `user`) y después se une con `user`; no usa una columna id (la tabla
+    // real no la tiene). Si la columna de cancelación no existe, activas_con_fecha_de_cancelacion_vencida queda null y la consulta sigue.
+    public (List<FilaSuscripcion> Filas, ConteoSuscripcion Total) UsuariosPorSuscripcion(string agrupar, string? escuela)
+    {
+        var raiz = _raiz;
+        var conFecha = !raiz._sinFechaCancelacion;
+        var grupo = agrupar switch { "escuela" => "COALESCE(c.escuela, '(sin escuela)')", "rol" => "COALESCE(c.rol, '(sin rol)')", _ => "'total'" };
+        string Sql(bool fecha) => $@"SELECT {grupo} AS g, SUM(c.cat = 'activa'), SUM(c.cat = 'inactiva'), SUM(c.cat = 'cancelada'), SUM(c.cat = 'sin'), COUNT(*), SUM(c.venc)
+            FROM (SELECT us.user_id, us.role AS rol, sh.school_name AS escuela,
+                         CASE WHEN s.user_id IS NULL THEN 'sin' WHEN COALESCE(s.act, 0) = 1 THEN 'activa' WHEN COALESCE(s.can, 0) = 1 THEN 'cancelada' ELSE 'inactiva' END AS cat,
+                         CASE WHEN COALESCE(s.act, 0) = 1 AND COALESCE(s.venc, 0) = 1 THEN 1 ELSE 0 END AS venc
+                  FROM user us
+                  LEFT JOIN school sh ON sh.school_id = us.school_id
+                  LEFT JOIN (SELECT sph.user_id, MAX(sph.{_colEstado} = 'active') AS act, MAX(sph.{_colEstado} LIKE '%cancel%') AS can,
+                                    {(fecha ? $"MAX(sph.{_colEstado} = 'active' AND (sph.{_colCancelacion} IS NULL OR sph.{_colCancelacion} < NOW()))" : "0")} AS venc
+                             FROM subscription_profile_history sph GROUP BY sph.user_id) s ON s.user_id = us.user_id
+                  WHERE us.role_id <> {RolCliente} AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}) c
+            GROUP BY g";
+        void Par(MySqlParameterCollection p) { ParamsExcl(p); p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); }
+        FilaSuscripcion Fila(MySqlDataReader r) => new(r.GetString(0), Entero(r, 1), Entero(r, 2), Entero(r, 3), Entero(r, 4), Entero(r, 5));
+        var vencidas = 0;
+        List<FilaSuscripcion> filas;
+        try
+        {
+            filas = Leer(Sql(conFecha), Par, r => { vencidas += Entero(r, 6); return Fila(r); }, 60);
+        }
+        catch (MySqlException e) when (conFecha && e.Number == 1054 && e.Message.Contains(_colCancelacion, StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine($"usuarios-por-suscripcion: la columna «{_colCancelacion}» no existe en subscription_profile_history; se sigue sin la fecha de cancelación (activas_con_fecha_de_cancelacion_vencida = null).");
+            raiz._sinFechaCancelacion = true;
+            conFecha = false;
+            vencidas = 0;
+            filas = Leer(Sql(false), Par, r => Fila(r), 60);
+        }
+        // Valores reales de status (usuarios con alguna suscripción en cada uno): informativo; si falla no tumba la consulta.
+        var estados = new Dictionary<string, int>();
+        try
+        {
+            estados = Leer($@"SELECT COALESCE(sph.{_colEstado}, '(vacío)'), COUNT(DISTINCT sph.user_id)
+                FROM subscription_profile_history sph
+                JOIN user us ON us.user_id = sph.user_id
+                LEFT JOIN school sh ON sh.school_id = us.school_id
+                WHERE us.role_id <> {RolCliente} AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
+                GROUP BY sph.{_colEstado} ORDER BY 2 DESC, 1", Par, r => (Estado: r.GetString(0), N: Entero(r, 1)), 60).ToDictionary(x => x.Estado, x => x.N);
+        }
+        catch (MySqlException e) { Rutas.RegistrarFallo("usuarios-por-suscripcion/estados_originales", e); }
+        var total = new ConteoSuscripcion(filas.Sum(f => f.Activas), filas.Sum(f => f.Inactivas), filas.Sum(f => f.Canceladas), filas.Sum(f => f.SinSuscripcion),
+            conFecha ? vencidas : null, estados);
+        return (filas, total);
+    }
+
+    public string? NotaSuscripcion =>
+        "Cada usuario (rol distinto de client) cuenta UNA vez: activa = tiene una suscripción con status 'active' (sin mirar la fecha de cancelación; es la definición del tablero de Power BI, igual que «usuarios_activos» de las demás consultas); " +
+        "cancelada = sin suscripción activa y con alguna 'canceled'; sin suscripción = no aparece en la historia de suscripciones. En la base real solo existen los estados active y canceled; " +
+        "«inactivas» (tiene suscripciones pero ninguna activa ni cancelada) es solo un respaldo para estados futuros y NO aparece si vale 0. " +
+        "El resumen trae 'estados_originales' (usuarios con alguna suscripción en cada valor real de status; un usuario puede aparecer en varios) y 'activas_con_fecha_de_cancelacion_vencida' (activas cuya fecha de cancelación ya pasó o está vacía: es la diferencia con el filtro de descargas de la plataforma, que además exige fecha futura). " +
+        "Es el estado actual, no depende de un período. " + NotaExclusion;
 
     public string? NotaParticipacion =>
         "participacion = usuarios conectados en el período / usuarios con suscripción activa de la escuela (gráfico «% de usuarios conectados por escuela» de Power BI). " +

@@ -51,7 +51,11 @@ if ((builder.Configuration["Datos:Origen"] ?? "ejemplo") == "mysql")
         Lista("Datos:OresExcluidos", "DEMOSTRACION"),
         Lista("Datos:DominiosExcluidos", ""),
         Lista("Datos:EscuelasExcluidas", "Escuela Facilitadores MSJ"));
-    builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion));
+    // Tiempo máximo de cada consulta SQL (Datos:CommandTimeoutSegundos, 30 por defecto). Los nombres de las columnas de la historia de suscripciones se pueden
+    // cambiar (Datos:ColEstadoSuscripcion / Datos:ColCancelacionSuscripcion) si en la base real se llaman distinto.
+    var tiempo = int.Parse(builder.Configuration["Datos:CommandTimeoutSegundos"] ?? "30", CultureInfo.InvariantCulture);
+    builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion, tiempo,
+        builder.Configuration["Datos:ColEstadoSuscripcion"] ?? "status", builder.Configuration["Datos:ColCancelacionSuscripcion"] ?? "cancellation_date"));
 }
 else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 
@@ -116,7 +120,14 @@ if (asistenteOn)
         var cabeceras = Auth.HeadersParaReenviar(ctx);
         try
         {
-            var r = await asistente.PreguntarAsync(p, usuario, (op, a) => asistente.EjecutarAsync(local, baseUrl, cabeceras, op, a, ctx.RequestAborted), ctx.RequestAborted);
+            var r = await asistente.PreguntarAsync(p, usuario, (op, a) => asistente.EjecutarAsync(local, baseUrl, cabeceras, op, a, ctx.RequestAborted),
+                async ruta =>
+                {
+                    using var req = new HttpRequestMessage(HttpMethod.Get, baseUrl + ruta);
+                    foreach (var (n, v) in cabeceras) req.Headers.TryAddWithoutValidation(n, v);
+                    using var resp = await local.SendAsync(req, ctx.RequestAborted);
+                    return ((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ctx.RequestAborted));
+                }, ctx.RequestAborted);
             Console.WriteLine($"asistente usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consultas={r.Consultas.Count} descargas={r.Descargas?.Count ?? 0}");
             return Results.Json(r);
         }
@@ -136,6 +147,25 @@ if (asistenteOn)
             Console.WriteLine($"Asistente: modelo no disponible ({e.GetType().Name}: {e.Message}).");
             return Results.Json(new { error = "modelo_no_disponible", mensaje = "El asistente no está disponible en este momento. Intenta de nuevo." }, statusCode: 502);
         }
+    });
+
+    // Gráfica ampliada de una respuesta (ventana «Ampliar» del panel): mismo id que la descarga y mismo dueño. Parámetros: todas, orden, incluir_ceros, limite.
+    // Se reconstruye por loopback a /exportar/{consulta}?formato=grafica con el Token de quien la pide; id ajeno, vencido o inventado → el mismo 404.
+    app.MapGet("/asistente/graficas/{id}", async (string id, HttpContext ctx, AsistenteFoundry asistente) =>
+    {
+        var usuario = Auth.Usuario(ctx);
+        if (asistente.BuscarDescarga(id, usuario) is not { } d)
+            return Results.Json(new { error = "descarga_expirada", mensaje = "El enlace expiró; vuelve a preguntar." }, statusCode: 404);
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"{BaseLoopback()}/exportar/{Uri.EscapeDataString(d.Consulta)}?{AsistenteFoundry.QueryDeGraficaAmpliada(d.Query, ctx.Request.Query)}");
+        foreach (var (n, v) in Auth.HeadersParaReenviar(ctx)) req.Headers.TryAddWithoutValidation(n, v);
+        using var resp = await local.SendAsync(req, ctx.RequestAborted);
+        var cuerpo = await resp.Content.ReadAsStringAsync(ctx.RequestAborted);
+        if (resp.IsSuccessStatusCode && System.Text.Json.Nodes.JsonNode.Parse(cuerpo) is System.Text.Json.Nodes.JsonObject spec)
+        {
+            spec["id"] = id; spec["url"] = "/asistente/graficas/" + id;
+            cuerpo = spec.ToJsonString(new System.Text.Json.JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        }
+        return Results.Content(cuerpo, "application/json", System.Text.Encoding.UTF8, (int)resp.StatusCode);
     });
 
     // Descarga del Excel de una respuesta: id opaco ↔ consulta, ligado a quien preguntó. Id inexistente, vencido o DE OTRA PERSONA → el mismo 404.
@@ -160,7 +190,7 @@ if (asistenteOn)
 app.MapGet("/salud", (IConsultasUso c) => new { estado = "ok", fuente = c.Fuente, datos_hasta_pruebas = c.DatosHastaPruebas, datos_hasta_conexiones = c.DatosHastaConexiones });
 
 foreach (var (ruta, f) in Rutas.Consultas)
-    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => Rutas.Con(f, r, c)));
+    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(ruta, () => Rutas.Con(f, r, c)));
 
 // Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
 // NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
@@ -173,15 +203,22 @@ app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUs
     var formato = r.Query["formato"].FirstOrDefault() ?? "xlsx";
     if (formato is not ("xlsx" or "grafica"))
         return Results.Json(new { error = "parametros_invalidos", mensaje = "'formato' debe ser 'xlsx' o 'grafica'." }, statusCode: 400);
-    return Rutas.Intentar(() =>
+    return Rutas.Intentar("exportar/" + consulta, () =>
     {
-        if (formato == "xlsx") r.HttpContext.Items["exportar"] = true;           // límite hasta 5000 (P.OrdenLimite)
+        // xlsx y gráfica trabajan con TODAS las filas (hasta 5000); en la gráfica, «limite» ya no es el de la consulta sino el nº de categorías de la vista previa.
+        r.HttpContext.Items["exportar"] = true;
+        OpcionesGrafica? opciones = null;
+        if (formato == "grafica")
+        {
+            r.HttpContext.Items["exportar_ignora_limite"] = true;
+            opciones = P.OpcionesDeGrafica(r);
+        }
         var resp = Columnas.ANodo(Rutas.Con(f, r, c));
         var u = Auth.Usuario(r.HttpContext);        // auditoría: quién exportó qué (sin token ni datos)
         Console.WriteLine($"exportar usuario={u.Id} rol={u.Rol} origen={u.Origen} alcance=\"{resp["alcance"]}\" consulta={consulta} formato={formato} filas={resp["resultados"]?.AsArray().Count ?? 0}");
         if (formato == "xlsx")
             return Results.File(Excel.Libro(resp), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Columnas.NombreArchivo(resp));
-        return Graficas.Desde(resp) is { } spec
+        return Graficas.Desde(resp, opciones) is { } spec
             ? Results.Json(spec, Columnas.JsonApi)
             : Results.Json(new { error = "sin_grafica", mensaje = "Esta consulta no tiene gráfica: hacen falta al menos 2 filas y una consulta graficable." }, statusCode: 422);
     });
@@ -276,11 +313,33 @@ static class P
         // Exportación (GET /exportar/...): el límite sube a 5000 y, sin 'limite', se devuelven todas las filas (hasta 5000).
         var exportar = r.HttpContext.Items["exportar"] is true;
         var max = MaxLimite(r);
-        var txt = r.Query["limite"].FirstOrDefault();
+        var txt = r.HttpContext.Items["exportar_ignora_limite"] is true ? null : r.Query["limite"].FirstOrDefault();   // en la gráfica, «limite» es de la gráfica (OpcionesDeGrafica)
         var limite = exportar ? max : 10;
         if (txt is not null && !int.TryParse(txt, out limite)) throw new ErrorConsulta("'limite' debe ser un número entero.");
         if (limite < 1 || limite > max) throw new ErrorConsulta($"'limite' debe estar entre 1 y {max}.");
         return (orden == "desc", limite);
+    }
+
+    /// <summary>
+    /// Parámetros de la gráfica (GET /exportar/{consulta}?formato=grafica): todas=true|false (vista previa de 10 por defecto), orden=desc|asc,
+    /// incluir_ceros=true|false (por defecto false), limite=1–5000 (categorías de la vista previa; 10 por defecto; con todas=true no aplica).
+    /// </summary>
+    public static OpcionesGrafica OpcionesDeGrafica(HttpRequest r)
+    {
+        bool Bool(string nombre)
+        {
+            var t = r.Query[nombre].FirstOrDefault();
+            if (string.IsNullOrEmpty(t)) return false;
+            if (!bool.TryParse(t, out var v)) throw new ErrorConsulta($"'{nombre}' debe ser true o false.");
+            return v;
+        }
+        var orden = r.Query["orden"].FirstOrDefault() ?? "desc";
+        if (orden is not ("asc" or "desc")) throw new ErrorConsulta("'orden' debe ser 'asc' o 'desc'.");
+        var limite = OpcionesGrafica.LimiteVistaPrevia;
+        var txt = r.Query["limite"].FirstOrDefault();
+        if (txt is not null && !int.TryParse(txt, out limite)) throw new ErrorConsulta("'limite' debe ser un número entero.");
+        if (limite < 1 || limite > 5000) throw new ErrorConsulta("'limite' debe estar entre 1 y 5000.");
+        return new OpcionesGrafica(Bool("todas"), orden, Bool("incluir_ceros"), limite);
     }
 
     public static string? Escuela(HttpRequest r, IConsultasUso c)

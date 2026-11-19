@@ -136,12 +136,16 @@ INDICADORES = ["has_connections_current_period", "has_created_instructional_plan
 
 
 def suscripciones(usuarios):
-    """(user_id, status). Activo si user_id % 5 != 0; algunos tienen además una fila 'inactive' (prueba el DISTINCT)."""
+    """(user_id, status). Como en la base real, solo existen 'active' y 'canceled'. Activo si user_id % 5 != 0; los múltiplos de 5 tienen 'canceled';
+    los múltiplos de 15 no tienen ninguna fila (sin suscripción); los múltiplos de 7 tienen además una fila 'canceled' (activa + cancelada: gana activa, prueba el DISTINCT)."""
     filas = []
     for u in usuarios:
-        filas.append((u[0], "inactive" if u[0] % 5 == 0 else "active"))
-        if u[0] % 7 == 0:
-            filas.append((u[0], "inactive"))
+        uid = u[0]
+        if uid % 15 == 0:
+            continue                                  # sin suscripción (nunca fue activo: 15 es múltiplo de 5)
+        filas.append((uid, "canceled" if uid % 5 == 0 else "active"))
+        if uid % 7 == 0:
+            filas.append((uid, "canceled"))
     return filas
 
 
@@ -161,6 +165,13 @@ def docentes(usuarios):
     return filas
 
 
+def porcentaje_quiz(user, asignada, tomada):
+    """% Full Quiz sintético y determinista (solo de las pruebas ya realizadas; NULL si no): 0.00-100.00 con dos decimales. Lo usa el verificador de promedio-full-quiz."""
+    if tomada is None:
+        return "NULL"
+    return f"{((user * 31 + asignada.day * 7 + asignada.hour * 3 + asignada.month) % 101) + (user % 4) * 0.25:.2f}"
+
+
 def a_sql(usuarios, conexiones, resultados):
     q = lambda s: "NULL" if s is None else "'" + str(s).replace("'", "''") + "'"
     f = lambda d: "NULL" if d is None else f"'{d:%Y-%m-%d %H:%M:%S}'"
@@ -173,13 +184,15 @@ def a_sql(usuarios, conexiones, resultados):
            "CREATE TABLE school (school_id INT PRIMARY KEY, school_name VARCHAR(250), school_type VARCHAR(30), city VARCHAR(100),"
            " ore VARCHAR(100), ore_id INT, school_identifier VARCHAR(100), state_iso_code VARCHAR(45), country VARCHAR(150), country_iso VARCHAR(45));",
            "CREATE TABLE user (user_id INT PRIMARY KEY, username VARCHAR(100), email VARCHAR(200), first_name VARCHAR(100),"
-           " last_name VARCHAR(155), role_id INT, role VARCHAR(45), school_id INT NULL, sie VARCHAR(50), ore_id INT, invitation_code VARCHAR(100));",
+           " last_name VARCHAR(155), role_id INT NOT NULL, role VARCHAR(45) NOT NULL, school_id INT NULL, sie VARCHAR(50), ore_id INT, invitation_code VARCHAR(100));",
            "CREATE TABLE connected_date (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, connected_date TIMESTAMP NULL, subscription_status VARCHAR(25));",
            "CREATE TABLE subject (id INT PRIMARY KEY, subject_code VARCHAR(15), subject_name VARCHAR(100));",
            "CREATE TABLE result_generic (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subject_code VARCHAR(15),"
-           " quiz_assigned_to_plan_date TIMESTAMP NULL, quiz_taken_date TIMESTAMP NULL, quiz_title VARCHAR(1000));",
+           " quiz_assigned_to_plan_date TIMESTAMP NULL, quiz_taken_date TIMESTAMP NULL, quiz_title VARCHAR(1000), total_percent_full_quiz DECIMAL(6,2) NULL);",
            "CREATE TABLE etl_last_date (id INT PRIMARY KEY, etl_last_date DATETIME(6));",
-           "CREATE TABLE subscription_profile_history (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subscription_id INT, status VARCHAR(25), cancellation_date DATETIME NULL);",
+           # Esquema REAL (confirmado 19-nov): SIN columna id; solo una clave invisible my_row_id que no se debe usar (el 19-nov una consulta que contaba sph.id falló con la base real).
+           "CREATE TABLE subscription_profile_history (my_row_id BIGINT NOT NULL AUTO_INCREMENT INVISIBLE PRIMARY KEY, subscription_id INT NOT NULL, status VARCHAR(20) NOT NULL,"
+           " activated_date DATETIME NULL, cancellation_date DATETIME NULL, user_attached_date DATETIME NULL, user_id INT NOT NULL, plan_name VARCHAR(100) NULL, plan_id INT NULL);",
            # En producción es una VISTA que cruza otras bases; aquí una tabla con las mismas columnas.
            "CREATE TABLE vw_teacher_activities (teacher_name VARCHAR(200), invitation_code VARCHAR(100), sie VARCHAR(100), ore VARCHAR(100),"
            " school VARCHAR(250), school_number VARCHAR(50), from_period DATETIME, to_period DATETIME, "
@@ -195,8 +208,8 @@ def a_sql(usuarios, conexiones, resultados):
         out.append("INSERT INTO connected_date (user_id, connected_date, subscription_status) VALUES "
                    + ",".join(f"({u},{f(h)},'active')" for u, h in conexiones[i:i + 500]) + ";")
     for i in range(0, len(resultados), 500):
-        out.append("INSERT INTO result_generic (user_id, subject_code, quiz_assigned_to_plan_date, quiz_taken_date, quiz_title) VALUES "
-                   + ",".join(f"({u},{q(m)},{f(a)},{f(t)},'Prueba sintetica')" for u, m, a, t in resultados[i:i + 500]) + ";")
+        out.append("INSERT INTO result_generic (user_id, subject_code, quiz_assigned_to_plan_date, quiz_taken_date, quiz_title, total_percent_full_quiz) VALUES "
+                   + ",".join(f"({u},{q(m)},{f(a)},{f(t)},'Prueba sintetica',{porcentaje_quiz(u, a, t)})" for u, m, a, t in resultados[i:i + 500]) + ";")
     out.append("INSERT INTO etl_last_date VALUES (1, '2026-11-12 03:00:00.000000');")
     out.append("INSERT INTO subscription_profile_history (user_id, subscription_id, status, cancellation_date) VALUES "
                + ",".join(f"({u},1,{q(st)},'2027-06-30 00:00:00')" for u, st in suscripciones(usuarios)) + ";")

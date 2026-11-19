@@ -82,7 +82,7 @@ function nombreDeContentDisposition(cd) {
  * Errores con `codigo`: descarga_expirada (404), no_autorizado (401), sin_permiso (403), autenticacion_no_disponible (503),
  * sin_conexion, http_NNN, o el `error` del servicio (p. ej. parametros_invalidos).
  */
-export async function descargarArchivo(url, nombreRespaldo, signal) {
+function destinoSeguro(url) {
   const destino = /^https?:\/\//i.test(url) ? url : `${ASSISTANT_URL}${url.startsWith("/") ? "" : "/"}${url}`;
   // El Token de la sesión solo viaja al servicio del asistente: una URL absoluta de OTRO origen (p. ej. en una respuesta alterada) se rechaza.
   if (origenDe(destino) !== origenDe(ASSISTANT_URL)) {
@@ -90,6 +90,11 @@ export async function descargarArchivo(url, nombreRespaldo, signal) {
     err.codigo = "url_no_permitida";
     throw err;
   }
+  return destino;
+}
+
+export async function descargarArchivo(url, nombreRespaldo, signal) {
+  const destino = destinoSeguro(url);
   let r;
   try {
     r = await fetch(destino, { method: "GET", headers: getAuthHeaders(), signal });
@@ -131,4 +136,38 @@ export function descargarExportacion(consulta, parametros, signal) {
   const q = new URLSearchParams({ formato: "xlsx" });
   Object.entries(parametros || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== "") q.set(k, v); });
   return descargarArchivo(`/exportar/${encodeURIComponent(consulta)}?${q.toString()}`, `${consulta}.xlsx`, signal);
+}
+
+/**
+ * Pide al servicio la gráfica AMPLIADA de una respuesta (GET /asistente/graficas/{id}): `url` es `graficas[i].url`.
+ * opciones = { todas: bool, orden: "desc"|"asc", incluirCeros: bool, limite?: n }. Devuelve la especificación (mismo formato que graficas[i]).
+ * Va con el Token de la sesión (el servicio comprueba que la gráfica es de esta persona y le aplica su alcance). Errores con `codigo`
+ * (descarga_expirada, no_autorizado, sin_permiso, autenticacion_no_disponible, sin_grafica, sin_conexion, http_NNN).
+ */
+export async function pedirGrafica(url, opciones, signal) {
+  const q = new URLSearchParams();
+  const o = opciones || {};
+  q.set("todas", o.todas ? "true" : "false");
+  q.set("orden", o.orden === "asc" ? "asc" : "desc");
+  q.set("incluir_ceros", o.incluirCeros ? "true" : "false");
+  if (o.limite) q.set("limite", String(o.limite));
+  const destino = `${destinoSeguro(url)}${url.includes("?") ? "&" : "?"}${q.toString()}`;
+  let r;
+  try {
+    r = await fetch(destino, { method: "GET", headers: getAuthHeaders(), signal });
+  } catch (e) {
+    if (e && e.name === "AbortError") throw e;
+    const err = new Error("sin conexión con el asistente");
+    err.codigo = "sin_conexion";
+    throw err;
+  }
+  let datos = {};
+  try { datos = await r.json(); } catch (_) { /* cuerpo vacío o no JSON */ }
+  if (!r.ok) {
+    const err = new Error(datos.mensaje || `error ${r.status}`);
+    err.codigo = r.status === 404 ? "descarga_expirada" : datos.error || `http_${r.status}`;
+    err.estado = r.status;
+    throw err;
+  }
+  return datos;
 }

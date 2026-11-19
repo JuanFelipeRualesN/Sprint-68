@@ -32,7 +32,10 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(datos)))
         self.end_headers()
-        self.wfile.write(datos)
+        try:
+            self.wfile.write(datos)
+        except (BrokenPipeError, ConnectionResetError):
+            pass            # el cliente ya se rindió (prueba del timeout de la API)
 
     def do_GET(self):
         if self.path == "/llamadas":

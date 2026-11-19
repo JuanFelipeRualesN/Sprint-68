@@ -168,6 +168,33 @@ public sealed class AsistenteFoundry
     public EntradaDescarga? BuscarDescarga(string id, Usuario u) =>
         _descargas.TryGetValue(id, out var e) && e.Expira > DateTime.UtcNow && e.Usuario == ClaveUsuario(u) ? e : null;
 
+    static readonly string[] ParamsDeGrafica = ["formato", "limite", "todas", "incluir_ceros"];
+
+    /// <summary>
+    /// Query de la gráfica de una consulta del chat: los mismos filtros, sin 'limite' (la consulta del chat trae pocas filas) y con formato=grafica.
+    /// Si el modelo pidió un 'limite' de 1 a 10 se respeta como nº de categorías de la vista previa; 'orden' se conserva (si no, mayor a menor).
+    /// </summary>
+    public static string QueryDeGrafica(string query)
+    {
+        var partes = query.Split('&', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var lim = partes.FirstOrDefault(x => x.StartsWith("limite=", StringComparison.Ordinal));
+        var salida = partes.Where(x => !ParamsDeGrafica.Any(k => x.StartsWith(k + "=", StringComparison.Ordinal))).ToList();
+        if (lim is not null && int.TryParse(lim[7..], out var n) && n is >= 1 and <= OpcionesGrafica.LimiteVistaPrevia) salida.Add("limite=" + n);
+        salida.Add("formato=grafica");
+        return string.Join("&", salida);
+    }
+
+    /// <summary>Query de la gráfica de una descarga registrada, con las opciones de la persona (todas, orden, incluir_ceros, limite) por encima de las del chat.</summary>
+    public static string QueryDeGraficaAmpliada(string queryDescarga, IQueryCollection pedido)
+    {
+        var sustituye = new[] { "todas", "orden", "incluir_ceros", "limite" }.Where(k => pedido.ContainsKey(k)).ToHashSet();
+        var partes = queryDescarga.Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(x => !ParamsDeGrafica.Any(k => x.StartsWith(k + "=", StringComparison.Ordinal)) && !sustituye.Any(k => x.StartsWith(k + "=", StringComparison.Ordinal))).ToList();
+        foreach (var k in sustituye) partes.Add($"{k}={Uri.EscapeDataString(pedido[k].ToString())}");
+        partes.Add("formato=grafica");
+        return string.Join("&", partes);
+    }
+
     /// <summary>Query de la descarga: la de la consulta del chat SIN 'limite' (el Excel trae la lista completa, hasta 5000 filas) y con formato=xlsx.</summary>
     public static string QueryDeExcel(string query)
     {
@@ -199,7 +226,9 @@ public sealed class AsistenteFoundry
     }
 
     // ── La pregunta ────────────────────────────────────────────────────────────────────────────────────────────
-    public async Task<RespuestaAsistente> PreguntarAsync(PreguntaAsistente p, Usuario usuario, Func<string, JsonObject, Task<ResultadoHerramienta>> ejecutar, CancellationToken ct)
+    /// <param name="pedir">GET por loopback (con la identidad de quien pregunta) a una ruta relativa de esta API: se usa para pedir la gráfica ya ordenada, sin ceros y con su total.</param>
+    public async Task<RespuestaAsistente> PreguntarAsync(PreguntaAsistente p, Usuario usuario, Func<string, JsonObject, Task<ResultadoHerramienta>> ejecutar,
+        Func<string, Task<(int Estado, string Cuerpo)>> pedir, CancellationToken ct)
     {
         var pregunta = (p.Pregunta ?? "").Trim();
         if (pregunta.Length > 1000) pregunta = pregunta[..1000];
@@ -209,6 +238,8 @@ public sealed class AsistenteFoundry
         string? ultimoId = _conversaciones.TryGetValue(conversacion, out var previa) ? previa.Id : null;
 
         var contexto = ContextoTexto(p.Contexto, p.Idioma);
+        // En una conversación que continúa, cada mensaje se marca como pregunta NUEVA: el historial es solo contexto (regla 5b), no pedidos pendientes.
+        if (ultimoId is not null) contexto = (contexto.Length > 0 ? contexto + "\n" : "") + "[Mensaje nuevo: responde SOLO a esta pregunta; no retomes pedidos ni aclaraciones de mensajes anteriores]";
         JsonNode entrada = JsonValue.Create(contexto.Length > 0 ? contexto + "\n" + pregunta : pregunta)!;
         var hoy = DateTime.UtcNow.AddHours(-4).ToString("yyyy-MM-dd");                                         // día en hora de Puerto Rico
         // Las fechas relativas las calcula el código (el modelo se equivoca con «últimos 3 meses completos»).
@@ -217,7 +248,9 @@ public sealed class AsistenteFoundry
         var instrucciones = _plantilla.Replace("{hoy}", hoy)
             .Replace("{trimestre_desde}", mesActual.AddMonths(-3).ToString("yyyy-MM-dd")).Replace("{trimestre_hasta}", mesActual.AddDays(-1).ToString("yyyy-MM-dd"))
             .Replace("{mes_pasado_desde}", mesActual.AddMonths(-1).ToString("yyyy-MM-dd")).Replace("{mes_pasado_hasta}", mesActual.AddDays(-1).ToString("yyyy-MM-dd"))
-            .Replace("{inicio_anio}", new DateOnly(h.Year, 1, 1).ToString("yyyy-MM-dd"));
+            .Replace("{inicio_anio}", new DateOnly(h.Year, 1, 1).ToString("yyyy-MM-dd"))
+            .Replace("{anio_academico_desde}", AnioAcademico(h).Desde.ToString("yyyy-MM-dd")).Replace("{anio_academico_hasta}", AnioAcademico(h).Hasta.ToString("yyyy-MM-dd"))
+            .Replace("{anio_academico_actual_desde}", AnioAcademico(h).ActualDesde.ToString("yyyy-MM-dd"));
 
         var referencias = new List<JsonNode>(); var consultas = new List<JsonNode>();
         var descargas = new List<JsonNode>(); var graficas = new List<JsonNode>(); var vistas = new HashSet<string>();
@@ -238,17 +271,21 @@ public sealed class AsistenteFoundry
             using var doc = await LlamarAsync(cuerpo, ct);
             ultimoId = doc.RootElement.GetProperty("id").GetString();
             var pendientes = new List<(string Nombre, string Args, string CallId)>();
-            var sb = new StringBuilder();
+            var mensajes = new List<string>();            // un texto por cada mensaje del modelo (puede haber varios en la misma respuesta)
             foreach (var item in doc.RootElement.GetProperty("output").EnumerateArray())
             {
                 var tipo = item.GetProperty("type").GetString();
                 if (tipo == "function_call")
                     pendientes.Add((item.GetProperty("name").GetString()!, item.GetProperty("arguments").GetString() ?? "{}", item.GetProperty("call_id").GetString()!));
                 else if (tipo == "message")
+                {
+                    var sb = new StringBuilder();
                     foreach (var c in item.GetProperty("content").EnumerateArray())
                         if (c.GetProperty("type").GetString() == "output_text") sb.Append(c.GetProperty("text").GetString());
+                    if (sb.Length > 0) mensajes.Add(sb.ToString());
+                }
             }
-            if (pendientes.Count == 0) { texto = sb.ToString(); break; }
+            if (pendientes.Count == 0) { texto = UnirMensajes(mensajes); break; }
 
             var resultados = new JsonArray();
             foreach (var (nombre, args, callId) in pendientes)
@@ -269,7 +306,17 @@ public sealed class AsistenteFoundry
                         var id = RegistrarDescarga(consulta, QueryDeExcel(query), usuario);
                         descargas.Add(new JsonObject { ["id"] = id, ["nombre"] = Columnas.NombreArchivo(nodo), ["consulta"] = consulta,
                             ["url"] = "/asistente/descargas/" + id, ["destacar"] = pideExcel });
-                        if (Graficas.Desde(nodo) is JsonObject spec) { spec["destacar"] = pideGrafica; graficas.Add(spec); }
+                        // La gráfica sale de /exportar/{consulta}?formato=grafica (todas las filas: ordenada, sin ceros, vista previa de 10 y con su total),
+                        // no de las filas del chat. Con el id de la descarga el panel pide después la versión ampliada (GET /asistente/graficas/{id}).
+                        if (Graficas.Graficable(consulta))
+                        {
+                            var (eg, cg) = await pedir($"/exportar/{Uri.EscapeDataString(consulta)}?{QueryDeGrafica(query)}");
+                            if (eg == 200 && JsonNode.Parse(cg) is JsonObject spec)
+                            {
+                                spec["id"] = id; spec["url"] = "/asistente/graficas/" + id; spec["destacar"] = pideGrafica;
+                                graficas.Add(spec);
+                            }
+                        }
                     }
                 }
                 resultados.Add(new JsonObject { ["type"] = "function_call_output", ["call_id"] = callId, ["output"] = salida });
@@ -292,6 +339,16 @@ public sealed class AsistenteFoundry
             Descargas: descargas.Count > 0 ? descargas : null, Graficas: graficas.Count > 0 ? graficas : null);
     }
 
+    /// <summary>
+    /// Año académico por defecto (SUPUESTO documentado: agosto a julio). «El último año académico» = el año académico COMPLETO más reciente;
+    /// «este año académico» = desde el 1 de agosto vigente hasta hoy. El asistente lo dice en la respuesta y ofrece cambiarlo.
+    /// </summary>
+    public static (DateOnly Desde, DateOnly Hasta, DateOnly ActualDesde) AnioAcademico(DateOnly hoy)
+    {
+        var inicio = hoy.Month >= 8 ? hoy.Year : hoy.Year - 1;          // el año académico en curso empezó el 1-ago de este año
+        return (new DateOnly(inicio - 1, 8, 1), new DateOnly(inicio, 7, 31), new DateOnly(inicio, 8, 1));
+    }
+
     // ── Utilidades ─────────────────────────────────────────────────────────────────────────────────────────────
     static string Corto(string? s) { var t = (s ?? "").Replace('\n', ' ').Replace('«', '"').Replace('»', '"').Trim(); return t.Length > 80 ? t[..80] : t; }
 
@@ -300,8 +357,9 @@ public sealed class AsistenteFoundry
         var partes = new List<string>();
         if (c is not null && !(string.IsNullOrWhiteSpace(c.Reporte) && string.IsNullOrWhiteSpace(c.Pagina)))
             partes.Add($"[Contexto del tablero (solo orientación, no es un dato ni un período): informe = «{Corto(c.Reporte)}», página = «{Corto(c.Pagina)}»]");
-        if (idioma is not null && idioma.StartsWith("en", StringComparison.OrdinalIgnoreCase))
-            partes.Add("[Idioma de la persona: inglés]");
+        // Idioma del PANEL (el de la plataforma): solo desempata cuando la pregunta no deja claro el suyo (regla 5a). Va SIEMPRE, también en español.
+        var en = idioma is not null && idioma.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        partes.Add($"[Idioma del panel: {(en ? "inglés" : "español")}]");
         return string.Join("\n", partes);
     }
 
@@ -318,11 +376,53 @@ public sealed class AsistenteFoundry
     static IEnumerable<string> AvisosDe(string salida) =>
         JsonNode.Parse(salida)?["nota"]?.GetValue<string>() is { } nota ? Aviso.Matches(nota).Select(m => m.Value.Trim()) : Enumerable.Empty<string>();
 
-    /// <summary>El modelo cierra con «Referencias: …» (útil en el arnés de pruebas); en el panel se muestran las de la API.</summary>
+    /// <summary>
+    /// El modelo cierra con «Referencias: …» (útil en el arnés de pruebas); en el panel se muestran las de la API, así que NINGÚN bloque de
+    /// referencias puede quedar en la respuesta (ni al final, ni en medio, ni en línea con el texto) y el texto debe salir UNA sola vez.
+    /// </summary>
+    static readonly Regex BloqueReferencias = new(@"Referencias:\s*consulta=.*?(?:generado=\S+|(?=\n\s*\n)|\z)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    static readonly Regex LineaReferencias = new(@"(?im)^[ \t]*Referencias:.*(?:\n|\z)", RegexOptions.Compiled);
     static string QuitarBloqueReferencias(string texto)
     {
-        var i = texto.LastIndexOf("Referencias:", StringComparison.Ordinal);
-        return (i > 0 ? texto[..i] : texto).Trim();
+        var t = BloqueReferencias.Replace(texto, " ");
+        t = LineaReferencias.Replace(t, "");
+        t = Regex.Replace(t, @"[ \t]+\n", "\n");
+        t = Regex.Replace(t, @"\n{3,}", "\n\n").Trim();
+        return QuitarRepeticion(t);
+    }
+
+    static string Plano(string s) => Regex.Replace(s, @"\s+", " ").Trim();
+
+    /// <summary>Varios mensajes del modelo en una respuesta: se unen sin repetir los que ya están contenidos en otro (el más largo gana).</summary>
+    static string UnirMensajes(List<string> mensajes)
+    {
+        var res = new List<string>();
+        foreach (var m in mensajes.Select(QuitarBloqueReferencias).Where(m => m.Length > 0))
+        {
+            var pm = Plano(m);
+            if (res.Any(r => Plano(r).Contains(pm, StringComparison.Ordinal))) continue;
+            res.RemoveAll(r => pm.Contains(Plano(r), StringComparison.Ordinal));
+            res.Add(m);
+        }
+        return string.Join("\n\n", res);
+    }
+
+    /// <summary>«Respuesta + respuesta»: si el texto (sin espacios repetidos) es el mismo bloque dos veces seguidas, se queda con uno.</summary>
+    static string QuitarRepeticion(string texto)
+    {
+        var p = Plano(texto);
+        if (p.Length < 20) return texto;
+        for (var corte = p.Length / 2 - 2; corte <= p.Length / 2 + 2; corte++)
+            if (corte > 0 && corte < p.Length && p[..corte].Trim() == p[corte..].Trim())
+            {
+                // Se corta el original por el punto equivalente: el primer bloque ocupa aproximadamente la mitad del texto.
+                var mitad = texto.Length / 2;
+                for (var d = 0; d < texto.Length / 2; d++)
+                    foreach (var i in new[] { mitad - d, mitad + d })
+                        if (i > 0 && i < texto.Length && Plano(texto[..i]) == p[..corte].Trim()) return texto[..i].Trim();
+                return p[..corte].Trim();
+            }
+        return texto;
     }
 
     // Verificador anti-invención (mismo criterio que probar_agente_local.py): toda cifra debe salir de lo que devolvió la API.

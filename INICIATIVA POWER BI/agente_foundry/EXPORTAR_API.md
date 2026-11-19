@@ -2,10 +2,21 @@
 
 `GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>`
 
-- `{consulta}` = la ruta de consulta sin `/`: `uso-por-area`, `conexiones-por-escuela`, `conexiones-por-maestro`, `comparar-areas`, `comparar-escuelas`, `promedio-full-quiz`, `tendencia-conexiones`, `conexiones-acumuladas`, `uso-docentes`, `patrones-conexion`, `participacion-escuelas`. (`buscar-escuela` no se exporta.)
+- `{consulta}` = la ruta de consulta sin `/`: `uso-por-area`, `conexiones-por-escuela`, `conexiones-por-maestro`, `comparar-areas`, `comparar-escuelas`, `promedio-full-quiz`, `tendencia-conexiones`, `conexiones-acumuladas`, `uso-docentes`, `patrones-conexion`, `participacion-escuelas`, `usuarios-por-suscripcion`. (`buscar-escuela` no se exporta.)
 - Los parámetros y sus validaciones son **los mismos** que los de la ruta JSON (mismos mensajes 400/503).
 - `formato=xlsx` (por defecto): libro `.xlsx` con la hoja `Datos` y la hoja `Referencias` (consulta, fuente, columna de fecha, período, filtros, cuentas de prueba, datos hasta, filas exportadas, nota completa, resumen). Sin `limite` trae **todas** las filas (hasta 5000; `limite` admite 1–5000). El nombre viene en `Content-Disposition`: `{consulta}_{desde}_{hasta}.xlsx`.
-- `formato=grafica`: JSON listo para Recharts (`tipo` `line`|`bar`, `layout`, `data`, `series`, `eje_x`, `eje_y`, `titulo`, referencias). Usa el `limite` normal (≤ 50). Menos de 2 filas → 422 `sin_grafica`.
+- Hoja `Datos` vacía: si el período pedido empieza después de «Datos hasta», dice la causa («No hay datos de pruebas después del 2026-04-23; el período pedido empieza el 2026-07-01»); si no, el mensaje genérico. En `Referencias` los valores numéricos (filtros como `limite`, filas exportadas, cifras del resumen) son números, no texto.
+- `formato=grafica`: JSON listo para Recharts (`tipo` `line`|`bar`, `layout`, `data`, `series`, `eje_x`, `eje_y`, `titulo`, referencias). Trabaja con **todas** las filas de la consulta (hasta 5000) y devuelve una **vista previa**. Menos de 2 categorías → 422 `sin_grafica`. Parámetros de la gráfica (además de los filtros de la consulta):
+  | Parámetro | Valores | Por defecto | Efecto |
+  |---|---|---|---|
+  | `todas` | `true` / `false` | `false` | `false` = vista previa de `limite` categorías; `true` = todas. |
+  | `orden` | `desc` / `asc` | `desc` | Barras ordenadas por la serie principal (mayor a menor o al revés; empate por nombre). |
+  | `incluir_ceros` | `true` / `false` | `false` | Por defecto se omiten las categorías cuyos valores son todos 0 o vacíos. |
+  | `limite` | 1–5000 | `10` | Categorías de la vista previa (en la gráfica NO es el límite de filas de la consulta). |
+
+  **Tipos de gráfica:** `bar` con varias `series` lleva `agrupar: "grouped"` (una barra por serie, lado a lado: `participacion-escuelas` = usuarios activos y conectados; `promedio-full-quiz` = pruebas asignadas y completadas; `uso-por-area`, comparaciones, `uso-docentes`, `usuarios-por-suscripcion` por escuela/rol). Una medida en **otra escala** (el % de participación, el promedio % Full Quiz, el % del total) no es una serie: viaja en cada punto de `data` y se describe en `extra: {clave, nombre, unidad}` para el tooltip y la etiqueta del valor; también es el criterio de orden. `pie` lleva `variante: "dona"` y `total_valor` (el total del centro): es el tipo por defecto de `usuarios-por-suscripcion` con `agrupar=total` y solo con **6 categorías o menos** (hoy son 3: activa, cancelada, sin suscripción; «inactiva» solo saldría si apareciera un estado nuevo en la base) (con más vuelve a `bar`). Las líneas (`tendencia-conexiones`, `conexiones-acumuladas`) llevan `serie_temporal: true`: el panel solo habilita «Línea» para ellas.
+
+  Campos nuevos en la respuesta (barras): `total_categorias` (las que hay con esas opciones; para «10 de 47»), `categorias_mostradas` (las de `data`), `categorias_en_cero` (las de valor 0, estén o no incluidas), `orden`, `incluir_ceros`, `todas`. Las **líneas** (tendencia, acumuladas) y `patrones-conexion` por día de la semana mantienen su orden natural y todas sus categorías (sin esos campos de orden). En el chat, `graficas[]` trae además `id` y `url` (`/asistente/graficas/{id}?todas=&orden=&incluir_ceros=&limite=`, mismo dueño y alcance que la descarga) para pedir la versión ampliada.
 - Errores: 404 `consulta_desconocida`, 400 `parametros_invalidos` (formato, fechas, límite, escuela), 422 `sin_grafica`, 503 `base_no_disponible`.
 
 ## Seguridad (Fase 4 · A1–A3; diseño en `DISENO_AUTH.md`)
@@ -20,3 +31,8 @@
 - `/exportar` no está en `openapi.json` a propósito: el asistente convierte cada `path` de ese archivo en una herramienta del modelo.
 - Variables de despliegue y supuestos pendientes: `DISENO_AUTH.md` §7.
 - **Topes internos:** las consultas por maestro (5000) y por escuela (1000) traen la lista entera para dar totales y porcentajes. Si hay más, el resultado se corta y la nota lleva `HAY MÁS FILAS` (la hoja `Referencias` dice «Lista completa: NO» y la gráfica trae `hay_mas_filas: true`); los totales y % cubren solo las filas consideradas.
+
+## Diagnóstico de fallos de base y configuración de columnas
+- Cuando una consulta falla contra la base, el cliente recibe solo `503 base_no_disponible`, y el **log del servidor** trae una línea con la causa, sin Token, parámetros ni datos: `consulta_fallida consulta=usuarios-por-suscripcion tipo=MySqlException mysql_codigo=1054 sql_estado=42S22 mensaje="Unknown column …" sql="SELECT …"` (consulta, tipo de excepción, código y mensaje de MySQL, y los primeros 80 caracteres del SQL). Aplica a todas las consultas y a `/exportar/…`.
+- `Datos__CommandTimeoutSegundos` (30 por defecto): tiempo máximo de cada consulta SQL (`usuarios-por-suscripcion` usa 60 s).
+- `Datos__ColEstadoSuscripcion` (`status`) y `Datos__ColCancelacionSuscripcion` (`cancellation_date`): nombres de las columnas de `subscription_profile_history` si en la base real se llaman distinto. Si la de cancelación no existe, `usuarios-por-suscripcion` sigue y `activas_con_fecha_de_cancelacion_vencida` no aparece.
