@@ -157,8 +157,13 @@ def esperado_escuelas(desde, hasta, desc, limite):
         if a <= h < b and ESC_DE[u] in cnt and cuenta_conexion(u):
             cnt[ESC_DE[u]] += 1
             usr[ESC_DE[u]].add(u)
-    filas = [(NOM_ESC[s], n, len(usr[s])) for s, n in cnt.items()]
-    return [dict(nombre=f[0], conexiones=f[1], usuarios_conectados=f[2]) for f in orden(filas, lambda f: f[1], desc, limite)]
+    ult = {}
+    for u, h in CONEX:
+        if a <= h < b and ESC_DE[u] in cnt and cuenta_conexion(u):
+            d = (h + dt.timedelta(minutes=OFF)).date().isoformat()
+            ult[ESC_DE[u]] = max(ult.get(ESC_DE[u], d), d)
+    filas = [(NOM_ESC[s], n, len(usr[s]), ult.get(s)) for s, n in cnt.items()]
+    return [dict(nombre=f[0], conexiones=f[1], usuarios_conectados=f[2], **({"ultima_conexion": f[3]} if f[3] else {})) for f in orden(filas, lambda f: f[1], desc, limite)]
 
 
 def esperado_maestros(desde, hasta, desc, limite, escuela=None):
@@ -170,10 +175,15 @@ def esperado_maestros(desde, hasta, desc, limite, escuela=None):
     for u, h in CONEX:
         if u in cnt and a <= h < b:
             cnt[u] += 1
+    ult = {}
+    for u, h in CONEX:
+        if u in cnt and a <= h < b:
+            d = (h + dt.timedelta(minutes=OFF)).date().isoformat()
+            ult[u] = max(ult.get(u, d), d)
     por_id = {u[0]: u for u in USUARIOS}
     filas = [(f"{por_id[i][3]} {por_id[i][4]}", NOM_ESC.get(por_id[i][2], "(sin escuela)"), n, i) for i, n in cnt.items()]
     filas = ordenar(filas, lambda f: f[2], lambda f: f[0], desc, lambda f: f[3])
-    return [dict(nombre=f[0], escuela=f[1], conexiones=f[2]) for f in filas[:limite]]
+    return [dict(nombre=f[0], escuela=f[1], conexiones=f[2], **({"ultima_conexion": ult[f[3]]} if f[3] in ult else {})) for f in filas[:limite]]
 
 
 def clave(d, g):
@@ -675,6 +685,25 @@ igual("participación: el porcentaje más alto sale tal cual (sin tope en 100) y
 igual("participación: la nota de corte dice cuántas se muestran, cuántas hay, cuántas quedan fuera y por qué",
       (f"se muestran 2 de {len(esp)} escuelas" in r["nota"], f"las otras {len(esp) - 2} quedan fuera por el límite pedido" in r["nota"],
        f"{sum(1 for f in esp if f['usuarios_conectados'] == 0)} de las {len(esp)} no tienen usuarios conectados" in r["nota"]), (True, True, True))
+
+# última conexión por escuela y por maestro (también en el Excel)
+_, r = api("/conexiones-por-escuela", **D, limite=50)
+igual("ultima_conexion de cada escuela = máximo día con conexión del período (fuerza bruta; se omite si no hubo)",
+      [f.get("ultima_conexion") for f in r["resultados"]], [f.get("ultima_conexion") for f in esperado_escuelas(D["desde"], D["hasta"], True, 50)])
+igual("ultima_conexion: las escuelas sin conexiones en el período no la traen y las demás sí",
+      (all(("ultima_conexion" in f) == (f["conexiones"] > 0) for f in r["resultados"]), any(f["conexiones"] == 0 for f in r["resultados"])), (True, True))
+cab, filas, ref = datos_exportados("conexiones-por-escuela", **D)
+esp_u = {f["nombre"]: f.get("ultima_conexion") for f in esperado_escuelas(D["desde"], D["hasta"], True, 5000)}
+i_u = cab.index("Última conexión")
+igual("Excel de conexiones-por-escuela: columna «Última conexión» = fuerza bruta", {f[0]: f[i_u] for f in filas}, esp_u)
+cab, filas, ref = datos_exportados("conexiones-por-maestro", **D)
+esp_m = {(f["nombre"], f["escuela"]): f.get("ultima_conexion") for f in esperado_maestros(D["desde"], D["hasta"], True, 5000)}
+i_m = cab.index("Última conexión")
+igual("Excel de conexiones-por-maestro: columna «Última conexión» = fuerza bruta", {(f[0], f[1]): f[i_m] for f in filas}, esp_m)
+_, rm = api("/conexiones-por-maestro", **D, limite=50)
+igual("ultima_conexion de cada maestro (JSON) = fuerza bruta", [f.get("ultima_conexion") for f in rm["resultados"]],
+      [f.get("ultima_conexion") for f in esperado_maestros(D["desde"], D["hasta"], True, 50)])
+# fronteras de día: la última conexión en la medianoche UTC cae en el día local anterior con offset negativo (se prueba corriendo con offset -240)
 
 # hoja Referencias
 _, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10")

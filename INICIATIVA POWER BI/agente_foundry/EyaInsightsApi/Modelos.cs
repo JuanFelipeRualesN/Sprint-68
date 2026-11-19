@@ -2,8 +2,9 @@ namespace EyaInsightsApi;
 
 // Filas que devuelve cada consulta. Los nombres salen en snake_case (pruebas_asignadas, ...).
 public record FilaArea(string Nombre, int PruebasAsignadas, int PruebasCompletadas, double? PorcentajeCompletado, double? PorcentajeDelTotalCompletadas = null);
-public record FilaEscuela(string Nombre, int Conexiones, int UsuariosConectados, double? PorcentajeDelTotal = null, double? ConexionesPorUsuario = null);
-public record FilaMaestro(string Nombre, string Escuela, int Conexiones, double? PorcentajeDelTotal = null);
+/// <param name="UltimaConexion">Último día CON conexión dentro del período pedido (hora local de la consulta); null (se omite) si no hubo ninguna.</param>
+public record FilaEscuela(string Nombre, int Conexiones, int UsuariosConectados, double? PorcentajeDelTotal = null, double? ConexionesPorUsuario = null, DateOnly? UltimaConexion = null);
+public record FilaMaestro(string Nombre, string Escuela, int Conexiones, double? PorcentajeDelTotal = null, DateOnly? UltimaConexion = null);
 public record FilaComparacion(string Nombre, int PruebasCompletadasA, int PruebasCompletadasB, int Diferencia, double? VariacionPct);
 public record FilaTendencia(string Periodo, int Conexiones, int? DiferenciaConPeriodoAnterior = null, double? VariacionPct = null);
 public record FilaComparacionEscuela(string Nombre, int ConexionesA, int ConexionesB, int Diferencia, double? VariacionPct);

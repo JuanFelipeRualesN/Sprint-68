@@ -202,6 +202,9 @@ public class ConsultasMySql : IConsultasUso
         return filas;
     }
 
+    /// <summary>Instante UTC de la columna i → día en la hora local de la consulta (null si la columna es NULL).</summary>
+    DateOnly? DiaLocal(MySqlDataReader r, int i) => r.IsDBNull(i) ? null : DateOnly.FromDateTime(r.GetDateTime(i).AddMinutes(_offsetMin));
+
     static int Entero(MySqlDataReader r, int i) => r.IsDBNull(i) ? 0 : Convert.ToInt32(r.GetValue(i), CultureInfo.InvariantCulture);
 
     // El día "d" local empieza en este instante UTC (d 00:00 local = d 00:00 UTC - offset).
@@ -339,9 +342,9 @@ public class ConsultasMySql : IConsultasUso
     // ── Conexiones ──────────────────────────────────────────────────────────────────────
     public List<FilaEscuela> ConexionesPorEscuela(DateOnly desde, DateOnly hasta, bool desc, int limite)
     {
-        var sql = $@"SELECT sh.school_name, COALESCE(x.n, 0) AS conexiones, COALESCE(x.u, 0) AS usuarios
+        var sql = $@"SELECT sh.school_name, COALESCE(x.n, 0) AS conexiones, COALESCE(x.u, 0) AS usuarios, x.ult
             FROM school sh
-            LEFT JOIN (SELECT us.school_id, COUNT(*) AS n, COUNT(DISTINCT dt.user_id) AS u
+            LEFT JOIN (SELECT us.school_id, COUNT(*) AS n, COUNT(DISTINCT dt.user_id) AS u, MAX(dt.connected_date) AS ult
                        FROM connected_date dt JOIN user us ON us.user_id = dt.user_id AND us.role_id <> {RolCliente}
                        WHERE dt.connected_date >= @a AND dt.connected_date < @b {FD("us")}
                        GROUP BY us.school_id) x ON x.school_id = sh.school_id
@@ -354,17 +357,17 @@ public class ConsultasMySql : IConsultasUso
         {
             p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta)); p.AddWithValue("@l", limite);
             ParamsExcl(p);
-        }, r => new FilaEscuela(r.GetString(0), Entero(r, 1), Entero(r, 2)));
+        }, r => new FilaEscuela(r.GetString(0), Entero(r, 1), Entero(r, 2), UltimaConexion: DiaLocal(r, 3)));
     }
 
     public List<FilaMaestro> ConexionesPorMaestro(DateOnly desde, DateOnly hasta, bool desc, int limite, string? escuela)
     {
         var sql = $@"SELECT TRIM(CONCAT_WS(' ', us.first_name, us.last_name)) AS maestro,
                             COALESCE(sh.school_name, '(sin escuela)') AS escuela,
-                            COALESCE(x.n, 0) AS conexiones
+                            COALESCE(x.n, 0) AS conexiones, x.ult
             FROM user us
             LEFT JOIN school sh ON sh.school_id = us.school_id
-            LEFT JOIN (SELECT dt.user_id, COUNT(*) AS n FROM connected_date dt
+            LEFT JOIN (SELECT dt.user_id, COUNT(*) AS n, MAX(dt.connected_date) AS ult FROM connected_date dt
                        WHERE dt.connected_date >= @a AND dt.connected_date < @b
                        GROUP BY dt.user_id) x ON x.user_id = us.user_id
             WHERE us.role_id = @rol AND us.school_id IS NOT NULL AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
@@ -375,7 +378,7 @@ public class ConsultasMySql : IConsultasUso
             p.AddWithValue("@a", Inicio(desde)); p.AddWithValue("@b", FinExclusivo(hasta));
             p.AddWithValue("@rol", RolDocente); p.AddWithValue("@l", limite);
             p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); ParamsExcl(p);
-        }, r => new FilaMaestro(r.GetString(0), r.GetString(1), Entero(r, 2)));
+        }, r => new FilaMaestro(r.GetString(0), r.GetString(1), Entero(r, 2), UltimaConexion: DiaLocal(r, 3)));
     }
 
     public List<FilaTendencia> Tendencia(DateOnly desde, DateOnly hasta, string granularidad, string? escuela)

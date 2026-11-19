@@ -25,7 +25,7 @@ static class Columnas
         ["pruebas_asignadas"] = "Pruebas asignadas", ["pruebas_completadas"] = "Pruebas completadas",
         ["porcentaje_completado"] = "% completado", ["porcentaje_del_total_completadas"] = "% del total de completadas",
         ["conexiones"] = "Conexiones", ["usuarios_conectados"] = "Usuarios conectados",
-        ["porcentaje_del_total"] = "% del total", ["conexiones_por_usuario"] = "Conexiones por usuario",
+        ["porcentaje_del_total"] = "% del total", ["conexiones_por_usuario"] = "Conexiones por usuario", ["ultima_conexion"] = "Última conexión",
         ["pruebas_completadas_a"] = "Pruebas completadas (A)", ["pruebas_completadas_b"] = "Pruebas completadas (B)",
         ["conexiones_a"] = "Conexiones (A)", ["conexiones_b"] = "Conexiones (B)",
         ["diferencia"] = "Diferencia (B − A)", ["variacion_pct"] = "Variación %",

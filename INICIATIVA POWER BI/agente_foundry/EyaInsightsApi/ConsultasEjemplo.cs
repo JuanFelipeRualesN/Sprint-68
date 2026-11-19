@@ -104,14 +104,16 @@ public class ConsultasEjemplo : IConsultasUso
     {
         var filas = Escuelas.Select(e =>   // incluye escuelas con cero conexiones
             new FilaEscuela(e, _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Sum(c => c.Cantidad),
-                            _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => c.Maestro).Distinct().Count()));
+                            _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => c.Maestro).Distinct().Count(),
+                            UltimaConexion: _conexiones.Where(c => c.Escuela == e && c.Dia >= desde && c.Dia <= hasta).Select(c => (DateOnly?)c.Dia).Max()));
         return Ordenar(filas, f => f.Conexiones, f => f.Nombre, desc).Take(limite).ToList();
     }
 
     public List<FilaMaestro> ConexionesPorMaestro(DateOnly desde, DateOnly hasta, bool desc, int limite, string? escuela)
     {
         var filas = Maestros.Where(m => escuela is null || m.Escuela == escuela).Select(m =>
-            new FilaMaestro(m.Maestro, m.Escuela, _conexiones.Where(c => c.Maestro == m.Maestro && c.Dia >= desde && c.Dia <= hasta).Sum(c => c.Cantidad)));
+            new FilaMaestro(m.Maestro, m.Escuela, _conexiones.Where(c => c.Maestro == m.Maestro && c.Dia >= desde && c.Dia <= hasta).Sum(c => c.Cantidad),
+                            UltimaConexion: _conexiones.Where(c => c.Maestro == m.Maestro && c.Dia >= desde && c.Dia <= hasta).Select(c => (DateOnly?)c.Dia).Max()));
         return Ordenar(filas, f => f.Conexiones, f => f.Nombre, desc).Take(limite).ToList();
     }
 
