@@ -86,8 +86,7 @@ const GraficaAmpliada = ({ spec, descarga, t, idioma, inicialTodas, onCerrar }) 
       .then((nueva) => { setActual(nueva); setCargando(false); })
       .catch((e) => { if (e && e.name === "AbortError") return; setError(mensajeDeError(e, t)); setCargando(false); });
     return () => ctl.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todas, orden, ocultarCeros]);
+  }, [puedePedir, spec, t, todas, orden, ocultarCeros, ordenInicial, cerosInicial]);
 
   const claveX = (actual.eje_x && actual.eje_x.clave) || "categoria";
   const data = actual.data;

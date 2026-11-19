@@ -5,9 +5,9 @@ import Grafica from "./grafica";
 import ExportarDirecto from "./exportar-directo";
 import { textosPara } from "./textos";
 import { mensajeDeError } from "./errores";
+import "./style.css";
 
 export { mensajeDeError };
-import "./style.css";
 
 /**
  * Panel del asistente de datos junto a los tableros de Power BI (REQ-3741).
