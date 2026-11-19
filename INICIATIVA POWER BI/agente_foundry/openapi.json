@@ -531,6 +531,46 @@
           }
         }
       }
+    },
+    "/usuarios-por-suscripcion": {
+      "get": {
+        "operationId": "usuarios_por_suscripcion",
+        "summary": "Usuarios por estado de suscripción (activa, inactiva, cancelada, sin suscripción)",
+        "description": "Cuenta los usuarios (rol distinto de client) por estado de suscripción: activas, inactivas, canceladas y sin_suscripcion, en total, por escuela o por rol. Cada usuario cuenta UNA vez: activa = tiene una suscripción con status 'active' (sin mirar la fecha de cancelación; es la definición del tablero de Power BI); cancelada = sin suscripción activa y con alguna cancelada; inactiva = tiene suscripciones pero ninguna activa ni cancelada; sin_suscripcion = no tiene ninguna. Es el estado ACTUAL: no lleva fechas ni período. Con agrupar=total (por defecto) devuelve 4 filas (Activas, Inactivas, Canceladas, Sin suscripción) con usuarios y porcentaje_del_total; con agrupar=escuela o rol devuelve una fila por grupo con las cuatro columnas y total_usuarios. El 'resumen' trae los totales (activas, inactivas, canceladas, sin_suscripcion, total_usuarios, porcentaje_activas), estados_originales (usuarios por cada valor real de status) y activas_con_fecha_de_cancelacion_vencida: úsalos, no los calcules. Úsala para «¿cuántos usuarios tienen la suscripción inactiva o cancelada y cuántos no tienen suscripción?». NO da planes, pagos ni vencimientos de usuarios individuales.",
+        "parameters": [
+          {
+            "name": "agrupar",
+            "in": "query",
+            "required": false,
+            "description": "Cómo agrupar. total (por defecto) = una fila por estado; escuela = una fila por escuela; rol = una fila por rol.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "total",
+                "escuela",
+                "rol"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
     }
   },
   "components": {

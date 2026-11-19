@@ -296,6 +296,36 @@ def esperado_patron_rol(desde, hasta, escuela=None):
     return [dict(nombre=r, conexiones=n, usuarios_conectados=len(usr[r])) for r, n in sorted(cnt.items(), key=lambda kv: (-kv[1], kv[0]))]
 
 
+def esperado_suscripcion(agrupar, escuela=None, solo_escuelas=None):
+    """Usuarios por estado de suscripción por fuerza bruta. Universo = rol ≠ client, fuera de cuentas de prueba (con exclusión, los sin escuela quedan fuera como en SQL),
+    opcionalmente solo de ciertas escuelas (alcance). Categoría: alguna 'active' → activa; si no, alguna con «cancel» → cancelada; si no, con filas → inactiva; sin filas → sin.
+    Devuelve (filas por grupo [nombre, activas, inactivas, canceladas, sin, total], totales (a, i, c, s), estados_originales)."""
+    filas_sub = {}
+    for u, st in dp.suscripciones(USUARIOS):
+        filas_sub.setdefault(u, []).append(st)
+    rol_n = dict(dp.ROLES)
+    grupos, tot, estados = {}, [0, 0, 0, 0], {}
+    for u in USUARIOS:
+        uid, rol, esc = u[0], u[1], u[2]
+        if rol == 1 or not visible(uid) or (EXCL and esc is None):
+            continue
+        nom_esc = NOM_ESC.get(esc)
+        if solo_escuelas is not None and nom_esc not in solo_escuelas:
+            continue
+        if escuela is not None and nom_esc != escuela:
+            continue
+        sts = filas_sub.get(uid, [])
+        cat = 3 if not sts else 0 if any(x == "active" for x in sts) else 2 if any("cancel" in x for x in sts) else 1
+        clave = "total" if agrupar == "total" else (nom_esc or "(sin escuela)") if agrupar == "escuela" else rol_n[rol]
+        g = grupos.setdefault(clave, [0, 0, 0, 0])
+        g[cat] += 1
+        tot[cat] += 1
+        for x in set(sts):
+            estados[x] = estados.get(x, 0) + 1
+    filas = [[k, g[0], g[1], g[2], g[3], sum(g)] for k, g in grupos.items()]
+    return filas, tot, estados
+
+
 def esperado_participacion(desde, hasta):
     """activos = suscripción 'active' (sin revisar cancelación), rol ≠ client, con escuela; conectados = distintos con conexión en el período."""
     a, b = rango(desde, hasta)
@@ -724,6 +754,58 @@ igual("ultima_conexion de cada maestro (JSON) = fuerza bruta", [f.get("ultima_co
       [f.get("ultima_conexion") for f in esperado_maestros(D["desde"], D["hasta"], True, 50)])
 # fronteras de día: la última conexión en la medianoche UTC cae en el día local anterior con offset negativo (se prueba corriendo con offset -240)
 
+# usuarios por estado de suscripción (fuerza bruta sobre las filas sintéticas; incluye canceladas y usuarios sin suscripción)
+print("\n[usuarios por suscripción]")
+for agr in ("total", "escuela", "rol"):
+    st, r = api("/usuarios-por-suscripcion", agrupar=agr, limite=50)
+    esp_f, esp_t, esp_e = esperado_suscripcion(agr)
+    if agr == "total":
+        obt = [(f["nombre"], f["usuarios"]) for f in r["resultados"]]
+        igual("usuarios por suscripción, total: 4 estados (activas, inactivas, canceladas, sin suscripción) = recálculo", (st, obt),
+              (200, [("Activas", esp_t[0]), ("Inactivas", esp_t[1]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])]))
+    else:
+        obt = sorted((f["nombre"], f["activas"], f["inactivas"], f["canceladas"], f["sin_suscripcion"], f["total_usuarios"]) for f in r["resultados"])
+        igual(f"usuarios por suscripción, por {agr}: una fila por grupo = recálculo", (st, obt), (200, sorted(tuple(x) for x in esp_f)))
+        orden_ok = [f["total_usuarios"] for f in r["resultados"]] == sorted((f["total_usuarios"] for f in r["resultados"]), reverse=True)
+        igual(f"usuarios por suscripción, por {agr}: ordenado de más a menos usuarios", orden_ok, True)
+    rs = r["resumen"]
+    igual(f"usuarios por suscripción ({agr}): resumen = totales del recálculo, estados originales y suma = total",
+          (rs["activas"], rs["inactivas"], rs["canceladas"], rs["sin_suscripcion"], rs["total_usuarios"], rs["estados_originales"],
+           rs["porcentaje_activas"], rs["activas_con_fecha_de_cancelacion_vencida"]),
+          (esp_t[0], esp_t[1], esp_t[2], esp_t[3], sum(esp_t), esp_e, round(100.0 * esp_t[0] / sum(esp_t), 1), 0))
+_, rt = api("/usuarios-por-suscripcion")
+igual("usuarios por suscripción: hay de los cuatro estados en los datos de prueba (la prueba no pasa vacía)",
+      all(f["usuarios"] > 0 for f in rt["resultados"]), True)
+igual("usuarios por suscripción: referencia sin período (período «no aplica», sin datos_hasta) y las cuentas de prueba declaradas",
+      (rt["periodo"], "datos_hasta" in rt, rt["filtros"]["cuentas_de_prueba"], rt["filtros"]["agrupar"]), ("no aplica", False, "excluidas" if EXCL else "incluidas", "total"))
+esc_ej = esperado_suscripcion("escuela")[0][0][0]
+_, re_ = api("/usuarios-por-suscripcion", agrupar="escuela", escuela=esc_ej)
+igual("usuarios por suscripción: filtro por escuela = recálculo de esa escuela", [(f["nombre"], f["total_usuarios"]) for f in re_["resultados"]],
+      [(f[0], f[5]) for f in esperado_suscripcion("escuela", escuela=esc_ej)[0]])
+st, rr = api("/usuarios-por-suscripcion", agrupar="x")
+igual("usuarios por suscripción: agrupar inválido → 400", (st, rr.get("error")), (400, "parametros_invalidos"))
+if not EXCL:   # sin exclusiones el universo es el de la tarjeta «Activos»: el total de activas debe coincidir con usuarios_activos de conexiones-acumuladas
+    _, ra = api("/conexiones-acumuladas", desde="2026-01-01", hasta="2026-11-10", granularidad="anio")
+    igual("usuarios por suscripción = tarjeta «Activos» de conexiones-acumuladas (sin exclusiones: mismas activas)", rt["resumen"]["activas"], ra["resumen"]["usuarios_activos"])
+# exportación: Excel y gráfica
+for agr in ("escuela", "rol", "total"):
+    cab, filas, ref = datos_exportados("usuarios-por-suscripcion", agrupar=agr)
+    esp_f, esp_t, _ = esperado_suscripcion(agr)
+    if agr == "total":
+        igual("Excel de usuarios por suscripción (total): 4 estados = recálculo", [(f[0], f[1]) for f in filas],
+              [("Activas", esp_t[0]), ("Inactivas", esp_t[1]), ("Canceladas", esp_t[2]), ("Sin suscripción", esp_t[3])])
+    else:
+        igual(f"Excel de usuarios por suscripción (por {agr}): todas las filas = recálculo, con encabezados legibles",
+              (cab[:6], sorted(tuple(f[:6]) for f in filas)), (["Nombre", "Activas", "Inactivas", "Canceladas", "Sin suscripción", "Total de usuarios"], sorted(tuple(x) for x in esp_f)))
+    igual(f"Excel de usuarios por suscripción ({agr}): Referencias dice «no aplica» en datos hasta y el número de filas es número", (ref["Datos hasta"], isinstance(ref["Filas exportadas"], int)), ("no aplica", True))
+st, g = grafica("usuarios-por-suscripcion", agrupar="rol")
+esp_f, _, _ = esperado_suscripcion("rol")
+igual("gráfica de usuarios por suscripción (por rol): barras agrupadas con las 4 series, de más a menos usuarios, = recálculo",
+      (st, [s["clave"] for s in g["series"]], [(p["categoria"], p["activas"], p["inactivas"], p["canceladas"], p["sin_suscripcion"]) for p in g["data"]]),
+      (200, ["activas", "inactivas", "canceladas", "sin_suscripcion"], [(f[0], f[1], f[2], f[3], f[4]) for f in sorted(esp_f, key=lambda f: (-f[5], f[0]))]))
+st, g = grafica("usuarios-por-suscripcion")
+igual("gráfica de usuarios por suscripción (total): una barra por estado", (st, [p["categoria"] for p in g["data"]], g["eje_x"]["titulo"]), (200, [p["categoria"] for p in g["data"]], "Estado"))
+
 # hoja Referencias
 _, r = api("/uso-por-area", desde="2026-09-01", hasta="2026-11-10")
 _, _, hojas, _ = exportar("uso-por-area", desde="2026-09-01", hasta="2026-11-10")
@@ -937,6 +1019,16 @@ if AUTH:
     st2, r2 = jget("/conexiones-por-maestro", "tok-ore2", escuela="Escuela Prueba Z", **CON)
     igual("escuela de OTRO ORE → 400 igual que una inexistente (mismo código y texto salvo el nombre)",
           (st, r["error"], r["mensaje"].replace("Escuela Prueba A", "X")), (st2, r2["error"], r2["mensaje"].replace("Escuela Prueba Z", "X")))
+    # usuarios por suscripción respeta el alcance (ORE 2: solo usuarios de sus escuelas; director: solo su escuela)
+    for tok, escs, etiqueta in (("tok-ore2", ESC_ORE2, "admin-ore (ORE 2)"), ("tok-director-1", {"Escuela Prueba A"}, "director")):
+        st, r = jget("/usuarios-por-suscripcion", tok, agrupar="escuela", limite=50)
+        esp_f, esp_t, _ = esperado_suscripcion("escuela", solo_escuelas=escs)
+        igual(f"usuarios por suscripción de {etiqueta}: solo sus escuelas = recálculo", (st, sorted((f["nombre"], f["total_usuarios"]) for f in r["resultados"]), r["resumen"]["total_usuarios"]),
+              (200, sorted((f[0], f[5]) for f in esp_f), sum(esp_t)))
+    st, r = jget("/usuarios-por-suscripcion", "tok-ore2", agrupar="escuela", escuela="Escuela Prueba A")
+    igual("usuarios por suscripción: escuela de otro ORE → 400 (como inexistente)", (st, r.get("error")), (400, "parametros_invalidos"))
+    st, r = jget("/usuarios-por-suscripcion", None)
+    igual("usuarios por suscripción sin Token → 401", st, 401)
     # ORE 1 no ve el ORE 2
     st, r = jget("/conexiones-por-escuela", "tok-ore1", limite=50, **CON)
     igual("admin-ore del ORE 1: nada de las escuelas del ORE 2", sorted({f["nombre"] for f in r["resultados"]} & ESC_ORE2), [])

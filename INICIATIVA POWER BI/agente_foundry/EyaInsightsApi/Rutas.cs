@@ -22,6 +22,7 @@ static class Rutas
         ["uso-docentes"] = UsoDocentes,
         ["patrones-conexion"] = PatronesConexion,
         ["participacion-escuelas"] = ParticipacionEscuelas,
+        ["usuarios-por-suscripcion"] = UsuariosPorSuscripcion,
     };
 
     // Topes internos de las consultas «completas» (la lista entera se trae para dar totales, % y empates exactos).
@@ -252,6 +253,30 @@ static class Rutas
                                         : "Rol de la cuenta de cada usuario (sin el rol client); ordenado de más a menos conexiones."),
             new { total_conexiones = total, mas_conexiones = mayor?.Nombre, conexiones_del_mayor = mayor?.Conexiones, hay_empate_en_el_mayor = empateMayor,
                   menos_conexiones = menor?.Nombre, conexiones_del_menor = menor?.Conexiones });
+    }
+
+    static Respuesta UsuariosPorSuscripcion(HttpRequest r, IConsultasUso c)
+    {
+        var agrupar = r.Query["agrupar"].FirstOrDefault() ?? "total";
+        if (agrupar is not ("total" or "escuela" or "rol")) throw new ErrorConsulta("'agrupar' debe ser 'total', 'escuela' o 'rol'.");
+        var (desc, limite) = P.OrdenLimite(r);
+        var escuela = P.Escuela(r, c);
+        var (todas, tot) = c.UsuariosPorSuscripcion(agrupar, escuela);
+        var orden = (desc ? todas.OrderByDescending(f => f.TotalUsuarios).ThenBy(f => f.Nombre, StringComparer.Ordinal)
+                          : todas.OrderBy(f => f.TotalUsuarios).ThenBy(f => f.Nombre, StringComparer.Ordinal)).ToList();
+        object filas = agrupar == "total"
+            ? new List<FilaEstadoSuscripcion>
+            {
+                new("Activas", tot.Activas, P.Pct(tot.Activas, tot.Total)), new("Inactivas", tot.Inactivas, P.Pct(tot.Inactivas, tot.Total)),
+                new("Canceladas", tot.Canceladas, P.Pct(tot.Canceladas, tot.Total)), new("Sin suscripción", tot.SinSuscripcion, P.Pct(tot.SinSuscripcion, tot.Total)),
+            }
+            : orden.Take(limite).ToList();
+        return new Respuesta("usuarios_por_suscripcion", c.Fuente, "subscription_profile_history.status (estado actual; no depende de un período)", "no aplica",
+            new { agrupar, escuela = escuela ?? "todas", orden = agrupar == "total" ? null : P.Texto(desc), limite = agrupar == "total" ? (int?)null : limite, cuentas_de_prueba = P.Cp(c) }, null, filas,
+            P.Unir(c.NotaSuscripcion, agrupar != "total" && orden.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {orden.Count} {(agrupar == "escuela" ? "escuelas" : "roles")}; el 'resumen' trae el total de todos." : null),
+            new { total_usuarios = tot.Total, activas = tot.Activas, inactivas = tot.Inactivas, canceladas = tot.Canceladas, sin_suscripcion = tot.SinSuscripcion,
+                  porcentaje_activas = P.Pct(tot.Activas, tot.Total), activas_con_fecha_de_cancelacion_vencida = tot.ActivasConFechaDeCancelacionVencida,
+                  grupos_considerados = agrupar == "total" ? (int?)null : todas.Count, estados_originales = tot.EstadosOriginales });
     }
 
     static Respuesta ParticipacionEscuelas(HttpRequest r, IConsultasUso c)

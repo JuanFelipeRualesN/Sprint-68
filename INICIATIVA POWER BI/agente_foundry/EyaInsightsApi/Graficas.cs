@@ -35,6 +35,8 @@ static class Graficas
         ["comparar_areas"] = new("bar", "horizontal", "pruebas", "Pruebas completadas", [new("pruebas_completadas_a", "Período A"), new("pruebas_completadas_b", "Período B")]),
         ["comparar_escuelas"] = new("bar", "horizontal", "conexiones", "Conexiones", [new("conexiones_a", "Período A"), new("conexiones_b", "Período B")]),
         ["promedio_full_quiz"] = new("bar", "vertical", "%", "Promedio % Full Quiz", [new("promedio_solo_realizadas", "Promedio (solo realizadas)")]),
+        ["usuarios_por_suscripcion"] = new("bar", "vertical", "usuarios", "Usuarios",
+            [new("activas", "Activas"), new("inactivas", "Inactivas"), new("canceladas", "Canceladas"), new("sin_suscripcion", "Sin suscripción")], "total_usuarios"),
         ["uso_docentes"] = new("bar", "horizontal", "maestros", "Maestros", [new("maestros", "Maestros"), new("con_conexiones", "Con conexiones"), new("con_asignaciones", "Con asignaciones")]),
     };
 
@@ -50,6 +52,9 @@ static class Graficas
     {
         var consulta = respuesta["consulta"]?.GetValue<string>() ?? "";
         if (!Moldes.TryGetValue(consulta, out var molde)) return null;
+        // agrupar=total: una fila por estado (nombre, usuarios), no el pivote por escuela/rol
+        if (consulta == "usuarios_por_suscripcion" && Texto(respuesta["filtros"], "agrupar", "total") == "total")
+            molde = new Molde("bar", "horizontal", "usuarios", "Usuarios", [new("usuarios", "Usuarios")]);
         if (respuesta["resultados"] is not JsonArray crudas || crudas.Count < 2) return null;
         var o = opciones ?? new OpcionesGrafica();
         var filtros = respuesta["filtros"];
@@ -155,6 +160,7 @@ static class Graficas
         "comparar_escuelas" => "Conexiones por escuela: período A vs B",
         "promedio_full_quiz" => "Promedio % Full Quiz",
         "uso_docentes" => "Uso de la plataforma por maestros",
+        "usuarios_por_suscripcion" => "Usuarios por estado de suscripción" + Texto(filtros, "agrupar", "total") switch { "escuela" => " (por escuela)", "rol" => " (por rol)", _ => "" },
         _ => consulta,
     };
 
@@ -163,6 +169,7 @@ static class Graficas
         "tendencia_conexiones" or "conexiones_acumuladas" => "Período",
         "patrones_conexion" => Texto(filtros, "agrupar", "dia_semana") == "rol" ? "Rol" : "Día de la semana",
         "conexiones_por_maestro" => "Maestro",
+        "usuarios_por_suscripcion" => Texto(filtros, "agrupar", "total") switch { "rol" => "Rol", "escuela" => "Escuela", _ => "Estado" },
         "uso_por_area" or "comparar_areas" => "Área",
         "promedio_full_quiz" => Texto(filtros, "agrupar", "escuela_materia") switch { "escuela" => "Escuela", "materia" => "Materia", _ => "Escuela · materia" },
         _ => "Escuela",

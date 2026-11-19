@@ -198,6 +198,24 @@ public class ConsultasEjemplo : IConsultasUso
         }).ToList();
     }
 
+    public (List<FilaSuscripcion> Filas, ConteoSuscripcion Total) UsuariosPorSuscripcion(string agrupar, string? escuela)
+    {
+        // Datos inventados: por escuela activa, 4 usuarios por maestro (3 activos, 1 inactivo) y 1 sin suscripción.
+        var porEscuela = EscuelasActivas.Where(e => escuela is null || e == escuela).Select(e =>
+        {
+            int m = Maestros.Count(x => x.Escuela == e);
+            return new FilaSuscripcion(e, m * 3, m, 0, m, m * 5);
+        }).ToList();
+        var filas = agrupar == "escuela" ? porEscuela
+            : agrupar == "rol" ? [new FilaSuscripcion("teacher", porEscuela.Sum(f => f.Activas), porEscuela.Sum(f => f.Inactivas), 0, porEscuela.Sum(f => f.SinSuscripcion), porEscuela.Sum(f => f.TotalUsuarios))]
+            : [new FilaSuscripcion("total", porEscuela.Sum(f => f.Activas), porEscuela.Sum(f => f.Inactivas), 0, porEscuela.Sum(f => f.SinSuscripcion), porEscuela.Sum(f => f.TotalUsuarios))];
+        var t = new ConteoSuscripcion(porEscuela.Sum(f => f.Activas), porEscuela.Sum(f => f.Inactivas), 0, porEscuela.Sum(f => f.SinSuscripcion), 0,
+            new Dictionary<string, int> { ["active"] = porEscuela.Sum(f => f.Activas), ["inactive"] = porEscuela.Sum(f => f.Inactivas) });
+        return (filas, t);
+    }
+
+    public string? NotaSuscripcion => "Datos de ejemplo: usuarios por estado de suscripción inventados.";
+
     public string? NotaParticipacion => "Datos de ejemplo: usuarios activos inventados (4 por maestro).";
     public List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta) =>
         EscuelasActivas.Select(e =>

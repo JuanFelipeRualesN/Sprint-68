@@ -24,6 +24,17 @@ public record FilaUsoDocentes(string Escuela, string PeriodoDesde, string Period
 public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsignadas, int PruebasCompletadas,
     double? PromedioSoloRealizadas, double PromedioTodasLasAsignadas);
 
+/// <summary>Usuarios por estado de suscripción: una fila por escuela o por rol (activas + inactivas + canceladas + sin suscripción = total_usuarios).</summary>
+public record FilaSuscripcion(string Nombre, int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int TotalUsuarios);
+/// <summary>Con agrupar=total: una fila por estado.</summary>
+public record FilaEstadoSuscripcion(string Nombre, int Usuarios, double? PorcentajeDelTotal = null);
+/// <param name="ActivasConFechaDeCancelacionVencida">Usuarios «activos» (status active) cuya cancellation_date ya pasó o está vacía: la diferencia entre las dos definiciones de «activo».</param>
+/// <param name="EstadosOriginales">Usuarios por cada valor REAL de subscription_profile_history.status (para ver qué estados existen en la base).</param>
+public record ConteoSuscripcion(int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int ActivasConFechaDeCancelacionVencida, Dictionary<string, int> EstadosOriginales)
+{
+    public int Total => Activas + Inactivas + Canceladas + SinSuscripcion;
+}
+
 /// <summary>
 /// Respuesta común a las 5 consultas. Lleva las REFERENCIAS que el agente debe citar:
 /// qué consulta se ejecutó, sobre qué columna de fecha se filtró, el período y los filtros aplicados,
@@ -96,4 +107,7 @@ public interface IConsultasUso
     /// <summary>Todas las escuelas con usuarios activos o con conexiones en el período, ordenadas por nombre.</summary>
     List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta);
     string? NotaParticipacion { get; }
+    /// <summary>agrupar: «total» (sin filas por grupo), «escuela» o «rol». Devuelve las filas por grupo y el total de todos los usuarios considerados.</summary>
+    (List<FilaSuscripcion> Filas, ConteoSuscripcion Total) UsuariosPorSuscripcion(string agrupar, string? escuela);
+    string? NotaSuscripcion { get; }
 }

@@ -136,12 +136,17 @@ INDICADORES = ["has_connections_current_period", "has_created_instructional_plan
 
 
 def suscripciones(usuarios):
-    """(user_id, status). Activo si user_id % 5 != 0; algunos tienen además una fila 'inactive' (prueba el DISTINCT)."""
+    """(user_id, status). Activo si user_id % 5 != 0; algunos tienen además una fila 'inactive' (prueba el DISTINCT).
+    Estados de «usuarios por suscripción» (A2/ajuste 3 de la ronda 3), SIN cambiar quién es activo: entre los que NO son activos (id múltiplo de 5),
+    los múltiplos de 15 no tienen ninguna fila (sin suscripción), los múltiplos de 10 tienen 'canceled' y el resto 'inactive'."""
     filas = []
     for u in usuarios:
-        filas.append((u[0], "inactive" if u[0] % 5 == 0 else "active"))
-        if u[0] % 7 == 0:
-            filas.append((u[0], "inactive"))
+        uid = u[0]
+        if uid % 15 == 0:
+            continue                                  # sin suscripción (nunca fue activo: 15 es múltiplo de 5)
+        filas.append((uid, "canceled" if uid % 10 == 0 else "inactive" if uid % 5 == 0 else "active"))
+        if uid % 7 == 0:
+            filas.append((uid, "inactive"))
     return filas
 
 

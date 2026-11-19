@@ -539,6 +539,48 @@ public class ConsultasMySql : IConsultasUso
             r => { int a = Entero(r, 1), c = Entero(r, 2); return new FilaParticipacion(r.GetString(0), a, c, a == 0 ? null : Math.Round(100.0 * c / a, 1)); });
     }
 
+    // ── Usuarios por estado de suscripción ──────────────────────────────────────────────
+    // Universo = el de la tarjeta «Activos»: usuarios con rol ≠ client, fuera de las cuentas de prueba (FU) y dentro del alcance (FA). Cada usuario cae en UNA categoría:
+    //  · activa: alguna fila de subscription_profile_history con status 'active' (SIN mirar cancellation_date: definición A de SEMANTICA_REPORTES.md §11, la del tablero);
+    //  · cancelada: sin fila activa y alguna con un status que contiene «cancel» (canceled, cancelled…);
+    //  · inactiva: tiene filas pero ninguna activa ni cancelada (inactive, NULL u otro valor);
+    //  · sin suscripción: ninguna fila.
+    // Los valores REALES de status salen en el resumen (estados_originales) para no depender de suponerlos.
+    public (List<FilaSuscripcion> Filas, ConteoSuscripcion Total) UsuariosPorSuscripcion(string agrupar, string? escuela)
+    {
+        var grupo = agrupar switch { "escuela" => "COALESCE(e.escuela, '(sin escuela)')", "rol" => "COALESCE(e.rol, '(sin rol)')", _ => "'total'" };
+        var baseUsuarios = $@"SELECT us.user_id, us.role AS rol, sh.school_name AS escuela,
+                    CASE WHEN COUNT(sph.id) = 0 THEN 'sin'
+                         WHEN SUM(sph.status = 'active') > 0 THEN 'activa'
+                         WHEN SUM(sph.status LIKE '%cancel%') > 0 THEN 'cancelada'
+                         ELSE 'inactiva' END AS cat,
+                    COALESCE(MAX(sph.status = 'active' AND (sph.cancellation_date IS NULL OR sph.cancellation_date < NOW())), 0) AS vencida
+                FROM user us
+                LEFT JOIN school sh ON sh.school_id = us.school_id
+                LEFT JOIN subscription_profile_history sph ON sph.user_id = us.user_id
+                WHERE us.role_id <> {RolCliente} AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
+                GROUP BY us.user_id, us.role, sh.school_name";
+        void Par(MySqlParameterCollection p) { ParamsExcl(p); p.AddWithValue("@e", (object?)escuela ?? DBNull.Value); }
+        var filas = Leer($@"SELECT {grupo} AS g, SUM(e.cat = 'activa'), SUM(e.cat = 'inactiva'), SUM(e.cat = 'cancelada'), SUM(e.cat = 'sin'), COUNT(*)
+                FROM ({baseUsuarios}) e GROUP BY g", Par,
+            r => new FilaSuscripcion(r.GetString(0), Entero(r, 1), Entero(r, 2), Entero(r, 3), Entero(r, 4), Entero(r, 5)));
+        var tot = Leer($@"SELECT COALESCE(SUM(e.cat = 'activa'), 0), COALESCE(SUM(e.cat = 'inactiva'), 0), COALESCE(SUM(e.cat = 'cancelada'), 0), COALESCE(SUM(e.cat = 'sin'), 0),
+                COALESCE(SUM(e.cat = 'activa' AND e.vencida = 1), 0) FROM ({baseUsuarios}) e", Par,
+            r => (A: Entero(r, 0), I: Entero(r, 1), C: Entero(r, 2), S: Entero(r, 3), V: Entero(r, 4))).First();
+        var estados = Leer($@"SELECT COALESCE(sph.status, '(vacío)'), COUNT(DISTINCT us.user_id)
+                FROM user us LEFT JOIN school sh ON sh.school_id = us.school_id
+                JOIN subscription_profile_history sph ON sph.user_id = us.user_id
+                WHERE us.role_id <> {RolCliente} AND (@e IS NULL OR sh.school_name = @e) {FU("us", "sh")}
+                GROUP BY sph.status ORDER BY 2 DESC, 1", Par, r => (Estado: r.GetString(0), N: Entero(r, 1))).ToDictionary(x => x.Estado, x => x.N);
+        return (filas, new ConteoSuscripcion(tot.A, tot.I, tot.C, tot.S, tot.V, estados));
+    }
+
+    public string? NotaSuscripcion =>
+        "Cada usuario (rol distinto de client) cuenta UNA vez: activa = tiene una suscripción con status 'active' (sin mirar la fecha de cancelación; es la definición del tablero de Power BI, igual que «usuarios_activos» de las demás consultas); " +
+        "cancelada = sin suscripción activa y con alguna cuyo status contiene «cancel»; inactiva = tiene suscripciones pero ninguna activa ni cancelada; sin suscripción = no aparece en la historia de suscripciones. " +
+        "El resumen trae 'estados_originales' (usuarios por cada valor real de status) y 'activas_con_fecha_de_cancelacion_vencida' (activas cuya fecha de cancelación ya pasó o está vacía: es la diferencia con el filtro de descargas de la plataforma, que además exige fecha futura). " +
+        "Es el estado actual, no depende de un período. " + NotaExclusion;
+
     public string? NotaParticipacion =>
         "participacion = usuarios conectados en el período / usuarios con suscripción activa de la escuela (gráfico «% de usuarios conectados por escuela» de Power BI). " +
         "usuarios_activos = suscripción 'active' sin revisar la fecha de cancelación; usuarios_conectados cuenta a quien se conectó en el período tenga o no suscripción activa, " +

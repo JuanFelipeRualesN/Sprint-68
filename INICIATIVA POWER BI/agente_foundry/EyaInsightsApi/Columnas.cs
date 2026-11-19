@@ -36,6 +36,9 @@ static class Columnas
         ["planes_con_datos"] = "Planes con datos", ["con_grupos"] = "Con grupos", ["con_asignaciones"] = "Con asignaciones",
         ["promedio_solo_realizadas"] = "Promedio % Full Quiz (solo realizadas)", ["promedio_todas_las_asignadas"] = "Promedio % Full Quiz (todas las asignadas)",
         ["usuarios_activos"] = "Usuarios activos", ["porcentaje_participacion"] = "% de participación",
+        ["activas"] = "Activas", ["inactivas"] = "Inactivas", ["canceladas"] = "Canceladas", ["sin_suscripcion"] = "Sin suscripción",
+        ["total_usuarios"] = "Total de usuarios", ["usuarios"] = "Usuarios", ["porcentaje_activas"] = "% de activas",
+        ["activas_con_fecha_de_cancelacion_vencida"] = "Activas con fecha de cancelación vencida", ["grupos_considerados"] = "Grupos considerados",
     };
 
     /// <summary>Encabezado legible de una columna; si no está en el diccionario: `_`→espacio y mayúscula inicial.</summary>
