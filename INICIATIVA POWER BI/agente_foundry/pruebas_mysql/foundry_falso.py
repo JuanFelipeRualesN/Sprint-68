@@ -9,7 +9,7 @@ Palabras clave:  AJENA  → conexiones_por_maestro de «Escuela Prueba A» (una 
                  DOBLE → como (otra) pero la respuesta final trae DOS mensajes idénticos, cada uno con su «Referencias: …» (caso real: texto repetido y referencias filtradas)
                  EN_LINEA → respuesta final de UN mensaje con «Referencias: …» pegado en medio del texto y el texto repetido después
                  (otra) → conexiones_por_maestro de todas las escuelas, limite 5
-GET /instrucciones devuelve las `instructions` de la última petición (para comprobar que la API manda las reglas del agente).
+GET /instrucciones devuelve las `instructions` y la `entrada` (texto de la pregunta) de la última petición con pregunta nueva (para comprobar que la API manda las reglas del agente).
 Uso:  python3 foundry_falso.py [puerto]    (por defecto 5198)
       y arrancar la API con  Foundry__Endpoint=http://127.0.0.1:5198/api/projects/p  Asistente__Habilitado=true  Asistente__Credencial=prueba
 """
@@ -32,7 +32,7 @@ def llamadas_para(pregunta):
     return [("conexiones_por_maestro", {**PERIODO, "limite": 5})]
 
 
-ULTIMAS = {"instructions": ""}
+ULTIMAS = {"instructions": "", "entrada": "", "previo": None}
 PREGUNTAS = {}      # id de respuesta → pregunta (la segunda llamada solo trae previous_response_id)
 REFS = ("Referencias: consulta=conexiones_por_escuela; fuente=mysql:gs_data_analysis; fecha filtrada=connected_date.connected_date; "
         "período=2026-01-01 a 2026-11-19; escuela=todas; cuentas de prueba=excluidas; orden/limite=asc/50; datos hasta=2026-11-18; filas=47; generado=2026-11-19T17:00:58.549583Z.")
@@ -45,7 +45,7 @@ def mensaje(texto):
 
 class H(BaseHTTPRequestHandler):
     def do_GET(self):
-        cuerpo = json.dumps({"instructions": ULTIMAS["instructions"]}).encode()
+        cuerpo = json.dumps({"instructions": ULTIMAS["instructions"], "entrada": ULTIMAS["entrada"], "previo": ULTIMAS["previo"]}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(cuerpo)))
@@ -59,6 +59,7 @@ class H(BaseHTTPRequestHandler):
         entrada = d.get("input")
         rid = "resp_" + uuid.uuid4().hex
         if isinstance(entrada, str):
+            ULTIMAS["entrada"], ULTIMAS["previo"] = entrada, d.get("previous_response_id")
             PREGUNTAS[rid] = entrada
             salida = [{"type": "function_call", "name": nombre, "arguments": json.dumps(args), "call_id": f"c{i}"}
                       for i, (nombre, args) in enumerate(llamadas_para(entrada))]

@@ -751,6 +751,8 @@ igual("instrucciones: regla de porcentajes > 100 (no topar, explicar en una fras
 igual("instrucciones: regla de listas cortadas (cuántas se muestran, cuántas hay, cuántas quedan fuera y por qué; sin «excluidas» falsas)",
       ("cuántas filas muestras" in INSTR, "cuántas existen en total" in INSTR, "POR QUÉ" in INSTR, "escuelas_sin_conectados" in INSTR, "NO se excluyen" in INSTR), (True,) * 5)
 
+igual("instrucciones: reglas 5a (idioma de la pregunta) y 5b (solo la pregunta actual)",
+      ("idioma de la PREGUNTA actual" in INSTR, "Idioma del panel" in INSTR, "SOLO LA PREGUNTA ACTUAL" in INSTR, "NUNCA retomes" in INSTR, "Idioma de la persona" in INSTR), (True, True, True, True, False))
 igual("instrucciones: regla 2d del año académico por defecto (agosto a julio, decirlo y ofrecer cambiarlo)",
       ("{anio_academico_desde}" in INSTR, "agosto a julio" in INSTR, "SIEMPRE dilo" in INSTR, "ofrece cambiarlo" in INSTR), (True,) * 4)
 
@@ -1009,10 +1011,12 @@ if AUTH:
     if st == 404:
         print("  · (asistente no habilitado: no se prueban /asistente/*)")
     else:
-        def pregunta(token, texto, conversacion=None):
+        def pregunta(token, texto, conversacion=None, idioma=None):
             cuerpo = {"pregunta": texto}
             if conversacion:
                 cuerpo["conversacion_id"] = conversacion
+            if idioma:
+                cuerpo["idioma"] = idioma
             st, _, c = http("POST", "/asistente/preguntar", token, None, cuerpo)
             return st, json.loads(c)
 
@@ -1073,6 +1077,32 @@ if AUTH:
         _ini = _hoy.year if _hoy.month >= 8 else _hoy.year - 1
         igual("asistente: año académico por defecto (agosto a julio) con las fechas calculadas y sin marcadores sin reemplazar",
               (f"del {_ini - 1}-08-01 al {_ini}-07-31" in enviadas, f"del {_ini}-08-01 a hoy" in enviadas, "{anio_academico" in enviadas), (True, True, False))
+        def foundry():
+            with urllib.request.urlopen(os.environ.get("FOUNDRY_FALSO", "http://127.0.0.1:5198") + "/instrucciones", timeout=10) as _r2:
+                return json.loads(_r2.read())
+
+        # idioma: el de la PREGUNTA manda; el del panel solo desempata y viaja siempre
+        pregunta("tok-ore2", "How many users have an inactive subscription?")
+        f_es = foundry()
+        pregunta("tok-ore2", "How many users have an inactive subscription?", idioma="en")
+        f_en = foundry()
+        igual("idioma: el contexto lleva SIEMPRE el idioma del panel (español por defecto, inglés si idioma=en)",
+              ("[Idioma del panel: español]" in f_es["entrada"], "[Idioma del panel: inglés]" in f_en["entrada"], "[Idioma del panel: español]" in f_en["entrada"]), (True, True, False))
+        igual("idioma: la regla 5a manda responder en el idioma de la PREGUNTA (y el del panel solo si no es claro); ya no hay la regla vieja «español salvo…»",
+              ("5a. IDIOMA" in f_en["instructions"], "idioma de la PREGUNTA actual" in f_en["instructions"], "Idioma del panel" in f_en["instructions"], "Idioma de la persona" in f_en["instructions"]), (True, True, True, False))
+
+        # solo la pregunta actual: en una conversación que continúa, el mensaje va marcado como nuevo y NO se reenvía el texto anterior
+        r_a = pregunta("tok-ore2", "PRIMERA indícame las escuelas visitadas y la última visita de cada una")[1]
+        f_1 = foundry()
+        r_b = pregunta("tok-ore2", "How many users have an inactive or canceled subscription?", r_a["conversacion_id"])[1]
+        f_2 = foundry()
+        marca = "[Mensaje nuevo: responde SOLO a esta pregunta"
+        igual("pregunta actual: el primer mensaje no lleva marca; el siguiente de la conversación sí y no reenvía el texto del anterior (el historial lo pone previous_response_id)",
+              (marca in f_1["entrada"], f_1["previo"] is None, marca in f_2["entrada"], "PRIMERA" in f_2["entrada"], f_2["previo"] is not None, r_b["conversacion_id"] == r_a["conversacion_id"]),
+              (False, True, True, False, True, True))
+        igual("pregunta actual: la regla 5b (solo la pregunta actual, no retomar pedidos anteriores) llega a Foundry",
+              ("5b. SOLO LA PREGUNTA ACTUAL" in f_2["instructions"], "NUNCA retomes" in f_2["instructions"]), (True, True))
+
         igual("conversaciones: otra persona con tu conversacion_id empieza una nueva; tú continúas la tuya",
               (r2["conversacion_id"] != r1["conversacion_id"], r3["conversacion_id"] == r1["conversacion_id"]), (True, True))
 

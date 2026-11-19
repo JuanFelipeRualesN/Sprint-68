@@ -61,3 +61,15 @@ Dame el ranking de participación por escuela desde el 1 de julio de 2026.
 ¿Cuántas escuelas se conectaron en el último año académico?
 How many schools connected during the last academic year?
 Dame las conexiones por escuela del año académico pasado.
+
+# Idioma (regla 5a): responde en el idioma de la PREGUNTA, aunque el panel esté en español; si no es claro, en el idioma del panel (idioma=es|en). Deben salir TODAS en inglés:
+How many users have an inactive or canceled subscription, and how many have no subscription?
+Which schools had the most connections in 2026?
+What was the connection trend by month this year?
+# ...y esta, en español con el panel en inglés (idioma=en), debe salir en español:
+¿Cuáles escuelas tuvieron más conexiones en lo corrido de 2026?
+
+# Solo la pregunta actual (regla 5b). Conversación de DOS mensajes en el mismo conversacion_id:
+#   1) «Indícame cuántas escuelas han sido visitadas y la fecha de la última visita de cada una»  → pide el período (no hay fechas)
+#   2) «How many users have an inactive or canceled subscription, and how many have no subscription?»
+# La respuesta al mensaje 2 debe ser en inglés y NO volver a pedir el período del mensaje 1 ni cerrar con ese pedido.

@@ -238,6 +238,8 @@ public sealed class AsistenteFoundry
         string? ultimoId = _conversaciones.TryGetValue(conversacion, out var previa) ? previa.Id : null;
 
         var contexto = ContextoTexto(p.Contexto, p.Idioma);
+        // En una conversación que continúa, cada mensaje se marca como pregunta NUEVA: el historial es solo contexto (regla 5b), no pedidos pendientes.
+        if (ultimoId is not null) contexto = (contexto.Length > 0 ? contexto + "\n" : "") + "[Mensaje nuevo: responde SOLO a esta pregunta; no retomes pedidos ni aclaraciones de mensajes anteriores]";
         JsonNode entrada = JsonValue.Create(contexto.Length > 0 ? contexto + "\n" + pregunta : pregunta)!;
         var hoy = DateTime.UtcNow.AddHours(-4).ToString("yyyy-MM-dd");                                         // día en hora de Puerto Rico
         // Las fechas relativas las calcula el código (el modelo se equivoca con «últimos 3 meses completos»).
@@ -355,8 +357,9 @@ public sealed class AsistenteFoundry
         var partes = new List<string>();
         if (c is not null && !(string.IsNullOrWhiteSpace(c.Reporte) && string.IsNullOrWhiteSpace(c.Pagina)))
             partes.Add($"[Contexto del tablero (solo orientación, no es un dato ni un período): informe = «{Corto(c.Reporte)}», página = «{Corto(c.Pagina)}»]");
-        if (idioma is not null && idioma.StartsWith("en", StringComparison.OrdinalIgnoreCase))
-            partes.Add("[Idioma de la persona: inglés]");
+        // Idioma del PANEL (el de la plataforma): solo desempata cuando la pregunta no deja claro el suyo (regla 5a). Va SIEMPRE, también en español.
+        var en = idioma is not null && idioma.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        partes.Add($"[Idioma del panel: {(en ? "inglés" : "español")}]");
         return string.Join("\n", partes);
     }
 
