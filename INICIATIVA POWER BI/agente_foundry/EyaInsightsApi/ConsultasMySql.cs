@@ -578,7 +578,7 @@ public class ConsultasMySql : IConsultasUso
     public string? NotaSuscripcion =>
         "Cada usuario (rol distinto de client) cuenta UNA vez: activa = tiene una suscripción con status 'active' (sin mirar la fecha de cancelación; es la definición del tablero de Power BI, igual que «usuarios_activos» de las demás consultas); " +
         "cancelada = sin suscripción activa y con alguna cuyo status contiene «cancel»; inactiva = tiene suscripciones pero ninguna activa ni cancelada; sin suscripción = no aparece en la historia de suscripciones. " +
-        "El resumen trae 'estados_originales' (usuarios por cada valor real de status) y 'activas_con_fecha_de_cancelacion_vencida' (activas cuya fecha de cancelación ya pasó o está vacía: es la diferencia con el filtro de descargas de la plataforma, que además exige fecha futura). " +
+        "El resumen trae 'estados_originales' (usuarios con alguna suscripción en cada valor real de status; un usuario puede aparecer en varios) y 'activas_con_fecha_de_cancelacion_vencida' (activas cuya fecha de cancelación ya pasó o está vacía: es la diferencia con el filtro de descargas de la plataforma, que además exige fecha futura). " +
         "Es el estado actual, no depende de un período. " + NotaExclusion;
 
     public string? NotaParticipacion =>
