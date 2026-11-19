@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Sparkles, X, Send, RotateCcw, ChevronDown, ChevronUp, Info, TriangleAlert } from "lucide-react";
-import { preguntar } from "./assistant-api";
+import { Sparkles, X, Send, RotateCcw, ChevronDown, ChevronUp, Info, TriangleAlert, Download } from "lucide-react";
+import { preguntar, leerAdjuntos, descargarExcel } from "./assistant-api";
+import Grafica from "./grafica";
+import ExportarDirecto from "./exportar-directo";
 import { textosPara } from "./textos";
 import "./style.css";
 
@@ -104,6 +106,35 @@ function Referencias({ refs, consultas, t, idioma }) {
   );
 }
 
+function BotonExcel({ descarga, t }) {
+  const [estado, setEstado] = useState("");
+  const [error, setError] = useState("");
+  const ctlRef = useRef(null);
+  useEffect(() => () => { if (ctlRef.current) ctlRef.current.abort(); }, []);
+  const bajar = async () => {
+    if (estado === "cargando") return;
+    setEstado("cargando"); setError("");
+    const ctl = new AbortController();
+    ctlRef.current = ctl;
+    try {
+      await descargarExcel(descarga, ctl.signal);
+      setEstado("");
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      setError(mensajeDeError(e, t)); setEstado("");
+    }
+  };
+  return (
+    <div className={`asst-descarga-fila${descarga.destacar ? " asst-descarga-fila--destacada" : ""}`}>
+      <button type="button" className="asst-descarga" onClick={bajar} disabled={estado === "cargando"} title={descarga.nombre || ""}>
+        <Download size={14} /> {estado === "cargando" ? t.descargando : t.descargarExcel}
+      </button>
+      <span className="asst-descarga-nota">{t.excelFilas}{typeof descarga.filas_estimadas === "number" ? ` (~${descarga.filas_estimadas})` : ""}</span>
+      {error && <div className="asst-advertencia" role="alert">{error}</div>}
+    </div>
+  );
+}
+
 function Mensaje({ m, t, idioma }) {
   if (m.rol === "usuario") return <div className="asst-msg asst-msg-usuario"><p>{m.texto}</p></div>;
   return (
@@ -111,6 +142,8 @@ function Mensaje({ m, t, idioma }) {
       <TextoRespuesta texto={m.texto} />
       {(m.avisos || []).map((a, i) => <div className="asst-aviso-dato" key={i}><TriangleAlert size={13} /> <span>{a}</span></div>)}
       {(m.advertencias || []).map((a, i) => <div className="asst-advertencia" key={i}><b>{t.verificacion}:</b> {a}</div>)}
+      {(m.graficas || []).map((g, k) => <Grafica key={`g${k}`} spec={g} t={t} idioma={idioma} />)}
+      {(m.descargas || []).map((d, k) => <BotonExcel key={d.id || `d${k}`} descarga={d} t={t} />)}
       <Referencias refs={m.referencias} consultas={m.consultas} t={t} idioma={idioma} />
     </div>
   );
@@ -121,6 +154,9 @@ function mensajeDeError(e, t) {
     case "sin_conexion": return t.errRed;
     case "sin_acceso_al_modelo": return t.errModelo;
     case "modelo_no_disponible": return t.errNoDisponible;
+    case "descarga_expirada": return t.descargaExpirada;
+    case "parametros_invalidos": return e.message || t.errDescarga;
+    case "http_500": case "http_503": case "base_no_disponible": return t.errDescarga;
     default: return t.errGenerico;
   }
 }
@@ -190,8 +226,9 @@ const AssistantPanel = ({ report, contextoReporte, contextoPagina, idioma, onTog
         signal: ctl.signal,
       });
       if (d.conversacion_id) setConversacionId(d.conversacion_id);
+      const { descargas, graficas } = leerAdjuntos(d);
       setMensajes((m) => [...m, {
-        id: nuevoId(), rol: "asistente",
+        id: nuevoId(), rol: "asistente", descargas, graficas,
         texto: d.error === "contenido_bloqueado" ? t.bloqueado : d.respuesta,
         referencias: d.referencias || [], avisos: d.avisos || [], advertencias: d.advertencias || [], consultas: d.consultas || [],
         bloqueado: d.error === "contenido_bloqueado",
@@ -245,6 +282,7 @@ const AssistantPanel = ({ report, contextoReporte, contextoPagina, idioma, onTog
             {t.sugerencias.map((s) => (
               <button type="button" key={s} className="asst-sug" onClick={() => enviar(s)} disabled={cargando}>{s}</button>
             ))}
+            <ExportarDirecto t={t} mensajeDeError={mensajeDeError} />
           </div>
         )}
         {mensajes.map((m) => <Mensaje key={m.id} m={m} t={t} idioma={lang} />)}
