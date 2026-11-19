@@ -6,6 +6,10 @@ using EyaInsightsApi;
 using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
+// Autenticación (Fase 4 · A1): Auth:Modo = local (solo desarrollo, solo loopback) | plataforma (Token de la plataforma validado en UsersAPI).
+// En Production solo vale «plataforma» y Auth:UsersApiUrl es obligatoria: si falta, la API no arranca.
+var auth = AuthOpciones.Leer(builder.Configuration);
+auth.ValidarArranque(builder.Configuration, builder.Environment.IsProduction());
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
     o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
@@ -56,14 +60,22 @@ else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 var asistenteOn = string.Equals(builder.Configuration["Asistente:Habilitado"], "true", StringComparison.OrdinalIgnoreCase);
 if (asistenteOn)
 {
-    builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration));
-    var origenes = (builder.Configuration["Asistente:Origenes"] ?? "http://localhost:3000")
-        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes).WithHeaders("content-type").WithMethods("GET", "POST").WithExposedHeaders("content-disposition")));   // GET + content-disposition: descarga directa de /exportar. OJO: GET permite que los orígenes del panel lean por JavaScript TODAS las rutas GET, no solo /exportar
+    builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration, builder.Environment.IsProduction()));
 }
 
+// CORS (A3): orígenes del front por ambiente en Cors:Origenes (variable Cors__Origenes, separados por coma). Aplica a TODAS las rutas
+// (consultas, /exportar y /asistente/*), no solo al asistente. Sin «*» en Production; sin cookies (la sesión va en el header Token).
+// OJO (revisión del #4): la política es GLOBAL; GET permite que los orígenes listados lean por JavaScript TODAS las rutas GET (no solo /exportar). Con Auth:Modo=plataforma
+// hace falta además un Token válido, y los datos ya vienen limitados al alcance de esa persona.
+// Compatibilidad: sin Cors:Origenes y con el asistente habilitado se usa Asistente:Origenes (por defecto http://localhost:3000, solo desarrollo).
+var origenes = Auth.OrigenesCors(builder.Configuration, asistenteOn, builder.Environment.IsProduction());
+if (origenes.Length > 0)
+    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes)
+        .WithHeaders("content-type", "token", "accept-language").WithMethods("GET", "POST")
+        .WithExposedHeaders("content-disposition").SetPreflightMaxAge(TimeSpan.FromMinutes(10))));
+
 var app = builder.Build();
-if (asistenteOn) app.UseCors("panel");
+if (origenes.Length > 0) app.UseCors("panel");
 
 if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
 {
@@ -71,32 +83,41 @@ if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
     catch (Exception e) { Console.WriteLine($"No se pudo conectar a MySQL ({e.GetType().Name}): revisa VPN, host, usuario y clave."); throw; }
 }
 
-// Clave de API: se exige el header x-api-key cuando existe EYA_API_KEY (menos en /salud).
-var claveEsperada = app.Configuration["EYA_API_KEY"];
-app.Use(async (ctx, next) =>
-{
-    if (!string.IsNullOrEmpty(claveEsperada) && ctx.Request.Path != "/salud"
-        && ctx.Request.Headers["x-api-key"] != claveEsperada)
-    {
-        ctx.Response.StatusCode = 401;
-        await ctx.Response.WriteAsJsonAsync(new { error = "no_autorizado", mensaje = "Falta o es incorrecto x-api-key." });
-        return;
-    }
-    await next();
-});
+// Autenticación (después de CORS, antes de las rutas). Ver Auth.cs y DISENO_AUTH.md.
+var consultasRaiz = app.Services.GetRequiredService<IConsultasUso>();
+var validador = auth.EsPlataforma ? new ValidadorSesion(auth, new HttpClient(), consultasRaiz.EscuelaDeUsuario) : null;
+app.UsarAutenticacion(auth, validador);
+app.VigilarLoopback(auth);
+Console.WriteLine(auth.EsPlataforma
+    ? $"Autenticación: plataforma (UsersAPI {new Uri(auth.UsersApiUrl).Host}, permiso «{auth.Permiso}», caché {auth.CacheSegundos} s)."
+    : "Autenticación: LOCAL (sin validación; solo desarrollo, la API solo escucha en loopback).");
+var claveEsperada = auth.ApiKey;     // loopback del asistente (A3 lo reemplaza por la identidad de quien pregunta)
 
 if (asistenteOn)
 {
     var local = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
     Console.WriteLine($"Asistente HABILITADO (modelo {app.Services.GetRequiredService<AsistenteFoundry>().Modelo}, {app.Services.GetRequiredService<AsistenteFoundry>().Herramientas} consultas). Solo para desarrollo local.");
+    // Las llamadas internas (herramientas del modelo y descargas) van a la propia API por la dirección en la que ESTE proceso escucha, nunca por el
+    // Host de la petición (ese header lo controla quien llama). Reenvían el Token de quien pregunta, así el alcance (ORE/escuela) sigue aplicando.
+    string BaseLoopback()
+    {
+        var dir = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features
+            .Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses.FirstOrDefault(a => a.StartsWith("http", StringComparison.OrdinalIgnoreCase));
+        if (dir is null) return "http://127.0.0.1:5000";
+        var u = new Uri(dir.Replace("://*", "://127.0.0.1").Replace("://+", "://127.0.0.1").Replace("://[::]", "://127.0.0.1").Replace("://0.0.0.0", "://127.0.0.1"));
+        return $"{u.Scheme}://{u.Authority}";
+    }
     app.MapPost("/asistente/preguntar", async (HttpContext ctx, PreguntaAsistente p, AsistenteFoundry asistente) =>
     {
         if (string.IsNullOrWhiteSpace(p.Pregunta) || p.Pregunta.Trim().Length < 2)
             return Results.Json(new { error = "pregunta_vacia", mensaje = "Escribe una pregunta." }, statusCode: 400);
-        var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
+        var baseUrl = BaseLoopback();
+        var usuario = Auth.Usuario(ctx);
+        var cabeceras = Auth.HeadersParaReenviar(ctx);
         try
         {
-            var r = await asistente.PreguntarAsync(p, (op, a) => asistente.EjecutarAsync(local, baseUrl, claveEsperada, op, a, ctx.RequestAborted), ctx.RequestAborted);
+            var r = await asistente.PreguntarAsync(p, usuario, (op, a) => asistente.EjecutarAsync(local, baseUrl, cabeceras, op, a, ctx.RequestAborted), ctx.RequestAborted);
+            Console.WriteLine($"asistente usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consultas={r.Consultas.Count} descargas={r.Descargas?.Count ?? 0}");
             return Results.Json(r);
         }
         catch (ErrorFoundry e) when (e.FiltroContenido)    // p. ej. el filtro anti-jailbreak de Azure
@@ -116,12 +137,30 @@ if (asistenteOn)
             return Results.Json(new { error = "modelo_no_disponible", mensaje = "El asistente no está disponible en este momento. Intenta de nuevo." }, statusCode: 502);
         }
     });
+
+    // Descarga del Excel de una respuesta: id opaco ↔ consulta, ligado a quien preguntó. Id inexistente, vencido o DE OTRA PERSONA → el mismo 404.
+    // El archivo se reconstruye por loopback con el Token de quien lo pide (alcance aplicado otra vez); la API no guarda datos, solo la consulta.
+    app.MapGet("/asistente/descargas/{id}", async (string id, HttpContext ctx, AsistenteFoundry asistente) =>
+    {
+        var usuario = Auth.Usuario(ctx);
+        if (asistente.BuscarDescarga(id, usuario) is not { } d)
+            return Results.Json(new { error = "descarga_expirada", mensaje = "El enlace expiró; vuelve a preguntar." }, statusCode: 404);
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"{BaseLoopback()}/exportar/{Uri.EscapeDataString(d.Consulta)}?{d.Query}");
+        foreach (var (n, v) in Auth.HeadersParaReenviar(ctx)) req.Headers.TryAddWithoutValidation(n, v);
+        using var resp = await local.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
+        var cuerpo = await resp.Content.ReadAsByteArrayAsync(ctx.RequestAborted);
+        Console.WriteLine($"descarga usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consulta={d.Consulta} estado={(int)resp.StatusCode} bytes={cuerpo.Length}");
+        if (resp.IsSuccessStatusCode)
+            return Results.File(cuerpo, resp.Content.Headers.ContentType?.ToString() ?? "application/octet-stream",
+                resp.Content.Headers.ContentDisposition?.FileNameStar ?? resp.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        return Results.Content(System.Text.Encoding.UTF8.GetString(cuerpo), resp.Content.Headers.ContentType?.ToString() ?? "application/json", System.Text.Encoding.UTF8, (int)resp.StatusCode);
+    });
 }
 
 app.MapGet("/salud", (IConsultasUso c) => new { estado = "ok", fuente = c.Fuente, datos_hasta_pruebas = c.DatosHastaPruebas, datos_hasta_conexiones = c.DatosHastaConexiones });
 
 foreach (var (ruta, f) in Rutas.Consultas)
-    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => f(r, c)));
+    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => Rutas.Con(f, r, c)));
 
 // Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
 // NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
@@ -137,7 +176,9 @@ app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUs
     return Rutas.Intentar(() =>
     {
         if (formato == "xlsx") r.HttpContext.Items["exportar"] = true;           // límite hasta 5000 (P.OrdenLimite)
-        var resp = Columnas.ANodo(f(r, c));
+        var resp = Columnas.ANodo(Rutas.Con(f, r, c));
+        var u = Auth.Usuario(r.HttpContext);        // auditoría: quién exportó qué (sin token ni datos)
+        Console.WriteLine($"exportar usuario={u.Id} rol={u.Rol} origen={u.Origen} alcance=\"{resp["alcance"]}\" consulta={consulta} formato={formato} filas={resp["resultados"]?.AsArray().Count ?? 0}");
         if (formato == "xlsx")
             return Results.File(Excel.Libro(resp), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Columnas.NombreArchivo(resp));
         return Graficas.Desde(resp) is { } spec

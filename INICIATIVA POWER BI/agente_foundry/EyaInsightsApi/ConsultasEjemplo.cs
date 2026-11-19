@@ -8,16 +8,43 @@ namespace EyaInsightsApi;
 public class ConsultasEjemplo : IConsultasUso
 {
     static readonly string[] Areas = ["Matemáticas", "Lectura", "Ciencias", "Estudios Sociales", "Inglés"];
-    static readonly string[] Escuelas = "ABCDEFGHIJKL".Select(c => $"Escuela Ejemplo {c}").ToArray();   // K y L sin actividad
-    static readonly string[] EscuelasActivas = Escuelas.Take(10).ToArray();
-    static readonly (string Maestro, string Escuela)[] Maestros =
-        Enumerable.Range(0, 36).Select(i => ($"Maestro Ejemplo {i + 1:00}", Escuelas[i % 12])).ToArray();
+    static readonly string[] TodasEscuelas = "ABCDEFGHIJKL".Select(c => $"Escuela Ejemplo {c}").ToArray();   // K y L sin actividad
+    static readonly (string Maestro, string Escuela)[] TodosMaestros =
+        Enumerable.Range(0, 36).Select(i => ($"Maestro Ejemplo {i + 1:00}", TodasEscuelas[i % 12])).ToArray();
+
+    // A2 — ids sintéticos para que el alcance también funcione sin MySQL: escuela i (A=0…) → school_id i+1; ORE 1 = A–F, ORE 2 = G–L.
+    static int IdEscuela(string e) => Array.IndexOf(TodasEscuelas, e) + 1;
+    static int OreDe(string e) => IdEscuela(e) <= 6 ? 1 : 2;
+
+    // Vistas acotadas (Para): comparten los datos generados pero solo ven las escuelas del alcance.
+    string[] Escuelas = TodasEscuelas;
+    string[] EscuelasActivas = TodasEscuelas.Take(10).ToArray();
+    (string Maestro, string Escuela)[] Maestros = TodosMaestros;
+    Alcance _alc = Alcance.Todo;
+    public string DescripcionAlcance => _alc.EsTodo ? "todas las escuelas"
+        : _alc.EscuelaId is { } e ? $"escuela {TodasEscuelas.ElementAtOrDefault(e - 1) ?? "#" + e}" : $"ORE ejemplo {_alc.OreId}";
+    public int? EscuelaDeUsuario(string userId) => null;       // los datos de ejemplo no tienen usuarios con escuela
+
+    public IConsultasUso Para(Alcance alcance)
+    {
+        if (alcance.EsTodo) return this;
+        bool Ve(string e) => (alcance.OreId is null || OreDe(e) == alcance.OreId) && (alcance.EscuelaId is null || IdEscuela(e) == alcance.EscuelaId);
+        var v = (ConsultasEjemplo)MemberwiseClone();
+        v._alc = alcance;
+        v.Escuelas = Escuelas.Where(Ve).ToArray();
+        v.EscuelasActivas = EscuelasActivas.Where(Ve).ToArray();
+        v.Maestros = Maestros.Where(m => Ve(m.Escuela)).ToArray();
+        var visibles = v.Escuelas.ToHashSet();
+        v._conexiones = _conexiones.Where(c => visibles.Contains(c.Escuela)).ToList();
+        v._pruebas = _pruebas.Where(x => visibles.Contains(x.Escuela)).ToList();
+        return v;
+    }
 
     record Conexion(DateOnly Dia, string Escuela, string Maestro, int Cantidad);
     record Prueba(DateOnly Dia, string Area, string Escuela, int Asignadas, int Completadas);
 
-    readonly List<Conexion> _conexiones = [];
-    readonly List<Prueba> _pruebas = [];
+    List<Conexion> _conexiones = [];
+    List<Prueba> _pruebas = [];
 
     public string Fuente => "datos_de_ejemplo";
     public string ColumnaFechaPruebas => "día de la prueba (dato de ejemplo)";

@@ -93,6 +93,7 @@ static class Excel
         foreach (var (k, v) in Columnas.Aplanar(r["periodo"], "")) Linea(k.Length == 0 ? "Período" : "Período · " + Rotulo(k), Columnas.Texto(v));
         foreach (var (k, v) in Columnas.Aplanar(r["filtros"]))
             Linea(k == "cuentas_de_prueba" ? "Cuentas de prueba" : "Filtro · " + Rotulo(k), Columnas.Texto(v));
+        if (r["alcance"] is { } alc) Linea("Alcance", Columnas.Texto(alc));
         Linea("Datos hasta", r["datos_hasta"] is { } dh ? Columnas.Texto(dh) : "no aplica");
         Linea("Filas exportadas", nFilas.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Linea("Lista completa", cortado

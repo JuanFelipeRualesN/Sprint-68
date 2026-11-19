@@ -46,6 +46,16 @@ static class Rutas
 
     public static IResult Ejecutar(Func<Respuesta> consulta) => Intentar(() => Results.Ok(consulta()));
 
+    /// <summary>
+    /// Ejecuta una consulta con el alcance de quien llama (A2): usa la vista filtrada de <see cref="IConsultasUso.Para"/> y declara
+    /// el alcance en la respuesta. Ninguna consulta recibe el IConsultasUso sin filtrar desde una ruta HTTP.
+    /// </summary>
+    public static Respuesta Con(Func<HttpRequest, IConsultasUso, Respuesta> f, HttpRequest r, IConsultasUso c)
+    {
+        var vista = c.Para(Auth.Usuario(r.HttpContext).Alcance);
+        return f(r, vista) with { Alcance = vista.DescripcionAlcance };
+    }
+
     static Respuesta UsoPorArea(HttpRequest r, IConsultasUso c)
     {
         var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);

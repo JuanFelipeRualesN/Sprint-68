@@ -22,12 +22,18 @@ export EYA_MYSQL_HOST EYA_MYSQL_PORT EYA_MYSQL_USER EYA_MYSQL_PASSWORD
 
 export Datos__Origen=mysql
 
+# Autenticación y CORS (Fase 4): SOLO desarrollo local. «local» no valida a nadie y por eso la API se niega a escuchar fuera de loopback.
+#  · Desplegado (Production) se usa Auth__Modo=plataforma + Auth__UsersApiUrl (ver DISENO_AUTH.md §7); con «local» la API no arranca.
+#  · ASPNETCORE_ENVIRONMENT=Development es necesario porque `dotnet run --no-launch-profile` arranca como Production por defecto.
+export ASPNETCORE_ENVIRONMENT=Development
+export Auth__Modo=local
+export Cors__Origenes=http://localhost:3000
+
 # Asistente del panel junto a Power BI (POST /asistente/preguntar): SOLO para desarrollo local.
 #  · Foundry se autentica con tu sesión de `az login` (no hay clave que guardar).
-#  · CORS limitado al front local (http://localhost:3000). Desplegado, el asistente debe ir detrás del backend de la plataforma.
+#  · CORS limitado al front local (Cors__Origenes, más abajo). Desplegado: Auth__Modo=plataforma, Asistente__Credencial=managed.
 export Asistente__Habilitado=true
 export Asistente__Credencial=azcli
-export Asistente__Origenes=http://localhost:3000
 export ASPNETCORE_URLS=http://127.0.0.1:5099     # solo accesible desde esta máquina
 export DOTNET_ROLL_FORWARD=Major                 # en esta máquina solo hay runtime 10
 exec dotnet run --no-launch-profile

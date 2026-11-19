@@ -19,8 +19,17 @@ public record PreguntaAsistente(string? Pregunta, string? ConversacionId, Contex
 /// <param name="Avisos">Frases AVISO/EMPATE que la API devolvió (datos hasta, empates en el corte…).</param>
 /// <param name="Advertencias">Verificación automática: cifras de la respuesta que no salen de las consultas.</param>
 /// <param name="Consultas">Qué consulta y con qué parámetros se ejecutó (transparencia).</param>
+/// <param name="Descargas">Fase 4: un archivo .xlsx por consulta exitosa (el servidor lo registra, el modelo no escribe enlaces): {id, nombre, consulta, url, destacar}.</param>
+/// <param name="Graficas">Fase 4: especificación de gráfica (formato Recharts) de las consultas graficables, calculada de las mismas cifras de la consulta.</param>
 public record RespuestaAsistente(string Respuesta, string ConversacionId, List<JsonNode> Referencias, List<string> Avisos,
-    List<string> Advertencias, List<JsonNode> Consultas, string? Error = null);
+    List<string> Advertencias, List<JsonNode> Consultas, string? Error = null,
+    List<JsonNode>? Descargas = null, List<JsonNode>? Graficas = null);
+
+/// <summary>Resultado de ejecutar una herramienta por loopback. Ruta/Query = lo que de verdad se pidió (argumentos ya saneados).</summary>
+public record ResultadoHerramienta(int Estado, string Cuerpo, string? Ruta = null, string? Query = null);
+
+/// <summary>Una descarga registrada: solo la consulta (no datos), ligada a quien preguntó. Se reconstruye al hacer clic.</summary>
+public record EntradaDescarga(string Consulta, string Query, string Usuario, Alcance Alcance, DateTime Expira);
 
 public class ErrorFoundry(int estado, string cuerpo) : Exception($"Foundry respondió {estado}")
 {
@@ -47,17 +56,32 @@ public sealed class AsistenteFoundry
     readonly string _endpoint, _modelo, _plantilla;
     readonly JsonArray _herramientas = new();
     readonly Dictionary<string, string> _rutas = new();
-    readonly ConcurrentDictionary<string, (string Id, DateTime Cuando)> _conversaciones = new();
+    readonly ConcurrentDictionary<string, (string Id, DateTime Cuando, string Usuario)> _conversaciones = new();
+    readonly ConcurrentDictionary<string, EntradaDescarga> _descargas = new();
+    const int MaxDescargas = 1000;
+    static readonly Regex PideExcel = new(@"excel|xlsx|descarg|hoja de c[aá]lculo|spreadsheet|download", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    static readonly Regex PideGrafica = new(@"gr[aá]fic|chart|graph|plot", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     AccessToken _token;
 
-    public AsistenteFoundry(IConfiguration cfg)
+    public AsistenteFoundry(IConfiguration cfg, bool produccion)
     {
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
         _endpoint = (cfg["Foundry:Endpoint"] ?? "https://chatbotaipowerbi.services.ai.azure.com/api/projects/proj-default").TrimEnd('/');
         _modelo = cfg["Foundry:Modelo"] ?? "gpt-4.1-mini";
-        _credencial = string.Equals(cfg["Asistente:Credencial"], "azcli", StringComparison.OrdinalIgnoreCase)
-            ? new AzureCliCredential()                                   // desarrollo local: la sesión de `az login`
-            : new DefaultAzureCredential(new DefaultAzureCredentialOptions { ExcludeInteractiveBrowserCredential = true });   // Azure: identidad administrada
+        // Asistente:Credencial = azcli (desarrollo: la sesión de `az login`) | managed (Azure: identidad administrada del App Service, sin claves;
+        // necesita el rol «Azure AI User» en el proyecto de Foundry; Asistente__ClientId elige una identidad asignada por el usuario) |
+        // prueba (SOLO fuera de Production: token ficticio, para probar contra foundry_falso.py). Por defecto = managed.
+        var cred = (cfg["Asistente:Credencial"] ?? "managed").Trim().ToLowerInvariant();
+        _credencial = cred switch
+        {
+            "azcli" => new AzureCliCredential(),
+            "prueba" when !produccion => new CredencialDePrueba(),      // produccion = IHostEnvironment.IsProduction() (también cuando no hay variable de entorno)
+            _ => new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            {
+                ExcludeInteractiveBrowserCredential = true,
+                ManagedIdentityClientId = string.IsNullOrWhiteSpace(cfg["Asistente:ClientId"]) ? null : cfg["Asistente:ClientId"],
+            }),
+        };
         _plantilla = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "instrucciones.txt"), Encoding.UTF8).Trim();
         CargarHerramientas(Path.Combine(AppContext.BaseDirectory, "openapi.json"));
     }
@@ -99,10 +123,15 @@ public sealed class AsistenteFoundry
     }
 
     // ── Ejecución de una herramienta contra la propia API (bucle local) ─────────────────────────────────────────
-    public async Task<(int Estado, string Cuerpo)> EjecutarAsync(HttpClient http, string baseUrl, string? clave, string operacion, JsonObject args, CancellationToken ct)
+    /// <summary>
+    /// Llama por loopback a la ruta de la herramienta REENVIANDO la identidad de quien pregunta (<paramref name="headers"/>: su Token, o x-api-key si es
+    /// un servicio): la API vuelve a autenticar y a aplicar el alcance (ORE/escuela), así el modelo no puede salirse del alcance de la persona.
+    /// </summary>
+    public async Task<ResultadoHerramienta> EjecutarAsync(HttpClient http, string baseUrl, IEnumerable<(string Nombre, string Valor)> headers,
+        string operacion, JsonObject args, CancellationToken ct)
     {
         if (!_rutas.TryGetValue(operacion, out var ruta))
-            return (400, JsonSerializer.Serialize(new { error = "consulta_desconocida", mensaje = $"No existe la consulta '{operacion}'." }));
+            return new(400, JsonSerializer.Serialize(new { error = "consulta_desconocida", mensaje = $"No existe la consulta '{operacion}'." }));
         // El modelo a veces inventa argumentos que la consulta no tiene: se descartan para que no cambien el resultado sin que se note.
         var declarados = _herramientas.FirstOrDefault(h => h!["name"]!.GetValue<string>() == operacion)?["parameters"]?["properties"]?.AsObject();
         if (declarados is not null)
@@ -116,9 +145,34 @@ public sealed class AsistenteFoundry
         var q = string.Join("&", args.Where(kv => kv.Value is not null)
             .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(Valor(kv.Value))}"));
         using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}{ruta}?{q}");
-        if (!string.IsNullOrEmpty(clave)) req.Headers.Add("x-api-key", clave);
+        foreach (var (nombre, valor) in headers) req.Headers.TryAddWithoutValidation(nombre, valor);
         using var resp = await http.SendAsync(req, ct);
-        return ((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
+        return new((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct), ruta, q);
+    }
+
+    // ── Descargas (Fase 4 · T6/A3): id opaco de 128 bits ↔ consulta, ligado a quien preguntó ────────────────────────────
+    static string ClaveUsuario(Usuario u) => $"{u.Origen}:{u.Id}";
+
+    string RegistrarDescarga(string consulta, string query, Usuario u)
+    {
+        var ahora = DateTime.UtcNow;
+        foreach (var k in _descargas.Where(kv => kv.Value.Expira <= ahora).Select(kv => kv.Key).ToList()) _descargas.TryRemove(k, out _);
+        while (_descargas.Count >= MaxDescargas && _descargas.OrderBy(kv => kv.Value.Expira).Select(kv => kv.Key).FirstOrDefault() is { } viejo)
+            _descargas.TryRemove(viejo, out _);
+        var id = Guid.NewGuid().ToString("N");
+        _descargas[id] = new EntradaDescarga(consulta, query, ClaveUsuario(u), u.Alcance, ahora + VidaConversacion);
+        return id;
+    }
+
+    /// <summary>null si no existe, venció o es de OTRA persona (mismo resultado: no se revela que el id existe).</summary>
+    public EntradaDescarga? BuscarDescarga(string id, Usuario u) =>
+        _descargas.TryGetValue(id, out var e) && e.Expira > DateTime.UtcNow && e.Usuario == ClaveUsuario(u) ? e : null;
+
+    /// <summary>Query de la descarga: la de la consulta del chat SIN 'limite' (el Excel trae la lista completa, hasta 5000 filas) y con formato=xlsx.</summary>
+    public static string QueryDeExcel(string query)
+    {
+        var partes = query.Split('&', StringSplitOptions.RemoveEmptyEntries).Where(x => !x.StartsWith("limite=", StringComparison.Ordinal) && !x.StartsWith("formato=", StringComparison.Ordinal));
+        return string.Join("&", partes.Append("formato=xlsx"));
     }
 
     // ── Llamada a Foundry (Responses API) ──────────────────────────────────────────────────────────────────────
@@ -145,11 +199,12 @@ public sealed class AsistenteFoundry
     }
 
     // ── La pregunta ────────────────────────────────────────────────────────────────────────────────────────────
-    public async Task<RespuestaAsistente> PreguntarAsync(PreguntaAsistente p, Func<string, JsonObject, Task<(int Estado, string Cuerpo)>> ejecutar, CancellationToken ct)
+    public async Task<RespuestaAsistente> PreguntarAsync(PreguntaAsistente p, Usuario usuario, Func<string, JsonObject, Task<ResultadoHerramienta>> ejecutar, CancellationToken ct)
     {
         var pregunta = (p.Pregunta ?? "").Trim();
         if (pregunta.Length > 1000) pregunta = pregunta[..1000];
-        var conversacion = !string.IsNullOrEmpty(p.ConversacionId) && _conversaciones.ContainsKey(p.ConversacionId)
+        // La conversación pertenece a quien la empezó: con el id de otra persona se empieza una nueva (mismo resultado que un id desconocido).
+        var conversacion = !string.IsNullOrEmpty(p.ConversacionId) && _conversaciones.TryGetValue(p.ConversacionId, out var duena) && duena.Usuario == ClaveUsuario(usuario)
             ? p.ConversacionId : Guid.NewGuid().ToString("N");
         string? ultimoId = _conversaciones.TryGetValue(conversacion, out var previa) ? previa.Id : null;
 
@@ -165,6 +220,8 @@ public sealed class AsistenteFoundry
             .Replace("{inicio_anio}", new DateOnly(h.Year, 1, 1).ToString("yyyy-MM-dd"));
 
         var referencias = new List<JsonNode>(); var consultas = new List<JsonNode>();
+        var descargas = new List<JsonNode>(); var graficas = new List<JsonNode>(); var vistas = new HashSet<string>();
+        bool pideExcel = PideExcel.IsMatch(pregunta), pideGrafica = PideGrafica.IsMatch(pregunta);
         var salidas = new List<string>(); var argumentos = new List<string>(); var avisos = new List<string>();
         _cifrasPrevias.TryGetValue(conversacion, out var previas);     // cifras de los turnos anteriores de esta conversación (preguntas de seguimiento)
         var texto = "";
@@ -197,13 +254,23 @@ public sealed class AsistenteFoundry
             foreach (var (nombre, args, callId) in pendientes)
             {
                 var objArgs = JsonNode.Parse(args)?.AsObject() ?? new JsonObject();
-                var (estado, salida) = await ejecutar(nombre, objArgs);
+                var (estado, salida, rutaApi, query) = await ejecutar(nombre, objArgs);
                 salidas.Add(salida); argumentos.Add(args);
                 consultas.Add(new JsonObject { ["herramienta"] = nombre, ["argumentos"] = objArgs.DeepClone(), ["estado"] = estado });
                 if (estado == 200)
                 {
                     if (Referencia(salida) is JsonNode r) referencias.Add(r);
                     foreach (var a in AvisosDe(salida)) if (!avisos.Contains(a)) avisos.Add(a);
+                    // Descarga y gráfica: las arma el servidor con las mismas cifras de la consulta (el modelo no escribe enlaces ni cifras).
+                    if (rutaApi is not null && rutaApi != "/buscar-escuela" && query is not null && vistas.Add(rutaApi + "?" + query)
+                        && JsonNode.Parse(salida) is JsonObject nodo)
+                    {
+                        var consulta = rutaApi.TrimStart('/');
+                        var id = RegistrarDescarga(consulta, QueryDeExcel(query), usuario);
+                        descargas.Add(new JsonObject { ["id"] = id, ["nombre"] = Columnas.NombreArchivo(nodo), ["consulta"] = consulta,
+                            ["url"] = "/asistente/descargas/" + id, ["destacar"] = pideExcel });
+                        if (Graficas.Desde(nodo) is JsonObject spec) { spec["destacar"] = pideGrafica; graficas.Add(spec); }
+                    }
                 }
                 resultados.Add(new JsonObject { ["type"] = "function_call_output", ["call_id"] = callId, ["output"] = salida });
             }
@@ -211,7 +278,7 @@ public sealed class AsistenteFoundry
         }
 
         if (string.IsNullOrWhiteSpace(texto)) texto = "No pude completar la consulta. Intenta de nuevo en un momento.";
-        _conversaciones[conversacion] = (ultimoId!, DateTime.UtcNow);
+        _conversaciones[conversacion] = (ultimoId!, DateTime.UtcNow, ClaveUsuario(usuario));
         foreach (var k in _conversaciones.Where(kv => DateTime.UtcNow - kv.Value.Cuando > VidaConversacion).Select(kv => kv.Key).ToList())
             _conversaciones.TryRemove(k, out _);
 
@@ -221,7 +288,8 @@ public sealed class AsistenteFoundry
         // Los AVISO/EMPATE de la API se muestran aparte (recuadro amarillo): si el modelo los repitió como línea suelta, se quitan.
         if (avisos.Count > 0) visible = Regex.Replace(visible, @"(?im)^\s*(AVISO|EMPATE):[^\n]*\n?", "").Trim();
         return new RespuestaAsistente(visible, conversacion, referencias, avisos,
-            Verificar(pregunta, contexto, visible, salidas, argumentos, hoy, previas), consultas);
+            Verificar(pregunta, contexto, visible, salidas, argumentos, hoy, previas), consultas,
+            Descargas: descargas.Count > 0 ? descargas : null, Graficas: graficas.Count > 0 ? graficas : null);
     }
 
     // ── Utilidades ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -242,7 +310,7 @@ public sealed class AsistenteFoundry
     {
         if (JsonNode.Parse(salida) is not JsonObject n) return null;
         var r = new JsonObject();
-        foreach (var k in new[] { "consulta", "fuente", "columna_fecha", "periodo", "filtros", "datos_hasta", "total_filas", "generado_en" })
+        foreach (var k in new[] { "consulta", "fuente", "columna_fecha", "periodo", "filtros", "alcance", "datos_hasta", "total_filas", "generado_en" })
             if (n[k] is JsonNode v) r[k] = v.DeepClone();
         return r;
     }
@@ -292,4 +360,11 @@ public sealed class AsistenteFoundry
             ? "La respuesta trae cifras pero no se ejecutó ninguna consulta: " + string.Join(", ", extra)
             : "Hay cifras en la respuesta que no salen de las consultas (posible cálculo del asistente): " + string.Join(", ", extra) };
     }
+}
+
+/// <summary>Credencial ficticia SOLO para pruebas locales contra foundry_falso.py (Asistente:Credencial=prueba; no existe en Production).</summary>
+sealed class CredencialDePrueba : TokenCredential
+{
+    public override AccessToken GetToken(TokenRequestContext c, CancellationToken ct) => new("token-de-prueba", DateTimeOffset.UtcNow.AddHours(1));
+    public override ValueTask<AccessToken> GetTokenAsync(TokenRequestContext c, CancellationToken ct) => new(GetToken(c, ct));
 }

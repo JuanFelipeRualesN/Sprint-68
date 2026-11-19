@@ -104,6 +104,7 @@ Leyenda: **M/E** = modelo / esfuerzo sugeridos. **∥** = puede correr en parale
 - Terminado: 116 + nuevas, todas ✓ en los tres modos.
 
 ### T6 — Asistente: `descargas[]` y `graficas[]` (M/E: Sonnet/high · tras T4; ∥ con T5)
+> **Reemplazada por A3 de `DISENO_AUTH.md`** (hecha allí: mismo contrato más identidad del usuario, descargas ligadas a su dueño y CORS por origen). Lo que sigue queda como referencia del diseño original; `GET /asistente/descargas/{id}` ya NO usa `x-api-key` sino el `Token` de la plataforma.
 - Archivos: `EyaInsightsApi/Asistente.cs`, `EyaInsightsApi/Program.cs`.
 - Cambio:
   - `RespuestaAsistente` + `List<JsonNode>? Descargas = null, List<JsonNode>? Graficas = null` **al final** (no romper la construcción posicional de `Program.cs:104`).
@@ -134,7 +135,7 @@ Leyenda: **M/E** = modelo / esfuerzo sugeridos. **∥** = puede correr en parale
 - **R1 Refactor de `Program.cs` (T1):** puede cambiar sin querer un mensaje o un orden. Mitigación: el verificador completo antes y después; no tocar la lógica de cada handler, solo moverla.
 - **R2 Tamaño:** 5000 maestros × ~4 columnas es pequeño (< 1 MB); ClosedXML es lento con libros grandes, aquí no aplica. Mantener el tope 5000.
 - **R3 Datos que cambian entre la respuesta y el clic:** la descarga se recalcula al hacer clic (refresco diario de la base). `generado_en` del Excel lo deja claro; aceptable.
-- **R4 Seguridad:** las descargas exponen los mismos datos que el chat y pasan por el mismo `x-api-key`; el servicio sigue sin autenticar usuarios ni imponer alcance por rol → **solo local** hasta que esté detrás del backend de la plataforma.
+- **R4 Seguridad (actualizado, Fase 4 · A1–A6):** las descargas exponen los mismos datos que el chat y van con la misma sesión: `Token` de la plataforma validado en UsersAPI, alcance por rol/ORE/escuela en SQL, 401/403/503 y arranque bloqueado en Production sin `Auth__Modo=plataforma`. **Riesgo residual:** no está probado contra UsersAPI ni Foundry reales, el supuesto `OreId` de UsersAPI = `school.ore_id` y UserId = `user.user_id` (director) está sin verificar (`DISENO_AUTH.md` §7), y el agente en la nube con `x-api-key` ve todas las escuelas.
 - **R5 Herramientas del modelo:** si alguien añade `/exportar` a `openapi.json`, el modelo lo verá como herramienta. Comentario en `CargarHerramientas` y en T4.
 - **R6 Sin Foundry en la nube:** T6–T7 no se pueden probar de punta a punta sin `az login`; quedan como prueba manual del usuario.
 - **R7 ClosedXML:** fijar versión exacta en el `.csproj`; si su licencia o dependencias cambian, alternativa = `DocumentFormat.OpenXml` (MIT) con más código.
