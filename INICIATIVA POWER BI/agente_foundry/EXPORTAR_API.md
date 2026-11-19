@@ -31,3 +31,8 @@
 - `/exportar` no está en `openapi.json` a propósito: el asistente convierte cada `path` de ese archivo en una herramienta del modelo.
 - Variables de despliegue y supuestos pendientes: `DISENO_AUTH.md` §7.
 - **Topes internos:** las consultas por maestro (5000) y por escuela (1000) traen la lista entera para dar totales y porcentajes. Si hay más, el resultado se corta y la nota lleva `HAY MÁS FILAS` (la hoja `Referencias` dice «Lista completa: NO» y la gráfica trae `hay_mas_filas: true`); los totales y % cubren solo las filas consideradas.
+
+## Diagnóstico de fallos de base y configuración de columnas
+- Cuando una consulta falla contra la base, el cliente recibe solo `503 base_no_disponible`, y el **log del servidor** trae una línea con la causa, sin Token, parámetros ni datos: `consulta_fallida consulta=usuarios-por-suscripcion tipo=MySqlException mysql_codigo=1054 sql_estado=42S22 mensaje="Unknown column …" sql="SELECT …"` (consulta, tipo de excepción, código y mensaje de MySQL, y los primeros 80 caracteres del SQL). Aplica a todas las consultas y a `/exportar/…`.
+- `Datos__CommandTimeoutSegundos` (30 por defecto): tiempo máximo de cada consulta SQL (`usuarios-por-suscripcion` usa 60 s).
+- `Datos__ColEstadoSuscripcion` (`status`) y `Datos__ColCancelacionSuscripcion` (`cancellation_date`): nombres de las columnas de `subscription_profile_history` si en la base real se llaman distinto. Si la de cancelación no existe, `usuarios-por-suscripcion` sigue y `activas_con_fecha_de_cancelacion_vencida` no aparece.

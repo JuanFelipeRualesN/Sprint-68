@@ -37,15 +37,30 @@ static class Rutas
         ? $"HAY MÁS FILAS: existen más de {tope} {que}; solo se consideran los primeros {tope} (los de más conexiones), así que la lista, los totales y los porcentajes NO son completos. No presentes la lista como completa."
         : null;
 
-    /// <summary>Ejecuta una acción y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base).</summary>
-    public static IResult Intentar(Func<IResult> accion)
+    /// <summary>
+    /// Ejecuta una acción y traduce los errores conocidos a respuestas HTTP (400 parámetros, 503 base). Cuando la base falla, el servidor escribe en el log
+    /// la causa (nombre de la consulta, tipo de excepción, código y mensaje de MySQL, y el comienzo del SQL) SIN parámetros, datos ni Token; al cliente solo
+    /// le llega el error genérico.
+    /// </summary>
+    public static IResult Intentar(string nombre, Func<IResult> accion)
     {
         try { return accion(); }
         catch (ErrorConsulta e) { return Results.Json(new { error = "parametros_invalidos", mensaje = e.Message }, statusCode: 400); }
-        catch (MySqlException) { return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503); }
+        catch (MySqlException e)
+        {
+            RegistrarFallo(nombre, e);
+            return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503);
+        }
     }
 
-    public static IResult Ejecutar(Func<Respuesta> consulta) => Intentar(() => Results.Ok(consulta()));
+    public static IResult Ejecutar(string nombre, Func<Respuesta> consulta) => Intentar(nombre, () => Results.Ok(consulta()));
+
+    /// <summary>Una línea de log por fallo de base: consulta_fallida consulta=… tipo=MySqlException mysql_codigo=1054 sql_estado=42S22 mensaje="Unknown column …" sql="SELECT …".</summary>
+    public static void RegistrarFallo(string nombre, MySqlException e)
+    {
+        static string Limpio(string? t, int max) { var s = System.Text.RegularExpressions.Regex.Replace(t ?? "", @"\s+", " ").Trim(); return s.Length > max ? s[..max] + "…" : s; }
+        Console.WriteLine($"consulta_fallida consulta={nombre} tipo={e.GetType().Name} mysql_codigo={e.Number} sql_estado={e.SqlState} mensaje=\"{Limpio(e.Message, 300)}\" sql=\"{Limpio(e.Data["sql_inicio"] as string, 80)}\"");
+    }
 
     /// <summary>
     /// Ejecuta una consulta con el alcance de quien llama (A2): usa la vista filtrada de <see cref="IConsultasUso.Para"/> y declara

@@ -51,7 +51,11 @@ if ((builder.Configuration["Datos:Origen"] ?? "ejemplo") == "mysql")
         Lista("Datos:OresExcluidos", "DEMOSTRACION"),
         Lista("Datos:DominiosExcluidos", ""),
         Lista("Datos:EscuelasExcluidas", "Escuela Facilitadores MSJ"));
-    builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion));
+    // Tiempo máximo de cada consulta SQL (Datos:CommandTimeoutSegundos, 30 por defecto). Los nombres de las columnas de la historia de suscripciones se pueden
+    // cambiar (Datos:ColEstadoSuscripcion / Datos:ColCancelacionSuscripcion) si en la base real se llaman distinto.
+    var tiempo = int.Parse(builder.Configuration["Datos:CommandTimeoutSegundos"] ?? "30", CultureInfo.InvariantCulture);
+    builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion, tiempo,
+        builder.Configuration["Datos:ColEstadoSuscripcion"] ?? "status", builder.Configuration["Datos:ColCancelacionSuscripcion"] ?? "cancellation_date"));
 }
 else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 
@@ -186,7 +190,7 @@ if (asistenteOn)
 app.MapGet("/salud", (IConsultasUso c) => new { estado = "ok", fuente = c.Fuente, datos_hasta_pruebas = c.DatosHastaPruebas, datos_hasta_conexiones = c.DatosHastaConexiones });
 
 foreach (var (ruta, f) in Rutas.Consultas)
-    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(() => Rutas.Con(f, r, c)));
+    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(ruta, () => Rutas.Con(f, r, c)));
 
 // Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
 // NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
@@ -199,7 +203,7 @@ app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUs
     var formato = r.Query["formato"].FirstOrDefault() ?? "xlsx";
     if (formato is not ("xlsx" or "grafica"))
         return Results.Json(new { error = "parametros_invalidos", mensaje = "'formato' debe ser 'xlsx' o 'grafica'." }, statusCode: 400);
-    return Rutas.Intentar(() =>
+    return Rutas.Intentar("exportar/" + consulta, () =>
     {
         // xlsx y gráfica trabajan con TODAS las filas (hasta 5000); en la gráfica, «limite» ya no es el de la consulta sino el nº de categorías de la vista previa.
         r.HttpContext.Items["exportar"] = true;

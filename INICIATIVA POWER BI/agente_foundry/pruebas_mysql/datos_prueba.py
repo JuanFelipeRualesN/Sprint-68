@@ -191,7 +191,8 @@ def a_sql(usuarios, conexiones, resultados):
            "CREATE TABLE result_generic (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subject_code VARCHAR(15),"
            " quiz_assigned_to_plan_date TIMESTAMP NULL, quiz_taken_date TIMESTAMP NULL, quiz_title VARCHAR(1000), total_percent_full_quiz DECIMAL(6,2) NULL);",
            "CREATE TABLE etl_last_date (id INT PRIMARY KEY, etl_last_date DATETIME(6));",
-           "CREATE TABLE subscription_profile_history (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subscription_id INT, status VARCHAR(25), cancellation_date DATETIME NULL);",
+           # SIN columna id: la tabla real no la tiene (el 19-nov una consulta que contaba sph.id falló con la base real y las pruebas no lo vieron)
+           "CREATE TABLE subscription_profile_history (user_id INT, subscription_id INT, status VARCHAR(25), cancellation_date DATETIME NULL, plan_name VARCHAR(100) NULL);",
            # En producción es una VISTA que cruza otras bases; aquí una tabla con las mismas columnas.
            "CREATE TABLE vw_teacher_activities (teacher_name VARCHAR(200), invitation_code VARCHAR(100), sie VARCHAR(100), ore VARCHAR(100),"
            " school VARCHAR(250), school_number VARCHAR(50), from_period DATETIME, to_period DATETIME, "

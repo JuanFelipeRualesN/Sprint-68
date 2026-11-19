@@ -28,9 +28,9 @@ public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsig
 public record FilaSuscripcion(string Nombre, int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int TotalUsuarios);
 /// <summary>Con agrupar=total: una fila por estado.</summary>
 public record FilaEstadoSuscripcion(string Nombre, int Usuarios, double? PorcentajeDelTotal = null);
-/// <param name="ActivasConFechaDeCancelacionVencida">Usuarios «activos» (status active) cuya cancellation_date ya pasó o está vacía: la diferencia entre las dos definiciones de «activo».</param>
+/// <param name="ActivasConFechaDeCancelacionVencida">Usuarios «activos» (status active) cuya cancellation_date ya pasó o está vacía: la diferencia entre las dos definiciones de «activo». null si la columna de cancelación no existe.</param>
 /// <param name="EstadosOriginales">Usuarios por cada valor REAL de subscription_profile_history.status (para ver qué estados existen en la base).</param>
-public record ConteoSuscripcion(int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int ActivasConFechaDeCancelacionVencida, Dictionary<string, int> EstadosOriginales)
+public record ConteoSuscripcion(int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int? ActivasConFechaDeCancelacionVencida, Dictionary<string, int> EstadosOriginales)
 {
     public int Total => Activas + Inactivas + Canceladas + SinSuscripcion;
 }
