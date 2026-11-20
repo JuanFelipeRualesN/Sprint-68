@@ -54,6 +54,10 @@ public sealed class AsistenteFoundry
     readonly HttpClient _http;
     readonly TokenCredential _credencial;
     readonly string _endpoint, _modelo, _plantilla;
+    // Asistente:Credencial=apikey (mismo patrón que AIServicesAPI de gs-base-api): AzureOpenAI:Endpoint + AzureOpenAI:ApiKey; la llamada va al endpoint de Azure OpenAI con la cabecera api-key;
+    // _clave nunca se escribe en logs, respuestas ni mensajes de error.
+    readonly string? _clave;
+    readonly string _baseRespuestas;
     readonly JsonArray _herramientas = new();
     readonly Dictionary<string, string> _rutas = new();
     readonly ConcurrentDictionary<string, (string Id, DateTime Cuando, string Usuario)> _conversaciones = new();
@@ -67,13 +71,29 @@ public sealed class AsistenteFoundry
     {
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
         _endpoint = (cfg["Foundry:Endpoint"] ?? "https://chatbotaipowerbi.services.ai.azure.com/api/projects/proj-default").TrimEnd('/');
-        _modelo = cfg["Foundry:Modelo"] ?? "gpt-4.1-mini";
+        // Nombre del deployment: Foundry:Modelo; con apikey, si falta, el mismo nombre que usa AIServicesAPI (AppSettings:azure_openai_deployment).
+        _modelo = cfg["Foundry:Modelo"] ?? (string.Equals(cfg["Asistente:Credencial"]?.Trim(), "apikey", StringComparison.OrdinalIgnoreCase) ? cfg["AppSettings:azure_openai_deployment"] : null) ?? "gpt-4.1-mini";
         // Asistente:Credencial = azcli (desarrollo: la sesión de `az login`) | managed (Azure: identidad administrada del App Service, sin claves;
         // necesita el rol «Azure AI User» en el proyecto de Foundry; Asistente__ClientId elige una identidad asignada por el usuario) |
         // prueba (SOLO fuera de Production: token ficticio, para probar contra foundry_falso.py). Por defecto = managed.
         var cred = (cfg["Asistente:Credencial"] ?? "managed").Trim().ToLowerInvariant();
+        if (cred == "apikey")
+        {
+            // apikey (Azure sin el rol «Azure AI User»): clave en AzureOpenAI:ApiKey (variable AzureOpenAI__ApiKey: referencia @Microsoft.KeyVault(...) de App Service o secreto
+            // «AzureOpenAI--ApiKey» cargado con KeyVault:VaultUrl), nunca en archivos. Sin clave, la API no arranca.
+            _clave = cfg["AzureOpenAI:ApiKey"]?.Trim();
+            if (string.IsNullOrEmpty(_clave))
+                throw new InvalidOperationException("Asistente:Credencial=apikey exige la clave en AzureOpenAI:ApiKey (variable de entorno AzureOpenAI__ApiKey). No se leen claves de archivos.");
+            // Con clave se usa el endpoint del RECURSO de Azure OpenAI/Foundry (https://<recurso>.openai.azure.com o .services.ai.azure.com), no el del proyecto.
+            _baseRespuestas = (cfg["AzureOpenAI:Endpoint"] is { Length: > 0 } er ? er : "https://chatbotaipowerbi.openai.azure.com").Trim().TrimEnd('/');
+            var valida = Uri.TryCreate(_baseRespuestas, UriKind.Absolute, out var uriRec)
+                && (uriRec.Scheme == Uri.UriSchemeHttps || (!produccion && uriRec.Scheme == Uri.UriSchemeHttp && uriRec.IsLoopback));   // http solo en loopback y fuera de Production (Foundry falso)
+            if (!valida) throw new InvalidOperationException("AzureOpenAI:Endpoint debe ser una URL https (p. ej. https://chatbotaipowerbi.openai.azure.com).");
+        }
+        else _baseRespuestas = _endpoint;
         _credencial = cred switch
         {
+            "apikey" => new CredencialDePrueba(),                        // no se usa: con apikey nunca se pide token Entra (solo evita un campo nulo)
             "azcli" => new AzureCliCredential(),
             "prueba" when !produccion => new CredencialDePrueba(),      // produccion = IHostEnvironment.IsProduction() (también cuando no hay variable de entorno)
             _ => new DefaultAzureCredential(new DefaultAzureCredentialOptions
@@ -87,6 +107,7 @@ public sealed class AsistenteFoundry
     }
 
     public string Modelo => _modelo;
+    public bool UsaApiKey => _clave is not null;
     public int Herramientas => _herramientas.Count;
 
     // Las herramientas salen de openapi.json (el mismo contrato que usa el agente de Foundry): una sola fuente.
@@ -214,9 +235,10 @@ public sealed class AsistenteFoundry
     {
         for (var intento = 0; ; intento++)
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, _endpoint + "/openai/v1/responses")
+            using var req = new HttpRequestMessage(HttpMethod.Post, _baseRespuestas + "/openai/v1/responses")
             { Content = new StringContent(cuerpo.ToJsonString(), Encoding.UTF8, "application/json") };
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await TokenAsync(ct));
+            if (_clave is not null) req.Headers.TryAddWithoutValidation("api-key", _clave);       // con clave: api-key y SIN Authorization
+            else req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await TokenAsync(ct));
             using var resp = await _http.SendAsync(req, ct);
             var texto = await resp.Content.ReadAsStringAsync(ct);
             if (resp.StatusCode == HttpStatusCode.TooManyRequests && intento == 0) { await Task.Delay(2500, ct); continue; }
@@ -380,8 +402,18 @@ public sealed class AsistenteFoundry
     /// El modelo cierra con «Referencias: …» (útil en el arnés de pruebas); en el panel se muestran las de la API, así que NINGÚN bloque de
     /// referencias puede quedar en la respuesta (ni al final, ni en medio, ni en línea con el texto) y el texto debe salir UNA sola vez.
     /// </summary>
-    static readonly Regex BloqueReferencias = new(@"Referencias:\s*consulta=.*?(?:generado=\S+|(?=\n\s*\n)|\z)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    static readonly Regex LineaReferencias = new(@"(?im)^[ \t]*Referencias:.*(?:\n|\z)", RegexOptions.Compiled);
+    // Independiente del idioma y del formato: la rótulo (Referencias/References/Fuentes/Sources, con o sin markdown: **, _, #, >, viñeta, `, con los dos puntos dentro
+    // o fuera de la negrita, en la misma línea o en la anterior) es opcional; lo que identifica el bloque es el patrón «consulta=…; fuente=…» (o «query=…; source=…»)
+    // hasta «generado=…»/«generated=…», el fin del párrafo o del texto.
+    const string Marca = @"[*_`#>•\-]";
+    static readonly Regex BloqueReferencias = new(
+        @"(?:(?:" + Marca + @"+[ \t]*)*(?:referencias?|references?|fuentes?|sources?)[ \t]*" + Marca + @"*[ \t]*:?[ \t]*" + Marca + @"*\s*)?" +
+        @"(?:consulta|query)[ \t]*=[^;\n]{0,200};\s*(?:fuente|source)[ \t]*=.*?(?:(?:generado|generated)[ \t]*=[^\s]*|(?=\n[ \t]*\n)|\z)" + Marca + @"*[.]?" + Marca + @"*",
+        RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    // Un rótulo suelto («Referencias:» / «References:» al inicio de línea) quita toda la línea; «Fuentes:»/«Sources:» solo si la línea trae pares clave=valor.
+    static readonly Regex LineaReferencias = new(
+        @"(?im)^[ \t]*(?:" + Marca + @"+[ \t]*)*(?:(?:referencias?|references?)[ \t]*" + Marca + @"*[ \t]*:|(?:fuentes?|sources?)[ \t]*" + Marca + @"*[ \t]*:(?=[^\n]*\w[\w ]*=))[^\n]*(?:\n|\z)",
+        RegexOptions.Compiled);
     static string QuitarBloqueReferencias(string texto)
     {
         var t = BloqueReferencias.Replace(texto, " ");

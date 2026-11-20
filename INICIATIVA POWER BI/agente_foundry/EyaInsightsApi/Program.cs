@@ -6,6 +6,24 @@ using EyaInsightsApi;
 using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
+// Key Vault como configuración (mismo patrón que GSBaseAPI): si hay KeyVault:VaultUrl, los secretos (p. ej. «AzureOpenAI--ApiKey») entran como configuración.
+// Es opcional: una referencia @Microsoft.KeyVault(...) en App Service entrega el mismo valor como variable de entorno (AzureOpenAI__ApiKey) y no necesita esto.
+if (builder.Configuration["KeyVault:VaultUrl"] is { Length: > 0 } vaultUrl)
+{
+    try
+    {
+        builder.Configuration.AddAzureKeyVault(new Uri(vaultUrl), new Azure.Identity.DefaultAzureCredential(new Azure.Identity.DefaultAzureCredentialOptions
+        {
+            ExcludeInteractiveBrowserCredential = true,
+            ManagedIdentityClientId = string.IsNullOrWhiteSpace(builder.Configuration["Asistente:ClientId"]) ? null : builder.Configuration["Asistente:ClientId"],
+        }));
+        Console.WriteLine("Key Vault configurado como fuente de configuración.");
+    }
+    catch (Exception e) when (builder.Environment.IsDevelopment())
+    {
+        Console.WriteLine($"Key Vault no disponible ({e.GetType().Name}); se sigue sin él en desarrollo.");      // fuera de Development el error detiene el arranque
+    }
+}
 // Autenticación (Fase 4 · A1): Auth:Modo = local (solo desarrollo, solo loopback) | plataforma (Token de la plataforma validado en UsersAPI).
 // En Production solo vale «plataforma» y Auth:UsersApiUrl es obligatoria: si falta, la API no arranca.
 var auth = AuthOpciones.Leer(builder.Configuration);
@@ -140,7 +158,8 @@ if (asistenteOn)
                                   || (e is ErrorFoundry ef && ef.Estado is 401 or 403))
         {
             Console.WriteLine($"Asistente: sin acceso al modelo ({e.GetType().Name}).");
-            return Results.Json(new { error = "sin_acceso_al_modelo", mensaje = "El servicio no pudo autenticarse con Azure AI Foundry (¿az login vigente?)." }, statusCode: 503);
+            var ayuda = app.Services.GetRequiredService<AsistenteFoundry>().UsaApiKey ? "¿clave de Foundry válida para ese endpoint?" : "¿az login vigente?";
+            return Results.Json(new { error = "sin_acceso_al_modelo", mensaje = $"El servicio no pudo autenticarse con Azure AI Foundry ({ayuda})." }, statusCode: 503);
         }
         catch (Exception e) when (e is ErrorFoundry or HttpRequestException or TaskCanceledException)
         {
