@@ -54,7 +54,8 @@ public sealed class AsistenteFoundry
     readonly HttpClient _http;
     readonly TokenCredential _credencial;
     readonly string _endpoint, _modelo, _plantilla;
-    // Asistente:Credencial=apikey: la llamada va al ENDPOINT DEL RECURSO (Foundry:EndpointRecurso) con la cabecera api-key; _clave nunca se escribe en logs, respuestas ni mensajes de error.
+    // Asistente:Credencial=apikey (mismo patrón que AIServicesAPI de gs-base-api): AzureOpenAI:Endpoint + AzureOpenAI:ApiKey; la llamada va al endpoint de Azure OpenAI con la cabecera api-key;
+    // _clave nunca se escribe en logs, respuestas ni mensajes de error.
     readonly string? _clave;
     readonly string _baseRespuestas;
     readonly JsonArray _herramientas = new();
@@ -70,22 +71,24 @@ public sealed class AsistenteFoundry
     {
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
         _endpoint = (cfg["Foundry:Endpoint"] ?? "https://chatbotaipowerbi.services.ai.azure.com/api/projects/proj-default").TrimEnd('/');
-        _modelo = cfg["Foundry:Modelo"] ?? "gpt-4.1-mini";
+        // Nombre del deployment: Foundry:Modelo; con apikey, si falta, el mismo nombre que usa AIServicesAPI (AppSettings:azure_openai_deployment).
+        _modelo = cfg["Foundry:Modelo"] ?? (string.Equals(cfg["Asistente:Credencial"]?.Trim(), "apikey", StringComparison.OrdinalIgnoreCase) ? cfg["AppSettings:azure_openai_deployment"] : null) ?? "gpt-4.1-mini";
         // Asistente:Credencial = azcli (desarrollo: la sesión de `az login`) | managed (Azure: identidad administrada del App Service, sin claves;
         // necesita el rol «Azure AI User» en el proyecto de Foundry; Asistente__ClientId elige una identidad asignada por el usuario) |
         // prueba (SOLO fuera de Production: token ficticio, para probar contra foundry_falso.py). Por defecto = managed.
         var cred = (cfg["Asistente:Credencial"] ?? "managed").Trim().ToLowerInvariant();
         if (cred == "apikey")
         {
-            // apikey (Azure sin el rol «Azure AI User»): clave de Foundry en Foundry__ApiKey (en App Service, referencia a Key Vault), nunca en archivos. Sin clave, la API no arranca.
-            _clave = cfg["Foundry:ApiKey"]?.Trim();
+            // apikey (Azure sin el rol «Azure AI User»): clave en AzureOpenAI:ApiKey (variable AzureOpenAI__ApiKey: referencia @Microsoft.KeyVault(...) de App Service o secreto
+            // «AzureOpenAI--ApiKey» cargado con KeyVault:VaultUrl), nunca en archivos. Sin clave, la API no arranca.
+            _clave = cfg["AzureOpenAI:ApiKey"]?.Trim();
             if (string.IsNullOrEmpty(_clave))
-                throw new InvalidOperationException("Asistente:Credencial=apikey exige la clave de Foundry en Foundry:ApiKey (variable de entorno Foundry__ApiKey). No se leen claves de archivos.");
-            // Con clave se usa el endpoint del RECURSO (https://<recurso>.services.ai.azure.com o .openai.azure.com), no el del proyecto.
-            _baseRespuestas = (cfg["Foundry:EndpointRecurso"] is { Length: > 0 } er ? er : "https://chatbotaipowerbi.services.ai.azure.com").Trim().TrimEnd('/');
+                throw new InvalidOperationException("Asistente:Credencial=apikey exige la clave en AzureOpenAI:ApiKey (variable de entorno AzureOpenAI__ApiKey). No se leen claves de archivos.");
+            // Con clave se usa el endpoint del RECURSO de Azure OpenAI/Foundry (https://<recurso>.openai.azure.com o .services.ai.azure.com), no el del proyecto.
+            _baseRespuestas = (cfg["AzureOpenAI:Endpoint"] is { Length: > 0 } er ? er : "https://chatbotaipowerbi.openai.azure.com").Trim().TrimEnd('/');
             var valida = Uri.TryCreate(_baseRespuestas, UriKind.Absolute, out var uriRec)
                 && (uriRec.Scheme == Uri.UriSchemeHttps || (!produccion && uriRec.Scheme == Uri.UriSchemeHttp && uriRec.IsLoopback));   // http solo en loopback y fuera de Production (Foundry falso)
-            if (!valida) throw new InvalidOperationException("Foundry:EndpointRecurso debe ser una URL https (p. ej. https://chatbotaipowerbi.services.ai.azure.com).");
+            if (!valida) throw new InvalidOperationException("AzureOpenAI:Endpoint debe ser una URL https (p. ej. https://chatbotaipowerbi.openai.azure.com).");
         }
         else _baseRespuestas = _endpoint;
         _credencial = cred switch

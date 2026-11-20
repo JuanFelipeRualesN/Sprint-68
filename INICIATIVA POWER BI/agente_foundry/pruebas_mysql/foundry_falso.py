@@ -75,7 +75,7 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("Content-Length") or 0)
         d = json.loads(self.rfile.read(n) or b"{}")
-        ULTIMAS["cabeceras"] = {"api_key": self.headers.get("api-key"), "authorization": self.headers.get("Authorization"), "ruta": self.path}
+        ULTIMAS["cabeceras"] = {"api_key": self.headers.get("api-key"), "authorization": self.headers.get("Authorization"), "ruta": self.path, "modelo": d.get("model")}
         if CLAVE_EXIGIDA is not None and self.headers.get("api-key") != CLAVE_EXIGIDA:
             cuerpo = json.dumps({"error": {"code": "401", "message": f"Access denied due to invalid subscription key: {self.headers.get('api-key')}"}}).encode()
             self.send_response(401)

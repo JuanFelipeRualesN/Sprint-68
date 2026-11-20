@@ -72,22 +72,30 @@ print(json.dumps(json.loads(urllib.request.urlopen(sys.argv[1] + "/instrucciones
 PY
 }
 preguntar() { curl -s -o /tmp/eya_resp.json -w "%{http_code}" -H "Token: tok-ore2" -H "Content-Type: application/json" -d '{"pregunta":"hola"}' http://127.0.0.1:5101/asistente/preguntar; }
-arrancar paridad plataforma Asistente__Credencial=apikey Foundry__ApiKey=$CLAVE Foundry__EndpointRecurso=http://127.0.0.1:5198
+arrancar paridad plataforma Asistente__Credencial=apikey AzureOpenAI__ApiKey=$CLAVE AzureOpenAI__Endpoint=http://127.0.0.1:5198
 resp=$(preguntar); cab=$(cabeceras http://127.0.0.1:5198)
 if [ "$resp" = 200 ] && python3 - "$cab" "$CLAVE" <<'PY'
 import json, sys
 c = json.loads(sys.argv[1]); assert c["api_key"] == sys.argv[2] and c["authorization"] is None and c["ruta"] == "/openai/v1/responses", c
 PY
 then echo "apikey: llega api-key al endpoint del recurso (/openai/v1/responses), sin Authorization ✓"; else echo "apikey: cabeceras ✗ (HTTP $resp, $cab)"; fallo=1; fi
+modelo=$(python3 -c "import json,sys,urllib.request;print(json.loads(urllib.request.urlopen('http://127.0.0.1:5198/instrucciones',timeout=10).read())['cabeceras']['modelo'])")
+[ "$modelo" = gpt-4.1-mini ] && echo "apikey: sin nombre de deployment configurado usa el modelo por defecto ✓" || { echo "apikey: modelo por defecto ✗ ($modelo)"; fallo=1; }
 if ! grep -rq "$CLAVE" /tmp/eya_api.log /tmp/eya_resp.json; then echo "apikey: la clave no aparece en el log ni en la respuesta ✓"; else echo "apikey: la clave se filtró ✗"; fallo=1; fi
 # clave rechazada: un Foundry falso que exige otra clave y contesta 401 repitiendo la que recibió
+arrancar paridad plataforma Asistente__Credencial=apikey AzureOpenAI__ApiKey=$CLAVE AzureOpenAI__Endpoint=http://127.0.0.1:5198 AppSettings__azure_openai_deployment=mi-deployment-uat
+resp=$(preguntar); modelo=$(python3 -c "import json,urllib.request;print(json.loads(urllib.request.urlopen('http://127.0.0.1:5198/instrucciones',timeout=10).read())['cabeceras']['modelo'])")
+[ "$resp" = 200 ] && [ "$modelo" = mi-deployment-uat ] && echo "apikey: el deployment sale de AppSettings:azure_openai_deployment (el mismo de AIServicesAPI) ✓" || { echo "apikey: deployment ✗ (HTTP $resp, $modelo)"; fallo=1; }
+arrancar paridad plataforma Asistente__Credencial=apikey AzureOpenAI__ApiKey=$CLAVE AzureOpenAI__Endpoint=http://127.0.0.1:5198 Foundry__Modelo=otro-modelo AppSettings__azure_openai_deployment=mi-deployment-uat
+resp=$(preguntar); modelo=$(python3 -c "import json,urllib.request;print(json.loads(urllib.request.urlopen('http://127.0.0.1:5198/instrucciones',timeout=10).read())['cabeceras']['modelo'])")
+[ "$resp" = 200 ] && [ "$modelo" = otro-modelo ] && echo "apikey: Foundry:Modelo manda sobre AppSettings:azure_openai_deployment ✓" || { echo "apikey: prioridad del deployment ✗ ($modelo)"; fallo=1; }
 FOUNDRY_FALSO_CLAVE=$CLAVE python3 "$AQUI/foundry_falso.py" 5197 & S3=$!
-arrancar paridad plataforma Asistente__Credencial=apikey Foundry__ApiKey=clave-mala-que-no-debe-salir-9x2 Foundry__EndpointRecurso=http://127.0.0.1:5197
+arrancar paridad plataforma Asistente__Credencial=apikey AzureOpenAI__ApiKey=clave-mala-que-no-debe-salir-9x2 AzureOpenAI__Endpoint=http://127.0.0.1:5197
 resp=$(preguntar)
 if [ "$resp" = 503 ] && grep -q '"sin_acceso_al_modelo"' /tmp/eya_resp.json && ! grep -rq "clave-mala-que-no-debe-salir-9x2" /tmp/eya_api.log /tmp/eya_resp.json; then
   echo "apikey: clave rechazada por Foundry (401 que repite la clave) → 503 sin_acceso_al_modelo y la clave no sale en el log ni en la respuesta ✓"
 else echo "apikey: error de Foundry ✗ (HTTP $resp)"; cat /tmp/eya_resp.json; fallo=1; fi
-arrancar paridad plataforma Asistente__Credencial=apikey Foundry__ApiKey=$CLAVE Foundry__EndpointRecurso=http://127.0.0.1:5197
+arrancar paridad plataforma Asistente__Credencial=apikey AzureOpenAI__ApiKey=$CLAVE AzureOpenAI__Endpoint=http://127.0.0.1:5197
 resp=$(preguntar)
 [ "$resp" = 200 ] && echo "apikey: con la clave correcta el Foundry que la exige responde ✓" || { echo "apikey: clave correcta ✗ (HTTP $resp)"; fallo=1; }
 kill $S3 2>/dev/null
@@ -105,8 +113,8 @@ revisar_falla() { # $1 = descripción, $2 = texto que debe decir el motivo; el r
   elif grep -q "$t" /tmp/eya_arranque.log; then echo "arranque ✓ $d (dice por qué)"; else echo "arranque ✗ $d (no explica el motivo)"; fallo=1; fi
 }
 BASE_PROD="ASPNETCORE_ENVIRONMENT=Production Auth__Modo=plataforma Auth__UsersApiUrl=https://u.invalid Cors__Origenes=https://front.ejemplo.invalid Asistente__Habilitado=true"
-revisar_falla "apikey sin clave no arranca" "Foundry__ApiKey" ASPNETCORE_URLS=http://127.0.0.1:5116 $BASE_PROD Asistente__Credencial=apikey
-revisar_falla "apikey con EndpointRecurso no https no arranca en Production" "EndpointRecurso" ASPNETCORE_URLS=http://127.0.0.1:5117 $BASE_PROD Asistente__Credencial=apikey Foundry__ApiKey=clave-prod-xyz-5521 Foundry__EndpointRecurso=http://127.0.0.1:5198
-( cd "$API" && env ASPNETCORE_URLS=http://127.0.0.1:5118 $BASE_PROD Asistente__Credencial=apikey Foundry__ApiKey=clave-prod-xyz-5521 timeout 8 dotnet bin/Debug/net8.0/EyaInsightsApi.dll >/tmp/eya_arranque.log 2>&1 ); rc=$?
+revisar_falla "apikey sin clave no arranca" "AzureOpenAI__ApiKey" ASPNETCORE_URLS=http://127.0.0.1:5116 $BASE_PROD Asistente__Credencial=apikey
+revisar_falla "apikey con AzureOpenAI__Endpoint no https no arranca en Production" "AzureOpenAI:Endpoint" ASPNETCORE_URLS=http://127.0.0.1:5117 $BASE_PROD Asistente__Credencial=apikey AzureOpenAI__ApiKey=clave-prod-xyz-5521 AzureOpenAI__Endpoint=http://127.0.0.1:5198
+( cd "$API" && env ASPNETCORE_URLS=http://127.0.0.1:5118 $BASE_PROD Asistente__Credencial=apikey AzureOpenAI__ApiKey=clave-prod-xyz-5521 timeout 8 dotnet bin/Debug/net8.0/EyaInsightsApi.dll >/tmp/eya_arranque.log 2>&1 ); rc=$?
 if [ $rc = 124 ] && ! grep -q "clave-prod-xyz-5521" /tmp/eya_arranque.log; then echo "arranque ✓ Production con apikey y clave arranca (y no escribe la clave)"; else echo "arranque ✗ Production con apikey (código $rc)"; tail -3 /tmp/eya_arranque.log; fallo=1; fi
 exit $fallo
