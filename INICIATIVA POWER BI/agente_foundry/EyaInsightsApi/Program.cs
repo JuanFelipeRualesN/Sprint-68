@@ -140,7 +140,8 @@ if (asistenteOn)
                                   || (e is ErrorFoundry ef && ef.Estado is 401 or 403))
         {
             Console.WriteLine($"Asistente: sin acceso al modelo ({e.GetType().Name}).");
-            return Results.Json(new { error = "sin_acceso_al_modelo", mensaje = "El servicio no pudo autenticarse con Azure AI Foundry (¿az login vigente?)." }, statusCode: 503);
+            var ayuda = app.Services.GetRequiredService<AsistenteFoundry>().UsaApiKey ? "¿clave de Foundry válida para ese endpoint?" : "¿az login vigente?";
+            return Results.Json(new { error = "sin_acceso_al_modelo", mensaje = $"El servicio no pudo autenticarse con Azure AI Foundry ({ayuda})." }, statusCode: 503);
         }
         catch (Exception e) when (e is ErrorFoundry or HttpRequestException or TaskCanceledException)
         {

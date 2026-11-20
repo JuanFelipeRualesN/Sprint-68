@@ -30,6 +30,7 @@
 - **Auditoría:** una línea de log por exportación y por descarga (`usuario`, rol, alcance, consulta, filas), sin Token ni datos.
 - `/exportar` no está en `openapi.json` a propósito: el asistente convierte cada `path` de ese archivo en una herramienta del modelo.
 - Variables de despliegue y supuestos pendientes: `DISENO_AUTH.md` §7.
+- **Foundry con API key:** `Asistente__Credencial=apikey` + `Foundry__ApiKey` (secreto; en App Service la referencia `@Microsoft.KeyVault(SecretUri=https://kv-eya-msj-uat.vault.azure.net/secrets/FOUNDRY-API-KEY/)`) + `Foundry__EndpointRecurso` (por defecto `https://chatbotaipowerbi.services.ai.azure.com`; alterno `https://chatbotaipowerbi.openai.azure.com`). Llama a `{EndpointRecurso}/openai/v1/responses` con la cabecera `api-key`. Sin clave la API no arranca. **No está probado contra el Foundry real**, solo contra el Foundry falso.
 - **Topes internos:** las consultas por maestro (5000) y por escuela (1000) traen la lista entera para dar totales y porcentajes. Si hay más, el resultado se corta y la nota lleva `HAY MÁS FILAS` (la hoja `Referencias` dice «Lista completa: NO» y la gráfica trae `hay_mas_filas: true`); los totales y % cubren solo las filas consideradas.
 
 ## Diagnóstico de fallos de base y configuración de columnas

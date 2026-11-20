@@ -54,6 +54,9 @@ public sealed class AsistenteFoundry
     readonly HttpClient _http;
     readonly TokenCredential _credencial;
     readonly string _endpoint, _modelo, _plantilla;
+    // Asistente:Credencial=apikey: la llamada va al ENDPOINT DEL RECURSO (Foundry:EndpointRecurso) con la cabecera api-key; _clave nunca se escribe en logs, respuestas ni mensajes de error.
+    readonly string? _clave;
+    readonly string _baseRespuestas;
     readonly JsonArray _herramientas = new();
     readonly Dictionary<string, string> _rutas = new();
     readonly ConcurrentDictionary<string, (string Id, DateTime Cuando, string Usuario)> _conversaciones = new();
@@ -72,8 +75,22 @@ public sealed class AsistenteFoundry
         // necesita el rol «Azure AI User» en el proyecto de Foundry; Asistente__ClientId elige una identidad asignada por el usuario) |
         // prueba (SOLO fuera de Production: token ficticio, para probar contra foundry_falso.py). Por defecto = managed.
         var cred = (cfg["Asistente:Credencial"] ?? "managed").Trim().ToLowerInvariant();
+        if (cred == "apikey")
+        {
+            // apikey (Azure sin el rol «Azure AI User»): clave de Foundry en Foundry__ApiKey (en App Service, referencia a Key Vault), nunca en archivos. Sin clave, la API no arranca.
+            _clave = cfg["Foundry:ApiKey"]?.Trim();
+            if (string.IsNullOrEmpty(_clave))
+                throw new InvalidOperationException("Asistente:Credencial=apikey exige la clave de Foundry en Foundry:ApiKey (variable de entorno Foundry__ApiKey). No se leen claves de archivos.");
+            // Con clave se usa el endpoint del RECURSO (https://<recurso>.services.ai.azure.com o .openai.azure.com), no el del proyecto.
+            _baseRespuestas = (cfg["Foundry:EndpointRecurso"] is { Length: > 0 } er ? er : "https://chatbotaipowerbi.services.ai.azure.com").Trim().TrimEnd('/');
+            var valida = Uri.TryCreate(_baseRespuestas, UriKind.Absolute, out var uriRec)
+                && (uriRec.Scheme == Uri.UriSchemeHttps || (!produccion && uriRec.Scheme == Uri.UriSchemeHttp && uriRec.IsLoopback));   // http solo en loopback y fuera de Production (Foundry falso)
+            if (!valida) throw new InvalidOperationException("Foundry:EndpointRecurso debe ser una URL https (p. ej. https://chatbotaipowerbi.services.ai.azure.com).");
+        }
+        else _baseRespuestas = _endpoint;
         _credencial = cred switch
         {
+            "apikey" => new CredencialDePrueba(),                        // no se usa: con apikey nunca se pide token Entra (solo evita un campo nulo)
             "azcli" => new AzureCliCredential(),
             "prueba" when !produccion => new CredencialDePrueba(),      // produccion = IHostEnvironment.IsProduction() (también cuando no hay variable de entorno)
             _ => new DefaultAzureCredential(new DefaultAzureCredentialOptions
@@ -87,6 +104,7 @@ public sealed class AsistenteFoundry
     }
 
     public string Modelo => _modelo;
+    public bool UsaApiKey => _clave is not null;
     public int Herramientas => _herramientas.Count;
 
     // Las herramientas salen de openapi.json (el mismo contrato que usa el agente de Foundry): una sola fuente.
@@ -214,9 +232,10 @@ public sealed class AsistenteFoundry
     {
         for (var intento = 0; ; intento++)
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, _endpoint + "/openai/v1/responses")
+            using var req = new HttpRequestMessage(HttpMethod.Post, _baseRespuestas + "/openai/v1/responses")
             { Content = new StringContent(cuerpo.ToJsonString(), Encoding.UTF8, "application/json") };
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await TokenAsync(ct));
+            if (_clave is not null) req.Headers.TryAddWithoutValidation("api-key", _clave);       // con clave: api-key y SIN Authorization
+            else req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await TokenAsync(ct));
             using var resp = await _http.SendAsync(req, ct);
             var texto = await resp.Content.ReadAsStringAsync(ct);
             if (resp.StatusCode == HttpStatusCode.TooManyRequests && intento == 0) { await Task.Delay(2500, ct); continue; }

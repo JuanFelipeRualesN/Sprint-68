@@ -185,8 +185,10 @@ Orden: **A1 ∥ A2 ∥ A5 → A3 ∥ A4 → A6** (A7 opcional, tras A3). Un PR p
 | `Auth__CacheSegundos` | `60` (por defecto) | Caché de sesión válida; las inválidas, 10 s; los fallos de UsersAPI no se cachean. |
 | `Cors__Origenes` | `https://<front dev>,https://<front uat>,…` | **Pendiente del usuario.** Sin `*`. |
 | `Asistente__Habilitado` | `true` | Activa `/asistente/*`. |
-| `Asistente__Credencial` | `managed` | Identidad administrada hacia Foundry (rol «Azure AI User» sobre el proyecto). `azcli` solo en desarrollo. |
-| `Foundry__Endpoint`, `Foundry__Modelo` | del proyecto de Foundry | Ya tienen valor por defecto; revisar por ambiente. |
+| `Asistente__Credencial` | `managed` **o** `apikey` | `managed`: identidad administrada hacia Foundry (rol «Azure AI User» sobre el proyecto). `apikey`: clave de Foundry (cuando no se puede asignar ese rol; ver abajo). `azcli` solo en desarrollo y `prueba` solo fuera de Production. |
+| `Foundry__ApiKey` | secreto en Key Vault | Solo con `Asistente__Credencial=apikey` (obligatoria: sin ella la API no arranca y dice por qué). En App Service: `@Microsoft.KeyVault(SecretUri=https://kv-eya-msj-uat.vault.azure.net/secrets/FOUNDRY-API-KEY/)`. Nunca en archivos, logs, respuestas ni mensajes de error. |
+| `Foundry__EndpointRecurso` | `https://chatbotaipowerbi.services.ai.azure.com` | Solo con `apikey`: endpoint del **recurso** (no del proyecto). Si ese host no acepta la clave, probar `https://chatbotaipowerbi.openai.azure.com`. En Production debe ser https. |
+| `Foundry__Endpoint`, `Foundry__Modelo` | del proyecto de Foundry | Ya tienen valor por defecto; revisar por ambiente. `Foundry__Endpoint` (proyecto) lo usan `managed`/`azcli`; con `apikey` no se usa. |
 | `EYA_API_KEY` | secreto en Key Vault | Identidad de servicio del agente en la nube. Vacío = no existe esa identidad. |
 | `Datos__Origen=mysql`, `EYA_MYSQL` (o `EYA_MYSQL_HOST/_USER/_PASSWORD`) | cadena desde Key Vault | Cuenta de solo lectura. |
 
@@ -203,3 +205,9 @@ Pendiente del usuario en Azure: (a) URL de UsersAPI por ambiente; (b) dominios d
 - **Probado** (MySQL 8 local con datos sintéticos, UsersAPI y Foundry **falsos**): `pruebas_mysql/correr_pruebas_auth.sh` → local **190/190** y plataforma **239/239** en `paridad`, `dominio` e `incluir`; pruebas del panel (jest) 20/20; 6 comprobaciones de arranque (loopback / Production) en el script.
 - **No probado:** UsersAPI real (el formato de la respuesta se tomó del código de gs-base-api), Foundry real (identidad administrada, modelo, instrucciones), el despliegue en Azure, el navegador con la sesión real y la prueba de los roles reales (OreId / director).
 - **Hallazgo de §6 sin cambios:** `LoginProcessSSO` con `ValidateIssuer = false`; fuera de alcance.
+
+### Foundry con API key (`Asistente__Credencial=apikey`)
+- **Por qué:** en Azure no se pudo asignar «Azure AI User» a la identidad administrada del App Service; la administración de Azure pidió usar la API key de Foundry, como el resto de los servicios con IA.
+- **Qué cambia:** la API llama a `{Foundry__EndpointRecurso}/openai/v1/responses` (endpoint del recurso, por defecto `https://chatbotaipowerbi.services.ai.azure.com`) con la cabecera `api-key: <clave>` y **sin** `Authorization` ni token Entra. El cuerpo es el mismo (`model` = `Foundry__Modelo`, `instructions`, `input`, herramientas). Con `managed`/`azcli` nada cambia (Bearer al endpoint del proyecto).
+- **Arranque:** con `apikey` y sin `Foundry__ApiKey` la API no arranca («exige la clave de Foundry en Foundry:ApiKey»); un `Foundry__EndpointRecurso` que no sea https tampoco arranca en Production. La clave se lee solo de la configuración por variable de entorno (la referencia de Key Vault la resuelve App Service) y no se escribe en ningún log ni respuesta; si Foundry responde 401/403 el cliente recibe `503 sin_acceso_al_modelo` sin el cuerpo de Foundry.
+- **NO probado contra el Foundry real** (sin acceso desde el entorno de desarrollo): solo con el Foundry falso (cabecera `api-key` presente, `Authorization` ausente, ruta `/openai/v1/responses`, la clave no sale en log ni respuestas). Pendiente verificar en UAT que el host `*.services.ai.azure.com` acepta la clave en `/openai/v1/responses` (si no, `Foundry__EndpointRecurso=https://chatbotaipowerbi.openai.azure.com`) y que el modelo `Foundry__Modelo` existe como despliegue de ese recurso.
