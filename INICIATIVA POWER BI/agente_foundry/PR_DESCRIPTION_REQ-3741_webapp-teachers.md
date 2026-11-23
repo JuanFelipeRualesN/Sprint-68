@@ -22,10 +22,17 @@ The panel uses plain `axios` with `getAuthHeaders()` (the helper the AI module u
 Produced with a test harness that runs the real panel, API layer and contract mapper with the network faked (desktop es, expanded chart, en, mobile). Not attached here.
 
 ## Test results
-- Jest: 7 suites, 100 tests pass (panel, expanded chart, chart types, config, API layer, contract mapper, dashboard mount).
+- Jest: 7 suites, 102 tests pass on the repo's pinned Jest 23.6.0 and also on Jest 27 (panel, expanded chart, chart types, config, API layer, contract mapper, dashboard mount).
 - Lint (CRA `react-app` config; the repo has no lint config): 0 errors, 53 warnings, identical to `main`. No new warnings.
 - `react-scripts build` (`.env.msj-dev`): compiled successfully.
-- The repo's own test setup is broken: `npm test` points to a missing `scripts/test.js`, `react-scripts test` rejects the stale `jest` block of `package.json`, and `yarn.lock` cannot be parsed (the pipeline uses `npm install --force`). Tests were run with Jest 27 and a local config kept outside the repo. No tooling changes are in this PR.
+
+### How the tests were run (the repo's `npm test` was already broken before this ticket)
+`npm test` runs `node scripts/test.js`, but neither `scripts/test.js` nor the `config/jest/*` transforms referenced by the `jest` block of `package.json` are in the repo; `react-scripts test` rejects that stale `jest` block; and `yarn.lock` cannot be parsed (the pipeline uses `npm install --force`). This PR does not change any of that. The suites were run with Jest 23.6.0 and a local config kept outside the repo (Babel 7 with `babel-preset-react-app` and `babel-plugin-jest-hoist`, CRA's CSS/file transforms, jsdom), and again with Jest 27 from `react-scripts`. A follow-up ticket should version `scripts/test.js` and `config/jest` (or move to `react-scripts test`) so `npm test` works.
+
+## Review fixes
+- M4: `config.test.js` uses `jest.resetModules()` instead of `jest.isolateModules()` (not available in Jest 23).
+- C4: `Language` is always sent in the ask body (the panel's current language, `es` if none). The backend uses it first and falls back to `Accept-Language`.
+- C1/C2/C3: the front reads `References[].HasMoreRows`, `Summary` (`Ties`) and `Note`, and the error codes `ai_disabled` and `quota_exceeded` (with the `http_429` fallback). Both codes are covered by tests.
 
 ## Enable the flag per environment
 In `.env.<environment>` set `REACT_APP_DATA_ASSISTANT_AVAILABLE = true` and rebuild. Every environment ships with `false`. Enable it only after the backend routes are deployed in that environment. Only the exact value `true` enables it.
