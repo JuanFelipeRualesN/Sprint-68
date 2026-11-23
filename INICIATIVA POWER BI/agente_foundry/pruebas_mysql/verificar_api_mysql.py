@@ -1227,6 +1227,22 @@ if AUTH:
                   (st, r["respuesta"].count(TEXTO_FALSO), "Referencias" in r["respuesta"], "consulta=" in r["respuesta"], len(r["referencias"]) >= 1),
                   (200, 1, False, False, True))
         igual("asistente: la respuesta normal no se toca", pregunta("tok-ore2", "hola")[1]["respuesta"], "Listo.")
+        # referencias fuera del texto, en cualquier idioma y formato (ES, EN, negrita, «Sources», sin rótulo, en medio de la frase)
+        TEXTO_EN = "There are 110 active users, 18 canceled and 8 without a subscription."
+        for caso, texto in (("REF_EN", TEXTO_EN), ("REF_NEGRITA", TEXTO_EN), ("REF_FUENTES", TEXTO_EN), ("REF_FUENTES_ES", TEXTO_FALSO), ("REF_SIN_ROTULO", TEXTO_EN),
+                            ("REF_ES_NEGRITA", TEXTO_FALSO), ("REF_MEDIO_EN", TEXTO_EN)):
+            st, r = pregunta("tok-ore2", f"SUSCRIPCION {caso}")
+            igual(f"asistente ({caso}): sin referencias en el texto (ni rótulo ni «consulta=»), conserva el texto y sigue llegando la referencia de la API",
+                  (st, r["respuesta"].startswith(texto), "consulta=" in r["respuesta"], "fuente=" in r["respuesta"], "generado=" in r["respuesta"],
+                   any(w in r["respuesta"].lower() for w in ("referencias", "references", "fuentes", "sources")), len(r["referencias"]) >= 1),
+                  (200, True, False, False, False, False, True))
+        st, r = pregunta("tok-ore2", "SUSCRIPCION REF_MEDIO_EN")
+        igual("asistente (REF_MEDIO_EN): lo que va DESPUÉS del bloque en medio de la frase se conserva", "Ask me if you want a breakdown by school." in r["respuesta"], True)
+        st, r = pregunta("tok-ore2", "SUSCRIPCION REF_EN", idioma="en")
+        igual("asistente en inglés: sigue llegando la gráfica (dona) y la descarga, igual que en español (el idioma no afecta los adjuntos)",
+              (st, len(r.get("graficas") or []), (r.get("graficas") or [{}])[0].get("variante"), len(r.get("descargas") or [])), (200, 1, "dona", 1))
+        st, r = pregunta("tok-ore2", "SUSCRIPCION REF_EN")
+        igual("asistente en español: la misma gráfica y descarga", (len(r.get("graficas") or []), len(r.get("descargas") or [])), (1, 1))
         igual("asistente: la API manda a Foundry las reglas del agente (porcentajes > 100 y listas cortadas)",
               ("4f." in enviadas and "pasa de 100" in enviadas, "4g." in enviadas and "POR QUÉ" in enviadas), (True, True))
         _hoy = (dt.datetime.utcnow() - dt.timedelta(hours=4)).date()           # el servicio lee el día en hora de Puerto Rico
