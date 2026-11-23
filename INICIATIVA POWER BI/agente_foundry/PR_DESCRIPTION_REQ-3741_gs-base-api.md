@@ -1,6 +1,6 @@
 # REQ-3741: Power BI data assistant (usage insights + assistant) — gs-base-api
 
-Base: `main` (ac9c9d0). Target: `uat`. Branch `req-3741`, 20 commits, one or more per task (`REQ-3741 Bn: ...`).
+Base: `main` (ac9c9d0). Target: `uat`. Branch `req-3741`, 19 commits, one or more per task (`REQ-3741 Bn: ...`).
 
 ## Summary
 
@@ -31,8 +31,8 @@ The MVP (`EyaInsightsApi`) moves into the monolith with no auth, hosting or CORS
 | B9 | `tool-definitions.json` (13 tools), English system instructions, `DataAssistantToolCatalog`. |
 | B10 | `DataAssistantService`, `IDataAssistantChatClient` + Azure adapter, conversation store (`IMemoryCache`, 2 h, 40-message cap, bound to `UserId`), download registry (2 h, 1000 entries, bound to `UserId`), `AnswerFigureVerifier`. |
 | B11 | `DataAssistantController`: session, role check, empty question, quota (reserve / commit with the sum of every model call / release), monitoring, 429 / 502 / 503 / `content_blocked`, owner check on downloads and charts. |
-| B12 | `AIServicesAPI.Tests` (xUnit): 93 tests. |
-| B14 | New keys in every `appsettings.{env}.json` and the template, README section. |
+| B12 | `AIServicesAPI.Tests` (xUnit): 93 tests. Both test projects are added to `GSBaseAPI.sln`. `cb747bd` aligns the `Microsoft.EntityFrameworkCore.Relational` version in `AIServicesAPI.Tests` (restore conflict) and drops an async warning. |
+| B14 | New keys in every `appsettings.{env}.json` and the template, README section. The README edit also removes the existing line `- Forcing deployment 2.` (line 7 on `main`). **To confirm:** if that line is used to trigger deployments, it must be restored. |
 | B13 | Not in this repo: `INICIATIVA POWER BI/agente_foundry/pruebas_monolito/` in `Sprint-68` (branch `claude/req-3741-b13-monolith-checks`). |
 
 ## Findings the reviewer should know
@@ -57,6 +57,8 @@ The MVP (`EyaInsightsApi`) moves into the monolith with no auth, hosting or CORS
 | `GSWebAPI.Tests` (existing) | 53 / 194 — the 141 failures are Testcontainers without Docker (same on `main`) |
 | Black-box (`pruebas_monolito`, real monolith + fake UsersAPI + fake Chat Completions) | 116 / 116, and the session token does not appear in the monolith log |
 
+**The new test projects need a MySQL database:** Docker running (Testcontainers starts MySQL), or `USAGE_INSIGHTS_TEST_CONNECTION_STRING` and `AI_SERVICES_TEST_CONNECTION_STRING` pointing to a test MySQL. Without either, `dotnet test` on the solution gives 154 failures (129 in `DataAnalysisAPI.Tests`, 25 in `AIServicesAPI.Tests`). The build agent must provide one of them, or the database tests must be filtered out.
+
 Not run: real Azure OpenAI, real UsersAPI, the real database, Docker/Testcontainers (a local MySQL 8.0.46 was used through `USAGE_INSIGHTS_TEST_CONNECTION_STRING` and `AI_SERVICES_TEST_CONNECTION_STRING`), the UAT battery of real questions.
 
 **About B13 vs the MVP baseline (274/275 local, 350/351 platform):** the numbers are not comparable. The MVP verifier was dropped as a whole because most of its checks were about things the monolith no longer has:
@@ -71,6 +73,10 @@ The new verifier recomputes by brute force the same figures for the main queries
 * The localized message files are copied to the output (`appsettings.dataanalysis.json`, `appsettings.aiservices.json`).
 
 ## Open items
+
+* **Pre-review finding M1:** `References[]` in the `ask` answer drop `HasMoreRows`, `Summary` (`Ties`) and `Note`. `BuildReference` (`DataAssistantService.cs:379`) copies only `Query, Source, DateColumn, Period, Filters, Scope, DataUntil, TotalRows, GeneratedAt`, so the panel never shows its "more rows" and "ties" chips. Fix: add those three keys to the list and add a test.
+* **Pre-review finding M2:** in `AttachDownloadAndChartAsync` (`DataAssistantService.cs:294`), the chart export is not inside a `try/catch`. A timeout or HTTP failure there turns an answer that already has data into a 502 `model_unavailable`. Fix: catch the failure, log only the exception type and keep the answer without the chart.
+* Follow-ups from the pre-review (low): the AI switch (503, `RequiresAiEnabled`) and the quota (429) answer without `ErrorCode`, so the panel falls back to `http_503` / `http_429`; validate the configurable subscription column names as SQL identifiers; log only the MySQL error number and SQL state.
 
 * **P6 (unconfirmed):** the `AnalysisConnectionStringReader` account should only have `SELECT` on `gs_data_analysis` (the UAT user name does not look read-only). The code opens every session `READ ONLY` and refuses to work otherwise.
 * **P7 (unconfirmed):** conversations and downloads are in memory (behind `IDataAssistantConversationStore` / `IDataAssistantDownloadRegistry`). With several App Service instances an id can land on another instance and give 404 / a new conversation: use ARR affinity or move the state to a shared store.
