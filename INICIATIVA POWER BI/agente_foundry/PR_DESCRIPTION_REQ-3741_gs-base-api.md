@@ -32,7 +32,7 @@ The MVP (`EyaInsightsApi`) moves into the monolith with no auth, hosting or CORS
 | B10 | `DataAssistantService`, `IDataAssistantChatClient` + Azure adapter, conversation store (`IMemoryCache`, 2 h, 40-message cap, bound to `UserId`), download registry (2 h, 1000 entries, bound to `UserId`), `AnswerFigureVerifier`. |
 | B11 | `DataAssistantController`: session, role check, empty question, quota (reserve / commit with the sum of every model call / release), monitoring, 429 / 502 / 503 / `content_blocked`, owner check on downloads and charts. |
 | B12 | `AIServicesAPI.Tests` (xUnit): 102 tests. Both test projects are added to `GSBaseAPI.sln`. `cb747bd` aligns the `Microsoft.EntityFrameworkCore.Relational` version in `AIServicesAPI.Tests` (restore conflict) and drops an async warning. |
-| B14 | New keys in every `appsettings.{env}.json` and the template, README section. The README edit also removes the existing line `- Forcing deployment 2.` (line 7 on `main`). **To confirm:** if that line is used to trigger deployments, it must be restored. |
+| B14 | New keys in every `appsettings.{env}.json` and the template, README section. The README edit keeps the existing line `- Forcing deployment 2.`: it only loses its trailing space and gets a final newline (the diff shows that line as changed, not removed). **To confirm:** if a deployment trigger depends on the exact bytes of that line, restore it. |
 | B13 | Not in this repo: `INICIATIVA POWER BI/agente_foundry/pruebas_monolito/` in `Sprint-68` (branch `claude/req-3741-b13-monolith-checks`). |
 
 ## Findings the reviewer should know
