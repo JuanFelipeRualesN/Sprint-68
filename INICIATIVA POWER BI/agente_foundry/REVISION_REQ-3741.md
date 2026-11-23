@@ -147,3 +147,20 @@ Los identificadores, comentarios XML/JSDoc, rutas, campos JSON, claves de config
 - **Backend:** controladores como los vecinos (`BaseController` y `GetLocalizedMessage` en AIServicesAPI; `ControllerBase` y `GetUserDetails` en DataAnalysisAPI). El cliente Feign tipado se registra con `AddHttpClient<I, T>`. Servicios y DI en `Program.cs` junto al resto de AIServicesAPI. Mensajes en `appsettings.aiservices.json` y en el nuevo `appsettings.dataanalysis.json`, con el mismo patrón. Ciclos de vida coherentes: `DataAssistantService` y el cliente de chat son *scoped* sobre singletons (`AzureOpenAIClient`, catálogo, almacenes) y no capturan servicios *scoped* en singletons.
 - **Workaround de OpenAI 2.9.1:** se llama al método de protocolo `CompleteChatAsync(BinaryContent, …)` (`AzureOpenAiDataAssistantChatClient.cs:54-55`), que evita el `MissingMethodException` de los métodos tipados. Lo cubre `AzureOpenAiAdapterTests` (deployment, `api-version`, cabecera `api-key`, parseo de `tool_calls`). Correcto. Conviene quitarlo cuando se suba el paquete.
 - **Front:** la estructura `data-assistant-panel/` (index, componentes, `style.css`, `__tests__`) sigue la de `data-analysis-module`. La capa API está en `src/api` y las URLs en `Settings`. i18next usa un namespace propio. Usar axios plano en lugar de la instancia de `interceptors.js` está justificado en `data-assistant.js:165-167` (el panel muestra los errores dentro del chat, sin modal ni cierre de sesión).
+
+## Borradores de descripción de PR (rama `claude/req-3741-pr-drafts`)
+
+Ambos están en inglés y la estructura es correcta. Correcciones de exactitud:
+
+### `PR_DESCRIPTION_REQ-3741_gs-base-api.md`
+- «20 commits» → son **19** (`git rev-list --count main..req-3741`). La base `ac9c9d0` es correcta.
+- Añadir a «Changes»: los 2 proyectos de prueba entran en `GSBaseAPI.sln`; la alineación de EF Relational en `AIServicesAPI.Tests` (`cb747bd`); y que se borra la línea «- Forcing deployment 2.» de `GSBaseAPI/README.md` (B5). Confirmar si esto último es intencional.
+- Tests: decir explícitamente que las suites nuevas necesitan Docker o las variables `*_TEST_CONNECTION_STRING` (M5). Sin eso, `dotnet test` sobre la solución da 154 fallos.
+- Añadir a «Open items» lo que salió en esta revisión: M1/C1 (referencias sin `HasMoreRows`/`Summary`/`Note`) y M2 (un fallo de la gráfica tumba la respuesta), salvo que se arreglen antes de abrir el PR. B2, B3 y la falta de `ErrorCode` en 503/429 (C2/C3) pueden ir como seguimiento.
+- Verificado y correcto: tope de 40 mensajes (`DataAssistantService.cs:27`), sesión `READ ONLY` en UTC, 168/93 pruebas (las reproduje), error CS0121 con el SDK 8.0.134, configuración por entorno y P7 (estado en memoria).
+
+### `PR_DESCRIPTION_REQ-3741_webapp-teachers.md`
+- «Jest: 7 suites, 100 tests pass» es cierto **con Jest 27**. Con el `jest 23.6.0` fijado en `package.json` fallan 2 pruebas (`jest.isolateModules`, M4). Arreglar M4 o indicar la versión exacta usada.
+- «Open items → Contract fields … must be confirmed»: ya están confirmados. `Category`, `Grouping`, `Extra`, `Order`, `IncludeZeros`, `All`, `Highlighted`, `Period.A/B`, `Filters.School` y `Filters.TestAccounts` existen en el backend con esos nombres (ver la tabla del contrato). Cambiar el punto por los desajustes reales: C1 (`References[].HasMoreRows`/`Summary`/`Note` no llegan) y C2/C3 (`ai_disabled` y `quota_exceeded` no se envían; el front cae en `http_503`/`http_429`).
+- La nota de rama (`main` 3 commits por delante de `uat` con árboles idénticos) es correcta: lo verifiqué.
+- «react-scripts build: compiled successfully» y lint: no pude reproducirlos aquí porque falta `config/` (B6). Conviene indicar cómo se ejecutó (configuración local fuera del repo), como ya se hace con las pruebas.
