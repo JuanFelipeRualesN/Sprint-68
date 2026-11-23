@@ -22,12 +22,12 @@ The panel uses plain `axios` with `getAuthHeaders()` (the helper the AI module u
 Produced with a test harness that runs the real panel, API layer and contract mapper with the network faked (desktop es, expanded chart, en, mobile). Not attached here.
 
 ## Test results
-- Jest: 7 suites, 102 tests pass on the repo's pinned Jest 23.6.0 and also on Jest 27 (panel, expanded chart, chart types, config, API layer, contract mapper, dashboard mount).
+- Jest 23.6.0 (the version pinned in the repo): 7 suites, 102 tests pass (panel, expanded chart, chart types, config, API layer, contract mapper, dashboard mount).
 - Lint (CRA `react-app` config; the repo has no lint config): 0 errors, 53 warnings, identical to `main`. No new warnings.
 - `react-scripts build` (`.env.msj-dev`): compiled successfully.
 
 ### How the tests were run (the repo's `npm test` was already broken before this ticket)
-`npm test` runs `node scripts/test.js`, but neither `scripts/test.js` nor the `config/jest/*` transforms referenced by the `jest` block of `package.json` are in the repo; `react-scripts test` rejects that stale `jest` block; and `yarn.lock` cannot be parsed (the pipeline uses `npm install --force`). This PR does not change any of that. The suites were run with Jest 23.6.0 and a local config kept outside the repo (Babel 7 with `babel-preset-react-app` and `babel-plugin-jest-hoist`, CRA's CSS/file transforms, jsdom), and again with Jest 27 from `react-scripts`. A follow-up ticket should version `scripts/test.js` and `config/jest` (or move to `react-scripts test`) so `npm test` works.
+`npm test` runs `node scripts/test.js`, but neither `scripts/test.js` nor the `config/jest/*` transforms referenced by the `jest` block of `package.json` are in the repo; `react-scripts test` rejects that stale `jest` block; and `yarn.lock` cannot be parsed (the pipeline uses `npm install --force`). This PR does not change any of that. The suites were run with Jest 23.6.0 and a local config kept outside the repo (Babel 7 with `babel-preset-react-app` and `babel-plugin-jest-hoist`, CRA's CSS/file transforms, jsdom). A follow-up ticket should version `scripts/test.js` and `config/jest` (or move to `react-scripts test`) so `npm test` works.
 
 ## Review fixes
 - M4: `config.test.js` uses `jest.resetModules()` instead of `jest.isolateModules()` (not available in Jest 23).
@@ -41,6 +41,6 @@ In `.env.<environment>` set `REACT_APP_DATA_ASSISTANT_AVAILABLE = true` and rebu
 `main` is not an ancestor of `uat`: it is 3 commits ahead (two merge commits and `719bf6cc`), but the trees are identical, so a PR to `uat` has no content differences, only extra history.
 
 ## Open items
-- Contract fields not listed in the plan are assumed in `data-assistant-contract.js` and must be confirmed with the backend: chart row key `Category`, `Grouping`, `Extra {Key, Name, Unit}`, `Order`, `IncludeZeros`, `All`, `Highlighted` (charts), `Period.A/B` for comparisons, `Filters.School` and `Filters.TestAccounts`.
+- Contract: the fields the plan did not list (chart row key `Category`, `Grouping`, `Extra`, `Order`, `IncludeZeros`, `All`, `Highlighted`, `Period.A/B`, `Filters.School`, `Filters.TestAccounts`) were checked against the backend in review and match. The backend will return `HasMoreRows`, `Summary` and `Note` in `References`, and `ErrorCode` `ai_disabled` / `quota_exceeded`, once its review fixes land; the front already reads those names.
 - Subscription chart colours match English status names only (server texts are localized); a stable key per category would fix this.
 - No end-to-end run against the monolith yet.
