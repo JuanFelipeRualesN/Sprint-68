@@ -1,0 +1,39 @@
+# REQ-3741: Power BI data assistant panel (gs-msj-private-webapp-teachers)
+
+Branch `req-3741` (from `main` 5504a3d) → target `uat`.
+
+## Summary
+Adds the **Data assistant** side panel to the reports dashboard. Administrators ask questions about platform usage in natural language and get answers with references (period, filtered date, school, data-up-to, rows), charts and Excel downloads. It is visible only to the `admin` and `admin-ore` roles, behind a feature flag. It calls the new backend routes using the existing API base URLs and the session `Token` header. No secrets, keys or queries live in the front.
+
+## Changes
+- **F1** Panel ported from the MVP to `data-analysis-module/data-assistant-panel/` with English identifiers, JSDoc and `data-assistant-*` CSS classes. Recharts only, no new dependencies.
+- **F2** Texts moved to the i18next namespace `data-assistant` (`translations/i18next/{es,en}/data-assistant.json`), registered in `src/i18n.js`.
+- **F3** URL builders in `settings.js` (`getDataAssistantAskAPI`, `getDataAssistantResourceAPI`, `getUsageInsightsExportAPI`) and `src/api/data-assistant.js` on axios. Resource URLs go through an allow-list (assistant paths and the usage insights export only).
+- **F4** `src/api/data-assistant-contract.js` is the single module that knows the API field names (PascalCase). It builds the ask request and maps answers to the camelCase view model the components read. Notices, the more-rows flag and ties come from structured fields, never from texts.
+- **F5** Optional `onReportReady` prop on `powerbi-embed`; panel mounted in `dashboard/index.js` only when the flag is `true` and the role is allowed. `REACT_APP_DATA_ASSISTANT_AVAILABLE = false` added to every `.env.*`; README section.
+- **F6** Tests completed; build verified.
+
+Routes used: `POST aiservicesapi/data-assistant/ask`, `GET aiservicesapi/data-assistant/downloads/{id}`, `GET aiservicesapi/data-assistant/charts/{id}`, `GET dataanalysisapi/usage-insights/{query}/export`.
+
+## Design note
+The panel uses plain `axios` with `getAuthHeaders()` (the helper the AI module uses), not the shared axios of `interceptors.js`. That interceptor opens a modal and signs the user out on 401/403, and shows a blank modal on 429 (quota). The panel shows every error inline in the chat instead.
+
+## Screenshots
+Produced with a test harness that runs the real panel, API layer and contract mapper with the network faked (desktop es, expanded chart, en, mobile). Not attached here.
+
+## Test results
+- Jest: 7 suites, 100 tests pass (panel, expanded chart, chart types, config, API layer, contract mapper, dashboard mount).
+- Lint (CRA `react-app` config; the repo has no lint config): 0 errors, 53 warnings, identical to `main`. No new warnings.
+- `react-scripts build` (`.env.msj-dev`): compiled successfully.
+- The repo's own test setup is broken: `npm test` points to a missing `scripts/test.js`, `react-scripts test` rejects the stale `jest` block of `package.json`, and `yarn.lock` cannot be parsed (the pipeline uses `npm install --force`). Tests were run with Jest 27 and a local config kept outside the repo. No tooling changes are in this PR.
+
+## Enable the flag per environment
+In `.env.<environment>` set `REACT_APP_DATA_ASSISTANT_AVAILABLE = true` and rebuild. Every environment ships with `false`. Enable it only after the backend routes are deployed in that environment. Only the exact value `true` enables it.
+
+## Branch note
+`main` is not an ancestor of `uat`: it is 3 commits ahead (two merge commits and `719bf6cc`), but the trees are identical, so a PR to `uat` has no content differences, only extra history.
+
+## Open items
+- Contract fields not listed in the plan are assumed in `data-assistant-contract.js` and must be confirmed with the backend: chart row key `Category`, `Grouping`, `Extra {Key, Name, Unit}`, `Order`, `IncludeZeros`, `All`, `Highlighted` (charts), `Period.A/B` for comparisons, `Filters.School` and `Filters.TestAccounts`.
+- Subscription chart colours match English status names only (server texts are localized); a stable key per category would fix this.
+- No end-to-end run against the monolith yet.
