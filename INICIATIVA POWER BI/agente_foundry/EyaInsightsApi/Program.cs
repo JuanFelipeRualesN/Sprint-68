@@ -6,6 +6,28 @@ using EyaInsightsApi;
 using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
+// Key Vault como configuración (mismo patrón que GSBaseAPI): si hay KeyVault:VaultUrl, los secretos (p. ej. «AzureOpenAI--ApiKey») entran como configuración.
+// Es opcional: una referencia @Microsoft.KeyVault(...) en App Service entrega el mismo valor como variable de entorno (AzureOpenAI__ApiKey) y no necesita esto.
+if (builder.Configuration["KeyVault:VaultUrl"] is { Length: > 0 } vaultUrl)
+{
+    try
+    {
+        builder.Configuration.AddAzureKeyVault(new Uri(vaultUrl), new Azure.Identity.DefaultAzureCredential(new Azure.Identity.DefaultAzureCredentialOptions
+        {
+            ExcludeInteractiveBrowserCredential = true,
+            ManagedIdentityClientId = string.IsNullOrWhiteSpace(builder.Configuration["Asistente:ClientId"]) ? null : builder.Configuration["Asistente:ClientId"],
+        }));
+        Console.WriteLine("Key Vault configurado como fuente de configuración.");
+    }
+    catch (Exception e) when (builder.Environment.IsDevelopment())
+    {
+        Console.WriteLine($"Key Vault no disponible ({e.GetType().Name}); se sigue sin él en desarrollo.");      // fuera de Development el error detiene el arranque
+    }
+}
+// Autenticación (Fase 4 · A1): Auth:Modo = local (solo desarrollo, solo loopback) | plataforma (Token de la plataforma validado en UsersAPI).
+// En Production solo vale «plataforma» y Auth:UsersApiUrl es obligatoria: si falta, la API no arranca.
+var auth = AuthOpciones.Leer(builder.Configuration);
+auth.ValidarArranque(builder.Configuration, builder.Environment.IsProduction());
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
     o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
@@ -47,7 +69,11 @@ if ((builder.Configuration["Datos:Origen"] ?? "ejemplo") == "mysql")
         Lista("Datos:OresExcluidos", "DEMOSTRACION"),
         Lista("Datos:DominiosExcluidos", ""),
         Lista("Datos:EscuelasExcluidas", "Escuela Facilitadores MSJ"));
-    builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion));
+    // Tiempo máximo de cada consulta SQL (Datos:CommandTimeoutSegundos, 30 por defecto). Los nombres de las columnas de la historia de suscripciones se pueden
+    // cambiar (Datos:ColEstadoSuscripcion / Datos:ColCancelacionSuscripcion) si en la base real se llaman distinto.
+    var tiempo = int.Parse(builder.Configuration["Datos:CommandTimeoutSegundos"] ?? "30", CultureInfo.InvariantCulture);
+    builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion, tiempo,
+        builder.Configuration["Datos:ColEstadoSuscripcion"] ?? "status", builder.Configuration["Datos:ColCancelacionSuscripcion"] ?? "cancellation_date"));
 }
 else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 
@@ -56,14 +82,22 @@ else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 var asistenteOn = string.Equals(builder.Configuration["Asistente:Habilitado"], "true", StringComparison.OrdinalIgnoreCase);
 if (asistenteOn)
 {
-    builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration));
-    var origenes = (builder.Configuration["Asistente:Origenes"] ?? "http://localhost:3000")
-        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes).WithHeaders("content-type").WithMethods("POST")));
+    builder.Services.AddSingleton(new AsistenteFoundry(builder.Configuration, builder.Environment.IsProduction()));
 }
 
+// CORS (A3): orígenes del front por ambiente en Cors:Origenes (variable Cors__Origenes, separados por coma). Aplica a TODAS las rutas
+// (consultas, /exportar y /asistente/*), no solo al asistente. Sin «*» en Production; sin cookies (la sesión va en el header Token).
+// OJO (revisión del #4): la política es GLOBAL; GET permite que los orígenes listados lean por JavaScript TODAS las rutas GET (no solo /exportar). Con Auth:Modo=plataforma
+// hace falta además un Token válido, y los datos ya vienen limitados al alcance de esa persona.
+// Compatibilidad: sin Cors:Origenes y con el asistente habilitado se usa Asistente:Origenes (por defecto http://localhost:3000, solo desarrollo).
+var origenes = Auth.OrigenesCors(builder.Configuration, asistenteOn, builder.Environment.IsProduction());
+if (origenes.Length > 0)
+    builder.Services.AddCors(o => o.AddPolicy("panel", p => p.WithOrigins(origenes)
+        .WithHeaders("content-type", "token", "accept-language").WithMethods("GET", "POST")
+        .WithExposedHeaders("content-disposition").SetPreflightMaxAge(TimeSpan.FromMinutes(10))));
+
 var app = builder.Build();
-if (asistenteOn) app.UseCors("panel");
+if (origenes.Length > 0) app.UseCors("panel");
 
 if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
 {
@@ -71,32 +105,48 @@ if (app.Services.GetRequiredService<IConsultasUso>() is ConsultasMySql mysql)
     catch (Exception e) { Console.WriteLine($"No se pudo conectar a MySQL ({e.GetType().Name}): revisa VPN, host, usuario y clave."); throw; }
 }
 
-// Clave de API: se exige el header x-api-key cuando existe EYA_API_KEY (menos en /salud).
-var claveEsperada = app.Configuration["EYA_API_KEY"];
-app.Use(async (ctx, next) =>
-{
-    if (!string.IsNullOrEmpty(claveEsperada) && ctx.Request.Path != "/salud"
-        && ctx.Request.Headers["x-api-key"] != claveEsperada)
-    {
-        ctx.Response.StatusCode = 401;
-        await ctx.Response.WriteAsJsonAsync(new { error = "no_autorizado", mensaje = "Falta o es incorrecto x-api-key." });
-        return;
-    }
-    await next();
-});
+// Autenticación (después de CORS, antes de las rutas). Ver Auth.cs y DISENO_AUTH.md.
+var consultasRaiz = app.Services.GetRequiredService<IConsultasUso>();
+var validador = auth.EsPlataforma ? new ValidadorSesion(auth, new HttpClient(), consultasRaiz.EscuelaDeUsuario) : null;
+app.UsarAutenticacion(auth, validador);
+app.VigilarLoopback(auth);
+Console.WriteLine(auth.EsPlataforma
+    ? $"Autenticación: plataforma (UsersAPI {new Uri(auth.UsersApiUrl).Host}, permiso «{auth.Permiso}», caché {auth.CacheSegundos} s)."
+    : "Autenticación: LOCAL (sin validación; solo desarrollo, la API solo escucha en loopback).");
+var claveEsperada = auth.ApiKey;     // loopback del asistente (A3 lo reemplaza por la identidad de quien pregunta)
 
 if (asistenteOn)
 {
     var local = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
     Console.WriteLine($"Asistente HABILITADO (modelo {app.Services.GetRequiredService<AsistenteFoundry>().Modelo}, {app.Services.GetRequiredService<AsistenteFoundry>().Herramientas} consultas). Solo para desarrollo local.");
+    // Las llamadas internas (herramientas del modelo y descargas) van a la propia API por la dirección en la que ESTE proceso escucha, nunca por el
+    // Host de la petición (ese header lo controla quien llama). Reenvían el Token de quien pregunta, así el alcance (ORE/escuela) sigue aplicando.
+    string BaseLoopback()
+    {
+        var dir = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features
+            .Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses.FirstOrDefault(a => a.StartsWith("http", StringComparison.OrdinalIgnoreCase));
+        if (dir is null) return "http://127.0.0.1:5000";
+        var u = new Uri(dir.Replace("://*", "://127.0.0.1").Replace("://+", "://127.0.0.1").Replace("://[::]", "://127.0.0.1").Replace("://0.0.0.0", "://127.0.0.1"));
+        return $"{u.Scheme}://{u.Authority}";
+    }
     app.MapPost("/asistente/preguntar", async (HttpContext ctx, PreguntaAsistente p, AsistenteFoundry asistente) =>
     {
         if (string.IsNullOrWhiteSpace(p.Pregunta) || p.Pregunta.Trim().Length < 2)
             return Results.Json(new { error = "pregunta_vacia", mensaje = "Escribe una pregunta." }, statusCode: 400);
-        var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
+        var baseUrl = BaseLoopback();
+        var usuario = Auth.Usuario(ctx);
+        var cabeceras = Auth.HeadersParaReenviar(ctx);
         try
         {
-            var r = await asistente.PreguntarAsync(p, (op, a) => asistente.EjecutarAsync(local, baseUrl, claveEsperada, op, a, ctx.RequestAborted), ctx.RequestAborted);
+            var r = await asistente.PreguntarAsync(p, usuario, (op, a) => asistente.EjecutarAsync(local, baseUrl, cabeceras, op, a, ctx.RequestAborted),
+                async ruta =>
+                {
+                    using var req = new HttpRequestMessage(HttpMethod.Get, baseUrl + ruta);
+                    foreach (var (n, v) in cabeceras) req.Headers.TryAddWithoutValidation(n, v);
+                    using var resp = await local.SendAsync(req, ctx.RequestAborted);
+                    return ((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ctx.RequestAborted));
+                }, ctx.RequestAborted);
+            Console.WriteLine($"asistente usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consultas={r.Consultas.Count} descargas={r.Descargas?.Count ?? 0}");
             return Results.Json(r);
         }
         catch (ErrorFoundry e) when (e.FiltroContenido)    // p. ej. el filtro anti-jailbreak de Azure
@@ -108,7 +158,8 @@ if (asistenteOn)
                                   || (e is ErrorFoundry ef && ef.Estado is 401 or 403))
         {
             Console.WriteLine($"Asistente: sin acceso al modelo ({e.GetType().Name}).");
-            return Results.Json(new { error = "sin_acceso_al_modelo", mensaje = "El servicio no pudo autenticarse con Azure AI Foundry (¿az login vigente?)." }, statusCode: 503);
+            var ayuda = app.Services.GetRequiredService<AsistenteFoundry>().UsaApiKey ? "¿clave de Foundry válida para ese endpoint?" : "¿az login vigente?";
+            return Results.Json(new { error = "sin_acceso_al_modelo", mensaje = $"El servicio no pudo autenticarse con Azure AI Foundry ({ayuda})." }, statusCode: 503);
         }
         catch (Exception e) when (e is ErrorFoundry or HttpRequestException or TaskCanceledException)
         {
@@ -116,228 +167,83 @@ if (asistenteOn)
             return Results.Json(new { error = "modelo_no_disponible", mensaje = "El asistente no está disponible en este momento. Intenta de nuevo." }, statusCode: 502);
         }
     });
+
+    // Gráfica ampliada de una respuesta (ventana «Ampliar» del panel): mismo id que la descarga y mismo dueño. Parámetros: todas, orden, incluir_ceros, limite.
+    // Se reconstruye por loopback a /exportar/{consulta}?formato=grafica con el Token de quien la pide; id ajeno, vencido o inventado → el mismo 404.
+    app.MapGet("/asistente/graficas/{id}", async (string id, HttpContext ctx, AsistenteFoundry asistente) =>
+    {
+        var usuario = Auth.Usuario(ctx);
+        if (asistente.BuscarDescarga(id, usuario) is not { } d)
+            return Results.Json(new { error = "descarga_expirada", mensaje = "El enlace expiró; vuelve a preguntar." }, statusCode: 404);
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"{BaseLoopback()}/exportar/{Uri.EscapeDataString(d.Consulta)}?{AsistenteFoundry.QueryDeGraficaAmpliada(d.Query, ctx.Request.Query)}");
+        foreach (var (n, v) in Auth.HeadersParaReenviar(ctx)) req.Headers.TryAddWithoutValidation(n, v);
+        using var resp = await local.SendAsync(req, ctx.RequestAborted);
+        var cuerpo = await resp.Content.ReadAsStringAsync(ctx.RequestAborted);
+        if (resp.IsSuccessStatusCode && System.Text.Json.Nodes.JsonNode.Parse(cuerpo) is System.Text.Json.Nodes.JsonObject spec)
+        {
+            spec["id"] = id; spec["url"] = "/asistente/graficas/" + id;
+            cuerpo = spec.ToJsonString(new System.Text.Json.JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        }
+        return Results.Content(cuerpo, "application/json", System.Text.Encoding.UTF8, (int)resp.StatusCode);
+    });
+
+    // Descarga del Excel de una respuesta: id opaco ↔ consulta, ligado a quien preguntó. Id inexistente, vencido o DE OTRA PERSONA → el mismo 404.
+    // El archivo se reconstruye por loopback con el Token de quien lo pide (alcance aplicado otra vez); la API no guarda datos, solo la consulta.
+    app.MapGet("/asistente/descargas/{id}", async (string id, HttpContext ctx, AsistenteFoundry asistente) =>
+    {
+        var usuario = Auth.Usuario(ctx);
+        if (asistente.BuscarDescarga(id, usuario) is not { } d)
+            return Results.Json(new { error = "descarga_expirada", mensaje = "El enlace expiró; vuelve a preguntar." }, statusCode: 404);
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"{BaseLoopback()}/exportar/{Uri.EscapeDataString(d.Consulta)}?{d.Query}");
+        foreach (var (n, v) in Auth.HeadersParaReenviar(ctx)) req.Headers.TryAddWithoutValidation(n, v);
+        using var resp = await local.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
+        var cuerpo = await resp.Content.ReadAsByteArrayAsync(ctx.RequestAborted);
+        Console.WriteLine($"descarga usuario={usuario.Id} rol={usuario.Rol} origen={usuario.Origen} consulta={d.Consulta} estado={(int)resp.StatusCode} bytes={cuerpo.Length}");
+        if (resp.IsSuccessStatusCode)
+            return Results.File(cuerpo, resp.Content.Headers.ContentType?.ToString() ?? "application/octet-stream",
+                resp.Content.Headers.ContentDisposition?.FileNameStar ?? resp.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        return Results.Content(System.Text.Encoding.UTF8.GetString(cuerpo), resp.Content.Headers.ContentType?.ToString() ?? "application/json", System.Text.Encoding.UTF8, (int)resp.StatusCode);
+    });
 }
 
 app.MapGet("/salud", (IConsultasUso c) => new { estado = "ok", fuente = c.Fuente, datos_hasta_pruebas = c.DatosHastaPruebas, datos_hasta_conexiones = c.DatosHastaConexiones });
 
-app.MapGet("/uso-por-area", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var todas = c.UsoPorArea(d, h, desc, 1000);          // todas las áreas, para poder dar totales y participación
-    int asig = todas.Sum(f => f.PruebasAsignadas), comp = todas.Sum(f => f.PruebasCompletadas);
-    var filas = todas.Take(limite).Select(f => f with { PorcentajeDelTotalCompletadas = P.Pct(f.PruebasCompletadas, comp) }).ToList();
-    return new Respuesta("uso_por_area", c.Fuente, c.ColumnaFechaPruebas, P.Periodo(d, h),
-        new { orden = P.Texto(desc), limite, escuela = "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaPruebas, filas,
-        P.Nota(c.NotaArea, h, c.DatosHastaPruebas),
-        new { total_pruebas_asignadas = asig, total_pruebas_completadas = comp, porcentaje_completado_global = P.Pct(comp, asig),
-              areas_consideradas = todas.Count, areas_con_pruebas_asignadas = todas.Count(f => f.PruebasAsignadas > 0),
-              areas_sin_pruebas_asignadas = todas.Count(f => f.PruebasAsignadas == 0) });
-}));
+foreach (var (ruta, f) in Rutas.Consultas)
+    app.MapGet("/" + ruta, (HttpRequest r, IConsultasUso c) => Rutas.Ejecutar(ruta, () => Rutas.Con(f, r, c)));
 
-app.MapGet("/buscar-escuela", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
+// Exportación: GET /exportar/{consulta}?formato=xlsx|grafica&<mismos parámetros que la consulta>.
+// NO está en openapi.json a propósito (D6): el asistente convierte cada path de openapi.json en una herramienta del modelo,
+// y el modelo no debe poder pedir archivos. Es una ruta pública de la API (decisión 5 del plan): la usa el panel y se puede llamar directo,
+// con la misma protección que las demás (x-api-key solo si existe EYA_API_KEY; ver EXPORTAR_API.md). /asistente/descargas/{id} (T6) aún no existe.
+app.MapGet("/exportar/{consulta}", (string consulta, HttpRequest r, IConsultasUso c) =>
 {
-    var texto = r.Query["texto"].FirstOrDefault()?.Trim();
-    if (string.IsNullOrEmpty(texto) || texto.Length < 2) throw new ErrorConsulta("Falta el parámetro 'texto' (mínimo 2 caracteres).");
-    var (_, limite) = P.OrdenLimite(r);
-    return new Respuesta("buscar_escuela", c.Fuente, "no aplica", "no aplica", new { texto, cuentas_de_prueba = P.Cp(c) }, null,
-        c.BuscarEscuelas(texto, limite),
-        P.Unir("Usa el nombre EXACTO devuelto como filtro 'escuela' en las demás consultas.", c.NotaConexiones));
-}));
-
-app.MapGet("/conexiones-por-escuela", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var escuela = P.Escuela(r, c); var (minC, maxC) = P.RangoConexiones(r);
-    var todasLas = c.ConexionesPorEscuela(d, h, desc, 1000);     // todas las escuelas: permite totales, participación y empates exactos
-    int total = todasLas.Sum(f => f.Conexiones);
-    var todas = escuela is null ? todasLas : todasLas.Where(f => f.Nombre == escuela).ToList();   // con filtro, solo esa escuela (el % sigue siendo sobre el total)
-    var conFiltroN = minC > 0 || maxC < int.MaxValue;
-    if (conFiltroN) todas = todas.Where(f => f.Conexiones >= minC && f.Conexiones <= maxC).ToList();
-    var filas = todas.Take(limite).Select(f => f with
+    if (consulta == "buscar-escuela" || !Rutas.Consultas.TryGetValue(consulta, out var f))
+        return Results.Json(new { error = "consulta_desconocida", mensaje = $"No se puede exportar '{consulta}'." }, statusCode: 404);
+    var formato = r.Query["formato"].FirstOrDefault() ?? "xlsx";
+    if (formato is not ("xlsx" or "grafica"))
+        return Results.Json(new { error = "parametros_invalidos", mensaje = "'formato' debe ser 'xlsx' o 'grafica'." }, statusCode: 400);
+    return Rutas.Intentar("exportar/" + consulta, () =>
     {
-        PorcentajeDelTotal = P.Pct(f.Conexiones, total),
-        ConexionesPorUsuario = f.UsuariosConectados == 0 ? null : Math.Round((double)f.Conexiones / f.UsuariosConectados, 1)
-    }).ToList();
-    return new Respuesta("conexiones_por_escuela", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", min_conexiones = conFiltroN ? minC : (int?)null, max_conexiones = conFiltroN && maxC < int.MaxValue ? maxC : (int?)null, cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
-        P.Unir(P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), conFiltroN ? "Filtro por número de conexiones: una conexión = un día con ingreso (no ingresos dentro del mismo día); «una sola vez» = min_conexiones 1 y max_conexiones 1 dentro del período pedido." : null),
-            P.Empates(todas, limite, f => f.Conexiones, completa: true)),
-        new { total_conexiones = total, escuelas_consideradas = todasLas.Count, escuelas_con_conexiones = todasLas.Count(f => f.Conexiones > 0),
-              escuelas_sin_conexiones = todasLas.Count(f => f.Conexiones == 0), escuelas_que_cumplen_el_filtro = conFiltroN ? todas.Count : (int?)null });
-}));
-
-app.MapGet("/conexiones-por-maestro", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var escuela = P.Escuela(r, c); var (minC, maxC) = P.RangoConexiones(r);
-    var todosLos = c.ConexionesPorMaestro(d, h, desc, 5000, escuela);   // todos los maestros: totales, participación y empates exactos
-    int total = todosLos.Sum(f => f.Conexiones);
-    var conFiltroN = minC > 0 || maxC < int.MaxValue;
-    var todos = conFiltroN ? todosLos.Where(f => f.Conexiones >= minC && f.Conexiones <= maxC).ToList() : todosLos;
-    var filas = todos.Take(limite).Select(f => f with { PorcentajeDelTotal = P.Pct(f.Conexiones, total) }).ToList();
-    return new Respuesta("conexiones_por_maestro", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", min_conexiones = conFiltroN ? minC : (int?)null, max_conexiones = conFiltroN && maxC < int.MaxValue ? maxC : (int?)null, cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
-        P.Unir(P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), conFiltroN ? "Filtro por número de conexiones: una conexión = un día con ingreso; «una sola vez» = min_conexiones 1 y max_conexiones 1 dentro del período pedido." : null),
-            P.Empates(todos, limite, f => f.Conexiones, completa: true)),
-        new { total_conexiones_maestros = total, maestros_considerados = todosLos.Count, maestros_con_conexiones = todosLos.Count(f => f.Conexiones > 0),
-              maestros_sin_conexiones = todosLos.Count(f => f.Conexiones == 0), maestros_que_cumplen_el_filtro = conFiltroN ? todos.Count : (int?)null });
-}));
-
-app.MapGet("/comparar-areas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (da, ha) = P.Rango(r, "desde_a", "hasta_a"); var (db, hb) = P.Rango(r, "desde_b", "hasta_b");
-    return new Respuesta("comparar_areas", c.Fuente, c.ColumnaFechaPruebas, new { a = P.Periodo(da, ha), b = P.Periodo(db, hb) },
-        new { escuela = "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaPruebas, c.CompararAreas(da, ha, db, hb),
-        P.Nota(c.NotaArea is null ? "Si los dos periodos tienen distinta duración, la comparación no está normalizada." : c.NotaArea + " Si los dos periodos tienen distinta duración, la comparación no está normalizada.", P.Max(ha, hb), c.DatosHastaPruebas));
-}));
-
-app.MapGet("/comparar-escuelas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (da, ha) = P.Rango(r, "desde_a", "hasta_a"); var (db, hb) = P.Rango(r, "desde_b", "hasta_b");
-    var (desc, limite) = P.OrdenLimite(r);
-    var a = c.ConexionesPorEscuela(da, ha, true, 1000).ToDictionary(f => f.Nombre, f => f.Conexiones);
-    var b = c.ConexionesPorEscuela(db, hb, true, 1000).ToDictionary(f => f.Nombre, f => f.Conexiones);
-    var todas = a.Keys.Union(b.Keys).Select(n =>
-    {
-        int va = a.GetValueOrDefault(n), vb = b.GetValueOrDefault(n), dif = vb - va;
-        return new FilaComparacionEscuela(n, va, vb, dif, va == 0 ? null : Math.Round(100.0 * dif / va, 1));
-    }).Where(f => f.ConexionesA > 0 || f.ConexionesB > 0).ToList();
-    var ord = (desc ? todas.OrderByDescending(f => f.Diferencia).ThenByDescending(f => f.Nombre, StringComparer.Ordinal)
-                    : todas.OrderBy(f => f.Diferencia).ThenBy(f => f.Nombre, StringComparer.Ordinal)).ToList();
-    int ta = a.Values.Sum(), tb = b.Values.Sum();
-    return new Respuesta("comparar_escuelas", c.Fuente, c.ColumnaFechaConexiones, new { a = P.Periodo(da, ha), b = P.Periodo(db, hb) },
-        new { orden = P.Texto(desc), limite, escuela = "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, ord.Take(limite).ToList(),
-        P.Unir(P.Nota(c.NotaConexiones, P.Max(ha, hb), c.DatosHastaConexiones),
-            "Diferencia = conexiones del período B menos las del A; con orden desc primero las escuelas que más crecieron, con asc las que más cayeron. Solo escuelas con conexiones en A o B. Si los períodos tienen distinta duración, la comparación no está normalizada."),
-        new { total_conexiones_a = ta, total_conexiones_b = tb, diferencia_total = tb - ta, variacion_total_pct = ta == 0 ? (double?)null : Math.Round(100.0 * (tb - ta) / ta, 1),
-              escuelas_comparadas = ord.Count });
-}));
-
-app.MapGet("/promedio-full-quiz", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var agrupar = r.Query["agrupar"].FirstOrDefault() ?? "escuela_materia";
-    if (agrupar is not ("escuela" or "materia" or "escuela_materia")) throw new ErrorConsulta("'agrupar' debe ser 'escuela', 'materia' o 'escuela_materia'.");
-    var escuela = P.Escuela(r, c);
-    var todas = c.PromedioFullQuiz(d, h, agrupar, desc, limite + 1, escuela);   // una fila de más para saber si se cortó la lista
-    var hayMas = todas.Count > limite; var filas = todas.Take(limite).ToList();
-    return new Respuesta("promedio_full_quiz", c.Fuente, c.ColumnaFechaPruebas, P.Periodo(d, h),
-        new { agrupar, orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaPruebas,
-        filas, P.Unir(P.Nota(c.NotaPromedioQuiz, h, c.DatosHastaPruebas),
-            hayMas ? $"HAY MÁS FILAS: se muestran solo las primeras {limite} (límite máximo 50); existen más combinaciones con el mismo filtro. No presentes la lista como completa." : null));
-}));
-
-app.MapGet("/tendencia-conexiones", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r);
-    var gran = r.Query["granularidad"].FirstOrDefault() ?? "mes";
-    if (gran is not ("mes" or "trimestre" or "anio")) throw new ErrorConsulta("'granularidad' debe ser 'mes', 'trimestre' o 'anio'.");
-    var escuela = P.Escuela(r, c);
-    var serie = c.Tendencia(d, h, gran, escuela);
-    var conVar = serie.Select((f, i) => i == 0 ? f : f with
-    {
-        DiferenciaConPeriodoAnterior = f.Conexiones - serie[i - 1].Conexiones,
-        VariacionPct = serie[i - 1].Conexiones == 0 ? null : Math.Round(100.0 * (f.Conexiones - serie[i - 1].Conexiones) / serie[i - 1].Conexiones, 1)
-    }).ToList();
-    var mayor = serie.OrderByDescending(f => f.Conexiones).ThenBy(f => f.Periodo, StringComparer.Ordinal).FirstOrDefault();
-    var menor = serie.OrderBy(f => f.Conexiones).ThenBy(f => f.Periodo, StringComparer.Ordinal).FirstOrDefault();
-    return new Respuesta("tendencia_conexiones", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { granularidad = gran, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, conVar,
-        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), "El primer período no trae variación (no hay anterior); el último puede estar incompleto si el período pedido no lo cubre entero."),
-        new { total_conexiones = serie.Sum(f => f.Conexiones), periodo_con_mas_conexiones = mayor?.Periodo, conexiones_del_mayor = mayor?.Conexiones,
-              periodo_con_menos_conexiones = menor?.Periodo, conexiones_del_menor = menor?.Conexiones });
-}));
-
-app.MapGet("/conexiones-acumuladas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r);
-    var gran = r.Query["granularidad"].FirstOrDefault() ?? "mes";
-    if (gran is not ("dia" or "mes" or "trimestre" or "anio")) throw new ErrorConsulta("'granularidad' debe ser 'dia', 'mes', 'trimestre' o 'anio'.");
-    if (gran == "dia" && h.DayNumber - d.DayNumber > 92) throw new ErrorConsulta("Con granularidad 'dia' el período puede tener como máximo 93 días; usa 'mes' para períodos más largos.");
-    var escuela = P.Escuela(r, c);
-    string Clave(DateOnly x) => gran == "dia" ? x.ToString("yyyy-MM-dd") : ConsultasEjemplo.Clave(x, gran);
-    var acc = new SortedDictionary<string, (int Con, int Nue)>(StringComparer.Ordinal);
-    for (var x = d; x <= h; x = x.AddDays(1)) acc.TryAdd(Clave(x), (0, 0));            // incluye períodos en cero
-    foreach (var (dia, con, nue) in c.ConexionesYNuevosPorDia(d, h, escuela)) { var k = Clave(dia); acc[k] = (acc[k].Con + con, acc[k].Nue + nue); }
-    int sc = 0, su = 0;
-    var filas = acc.Select(kv => { sc += kv.Value.Con; su += kv.Value.Nue; return new FilaAcumulada(kv.Key, kv.Value.Con, sc, kv.Value.Nue, su); }).ToList();
-    var act = escuela is null ? c.UsuariosActivos() : null;
-    static double? Pct2(int parte, int total) => total == 0 ? null : Math.Round(100.0 * parte / total, 2);
-    return new Respuesta("conexiones_acumuladas", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { granularidad = gran, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
-        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones),
-            P.Unir("conexiones_acumuladas y usuarios_acumulados son la suma corrida desde el inicio del período pedido; usuarios_nuevos = usuarios cuya primera conexión del período cae en esa fila.",
-                escuela is null ? c.NotaActivos : "Con filtro de escuela no se informan usuarios_activos ni porcentajes (la tarjeta de Power BI es de toda la plataforma).")),
-        new { total_conexiones = sc, usuarios_conectados = su,
-              usuarios_activos = act?.UsuariosActivos, porcentaje_conexion_usuarios = act is null ? null : Pct2(su, act.UsuariosActivos),
-              usuarios_conectados_alguna_vez = act?.ConectadosAlgunaVez, porcentaje_conectados_alguna_vez = act is null ? null : Pct2(act.ConectadosAlgunaVez, act.UsuariosActivos) });
-}));
-
-app.MapGet("/uso-docentes", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var pd = P.FechaOpcional(r, "periodo_desde");
-    var fecha = pd is null ? P.FechaOpcional(r, "fecha") ?? DateOnly.FromDateTime(DateTime.UtcNow.AddMinutes(-240)) : (DateOnly?)null;   // hoy en Puerto Rico
-    var (_, limite) = P.OrdenLimite(r);
-    var escuela = P.Escuela(r, c);
-    var (todas, total) = c.UsoDocentes(fecha, pd, escuela);
-    var filas = todas.Take(limite).ToList();
-    var seleccion = pd is { } p0 ? (object)new { periodo_desde = p0.ToString("yyyy-MM-dd") } : new { fecha = fecha!.Value.ToString("yyyy-MM-dd") };
-    return new Respuesta("uso_docentes", c.Fuente, "vw_teacher_activities.from_period / to_period (período académico de cada escuela)", seleccion,
-        new { limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, null, filas,
-        P.Unir(c.NotaDocentes, todas.Count == 0
-            ? "NO HAY DATOS: ninguna escuela tiene un período académico que cumpla esa condición."
-            : todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} combinaciones escuela-período; el 'resumen' trae el total de todas." : null),
-        new { escuelas = todas.Select(f => f.Escuela).Distinct().Count(), combinaciones_escuela_periodo = todas.Count,
-              maestros = total.Maestros, con_conexiones = total.ConConexiones, con_planes = total.ConPlanes, planes_con_datos = total.PlanesConDatos,
-              con_grupos = total.ConGrupos, con_asignaciones = total.ConAsignaciones,
-              maestros_sin_conexiones = total.Maestros - total.ConConexiones });
-}));
-
-app.MapGet("/patrones-conexion", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r);
-    var agrupar = r.Query["agrupar"].FirstOrDefault() ?? "dia_semana";
-    if (agrupar is not ("dia_semana" or "rol")) throw new ErrorConsulta("'agrupar' debe ser 'dia_semana' o 'rol'.");
-    var escuela = P.Escuela(r, c);
-    var todas = c.PatronConexiones(d, h, agrupar, escuela);
-    int total = todas.Sum(f => f.Conexiones);
-    var filas = todas.Select(f => f with { PorcentajeDelTotal = P.Pct(f.Conexiones, total) }).ToList();
-    var mayor = todas.OrderByDescending(f => f.Conexiones).FirstOrDefault(); var menor = todas.OrderBy(f => f.Conexiones).FirstOrDefault();
-    var empateMayor = mayor is not null && todas.Count(f => f.Conexiones == mayor.Conexiones) > 1;
-    return new Respuesta("patrones_conexion", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { agrupar, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, filas,
-        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones),
-            agrupar == "dia_semana" ? "Siempre salen los 7 días (lunes a domingo, en ese orden); el día se lee en la hora local indicada. El total por día depende de cuántos lunes, martes… tenga el período pedido: con períodos cortos la comparación no es justa."
-                                    : "Rol de la cuenta de cada usuario (sin el rol client); ordenado de más a menos conexiones."),
-        new { total_conexiones = total, mas_conexiones = mayor?.Nombre, conexiones_del_mayor = mayor?.Conexiones, hay_empate_en_el_mayor = empateMayor,
-              menos_conexiones = menor?.Nombre, conexiones_del_menor = menor?.Conexiones });
-}));
-
-app.MapGet("/participacion-escuelas", (HttpRequest r, IConsultasUso c) => Ejecutar(() =>
-{
-    var (d, h) = P.Rango(r); var (desc, limite) = P.OrdenLimite(r);
-    var escuela = P.Escuela(r, c);
-    var todasLas = c.ParticipacionEscuelas(d, h);
-    var todas = (desc ? todasLas.OrderBy(f => f.PorcentajeParticipacion is null).ThenByDescending(f => f.PorcentajeParticipacion)
-                      : todasLas.OrderBy(f => f.PorcentajeParticipacion is null).ThenBy(f => f.PorcentajeParticipacion)).ToList();   // estable: empates por nombre; sin activos al final
-    if (escuela is not null) todas = todas.Where(f => f.Nombre == escuela).ToList();
-    int act = todasLas.Sum(f => f.UsuariosActivos), con = todasLas.Sum(f => f.UsuariosConectados);
-    return new Respuesta("participacion_escuelas", c.Fuente, c.ColumnaFechaConexiones, P.Periodo(d, h),
-        new { orden = P.Texto(desc), limite, escuela = escuela ?? "todas", cuentas_de_prueba = P.Cp(c) }, c.DatosHastaConexiones, todas.Take(limite).ToList(),
-        P.Unir(P.Nota(c.NotaConexiones, h, c.DatosHastaConexiones), P.Unir(c.NotaParticipacion,
-            todas.Count > limite ? $"HAY MÁS FILAS: se muestran {limite} de {todas.Count} escuelas; el 'resumen' trae el total de todas. Los empates se ordenan alfabéticamente, así que la lista no es exhaustiva si el último valor se repite." : null)),
-        new { escuelas_consideradas = todasLas.Count, total_usuarios_activos = act, total_usuarios_conectados = con, porcentaje_participacion_global = P.Pct(con, act),
-              escuelas_sin_conectados = todasLas.Count(f => f.UsuariosConectados == 0), escuelas_con_100_o_mas = todasLas.Count(f => f.PorcentajeParticipacion >= 100) });
-}));
+        // xlsx y gráfica trabajan con TODAS las filas (hasta 5000); en la gráfica, «limite» ya no es el de la consulta sino el nº de categorías de la vista previa.
+        r.HttpContext.Items["exportar"] = true;
+        OpcionesGrafica? opciones = null;
+        if (formato == "grafica")
+        {
+            r.HttpContext.Items["exportar_ignora_limite"] = true;
+            opciones = P.OpcionesDeGrafica(r);
+        }
+        var resp = Columnas.ANodo(Rutas.Con(f, r, c));
+        var u = Auth.Usuario(r.HttpContext);        // auditoría: quién exportó qué (sin token ni datos)
+        Console.WriteLine($"exportar usuario={u.Id} rol={u.Rol} origen={u.Origen} alcance=\"{resp["alcance"]}\" consulta={consulta} formato={formato} filas={resp["resultados"]?.AsArray().Count ?? 0}");
+        if (formato == "xlsx")
+            return Results.File(Excel.Libro(resp), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Columnas.NombreArchivo(resp));
+        return Graficas.Desde(resp, opciones) is { } spec
+            ? Results.Json(spec, Columnas.JsonApi)
+            : Results.Json(new { error = "sin_grafica", mensaje = "Esta consulta no tiene gráfica: hacen falta al menos 2 filas y una consulta graficable." }, statusCode: 422);
+    });
+});
 
 app.Run();
-
-static IResult Ejecutar(Func<Respuesta> consulta)
-{
-    try { return Results.Ok(consulta()); }
-    catch (ErrorConsulta e) { return Results.Json(new { error = "parametros_invalidos", mensaje = e.Message }, statusCode: 400); }
-    catch (MySqlException) { return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503); }
-}
 
 /// <summary>Lectura y validación de parámetros (mismos mensajes que la API de ejemplo en Python).</summary>
 static class P
@@ -416,15 +322,43 @@ static class P
         return (mn, mx);
     }
 
+    /// <summary>Límite máximo de filas: 50 en las rutas JSON; 5000 en la exportación.</summary>
+    public static int MaxLimite(HttpRequest r) => r.HttpContext.Items["exportar"] is true ? 5000 : 50;
+
     public static (bool desc, int limite) OrdenLimite(HttpRequest r)
     {
         var orden = r.Query["orden"].FirstOrDefault() ?? "desc";
         if (orden is not ("asc" or "desc")) throw new ErrorConsulta("'orden' debe ser 'asc' o 'desc'.");
-        var txt = r.Query["limite"].FirstOrDefault();
-        var limite = 10;
+        // Exportación (GET /exportar/...): el límite sube a 5000 y, sin 'limite', se devuelven todas las filas (hasta 5000).
+        var exportar = r.HttpContext.Items["exportar"] is true;
+        var max = MaxLimite(r);
+        var txt = r.HttpContext.Items["exportar_ignora_limite"] is true ? null : r.Query["limite"].FirstOrDefault();   // en la gráfica, «limite» es de la gráfica (OpcionesDeGrafica)
+        var limite = exportar ? max : 10;
         if (txt is not null && !int.TryParse(txt, out limite)) throw new ErrorConsulta("'limite' debe ser un número entero.");
-        if (limite is < 1 or > 50) throw new ErrorConsulta("'limite' debe estar entre 1 y 50.");
+        if (limite < 1 || limite > max) throw new ErrorConsulta($"'limite' debe estar entre 1 y {max}.");
         return (orden == "desc", limite);
+    }
+
+    /// <summary>
+    /// Parámetros de la gráfica (GET /exportar/{consulta}?formato=grafica): todas=true|false (vista previa de 10 por defecto), orden=desc|asc,
+    /// incluir_ceros=true|false (por defecto false), limite=1–5000 (categorías de la vista previa; 10 por defecto; con todas=true no aplica).
+    /// </summary>
+    public static OpcionesGrafica OpcionesDeGrafica(HttpRequest r)
+    {
+        bool Bool(string nombre)
+        {
+            var t = r.Query[nombre].FirstOrDefault();
+            if (string.IsNullOrEmpty(t)) return false;
+            if (!bool.TryParse(t, out var v)) throw new ErrorConsulta($"'{nombre}' debe ser true o false.");
+            return v;
+        }
+        var orden = r.Query["orden"].FirstOrDefault() ?? "desc";
+        if (orden is not ("asc" or "desc")) throw new ErrorConsulta("'orden' debe ser 'asc' o 'desc'.");
+        var limite = OpcionesGrafica.LimiteVistaPrevia;
+        var txt = r.Query["limite"].FirstOrDefault();
+        if (txt is not null && !int.TryParse(txt, out limite)) throw new ErrorConsulta("'limite' debe ser un número entero.");
+        if (limite < 1 || limite > 5000) throw new ErrorConsulta("'limite' debe estar entre 1 y 5000.");
+        return new OpcionesGrafica(Bool("todas"), orden, Bool("incluir_ceros"), limite);
     }
 
     public static string? Escuela(HttpRequest r, IConsultasUso c)

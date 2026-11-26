@@ -2,8 +2,9 @@ namespace EyaInsightsApi;
 
 // Filas que devuelve cada consulta. Los nombres salen en snake_case (pruebas_asignadas, ...).
 public record FilaArea(string Nombre, int PruebasAsignadas, int PruebasCompletadas, double? PorcentajeCompletado, double? PorcentajeDelTotalCompletadas = null);
-public record FilaEscuela(string Nombre, int Conexiones, int UsuariosConectados, double? PorcentajeDelTotal = null, double? ConexionesPorUsuario = null);
-public record FilaMaestro(string Nombre, string Escuela, int Conexiones, double? PorcentajeDelTotal = null);
+/// <param name="UltimaConexion">Último día CON conexión dentro del período pedido (hora local de la consulta); null (se omite) si no hubo ninguna.</param>
+public record FilaEscuela(string Nombre, int Conexiones, int UsuariosConectados, double? PorcentajeDelTotal = null, double? ConexionesPorUsuario = null, DateOnly? UltimaConexion = null);
+public record FilaMaestro(string Nombre, string Escuela, int Conexiones, double? PorcentajeDelTotal = null, DateOnly? UltimaConexion = null);
 public record FilaComparacion(string Nombre, int PruebasCompletadasA, int PruebasCompletadasB, int Diferencia, double? VariacionPct);
 public record FilaTendencia(string Periodo, int Conexiones, int? DiferenciaConPeriodoAnterior = null, double? VariacionPct = null);
 public record FilaComparacionEscuela(string Nombre, int ConexionesA, int ConexionesB, int Diferencia, double? VariacionPct);
@@ -23,6 +24,19 @@ public record FilaUsoDocentes(string Escuela, string PeriodoDesde, string Period
 public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsignadas, int PruebasCompletadas,
     double? PromedioSoloRealizadas, double PromedioTodasLasAsignadas);
 
+/// <summary>Usuarios por estado de suscripción: una fila por escuela o por rol (activas + inactivas + canceladas + sin suscripción = total_usuarios).</summary>
+public record FilaSuscripcion(string Nombre, int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int TotalUsuarios);
+/// <summary>Como <see cref="FilaSuscripcion"/> pero «inactivas» solo viaja si hay usuarios en ese estado (en la plataforma real no existe: solo active y canceled).</summary>
+public record FilaSuscripcionVista(string Nombre, int Activas, int? Inactivas, int Canceladas, int SinSuscripcion, int TotalUsuarios);
+/// <summary>Con agrupar=total: una fila por estado.</summary>
+public record FilaEstadoSuscripcion(string Nombre, int Usuarios, double? PorcentajeDelTotal = null);
+/// <param name="ActivasConFechaDeCancelacionVencida">Usuarios «activos» (status active) cuya cancellation_date ya pasó o está vacía: la diferencia entre las dos definiciones de «activo». null si la columna de cancelación no existe.</param>
+/// <param name="EstadosOriginales">Usuarios por cada valor REAL de subscription_profile_history.status (para ver qué estados existen en la base).</param>
+public record ConteoSuscripcion(int Activas, int Inactivas, int Canceladas, int SinSuscripcion, int? ActivasConFechaDeCancelacionVencida, Dictionary<string, int> EstadosOriginales)
+{
+    public int Total => Activas + Inactivas + Canceladas + SinSuscripcion;
+}
+
 /// <summary>
 /// Respuesta común a las 5 consultas. Lleva las REFERENCIAS que el agente debe citar:
 /// qué consulta se ejecutó, sobre qué columna de fecha se filtró, el período y los filtros aplicados,
@@ -31,6 +45,8 @@ public record FilaPromedioQuiz(string? Escuela, string? Materia, int PruebasAsig
 public record Respuesta(string Consulta, string Fuente, string ColumnaFecha, object Periodo, object Filtros,
     DateOnly? DatosHasta, object Resultados, string? Nota = null, object? Resumen = null)
 {
+    /// <summary>Qué datos incluye esta respuesta según quien la pidió: «todas las escuelas», «ORE …» o «escuela …» (Fase 4 · A2).</summary>
+    public string? Alcance { get; init; }
     public int TotalFilas => Resultados is System.Collections.ICollection c ? c.Count : 0;
     public DateTime GeneradoEn { get; } = DateTime.UtcNow;
 }
@@ -44,6 +60,15 @@ public class ErrorConsulta(string mensaje) : Exception(mensaje);
 /// </summary>
 public interface IConsultasUso
 {
+    /// <summary>
+    /// Vista de las consultas limitada al <paramref name="alcance"/> (A2): el filtro va en SQL (escuela.ore_id / school_id), no sobre filas ya cortadas.
+    /// <see cref="Alcance.Todo"/> devuelve las mismas consultas sin filtro.
+    /// </summary>
+    IConsultasUso Para(Alcance alcance);
+    /// <summary>«todas las escuelas», «ORE &lt;nombre&gt;» o «escuela &lt;nombre&gt;»; va en las referencias de cada respuesta y del Excel.</summary>
+    string DescripcionAlcance { get; }
+    /// <summary>Escuela del usuario (gs_data_analysis.user.school_id) o null si no se encuentra; sirve para el alcance del director.</summary>
+    int? EscuelaDeUsuario(string userId);
     string Fuente { get; }
     string? NotaArea { get; }
     /// <summary>Columna sobre la que se filtra el período en las consultas de pruebas (se cita en la respuesta).</summary>
@@ -84,4 +109,7 @@ public interface IConsultasUso
     /// <summary>Todas las escuelas con usuarios activos o con conexiones en el período, ordenadas por nombre.</summary>
     List<FilaParticipacion> ParticipacionEscuelas(DateOnly desde, DateOnly hasta);
     string? NotaParticipacion { get; }
+    /// <summary>agrupar: «total» (sin filas por grupo), «escuela» o «rol». Devuelve las filas por grupo y el total de todos los usuarios considerados.</summary>
+    (List<FilaSuscripcion> Filas, ConteoSuscripcion Total) UsuariosPorSuscripcion(string agrupar, string? escuela);
+    string? NotaSuscripcion { get; }
 }
