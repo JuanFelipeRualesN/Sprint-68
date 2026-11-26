@@ -20,6 +20,18 @@ read -r -s -p "Clave (no se muestra): " EYA_MYSQL_PASSWORD; echo
 echo "Conectando a ${EYA_MYSQL_HOST}:${EYA_MYSQL_PORT} como ${EYA_MYSQL_USER}..."
 export EYA_MYSQL_HOST EYA_MYSQL_PORT EYA_MYSQL_USER EYA_MYSQL_PASSWORD
 
+# Consultas del tablero (esquema `agente`, P1–P10): usuario de SOLO LECTURA agente_lector (sql/09).
+# Si pulsas Enter sin clave, esas consultas usan la misma conexión de arriba (base `agente`).
+read -r -p "Usuario de las consultas del tablero [agente_lector]: " EYA_MYSQL_AGENTE_USER; EYA_MYSQL_AGENTE_USER=${EYA_MYSQL_AGENTE_USER:-agente_lector}
+read -r -s -p "Clave de ${EYA_MYSQL_AGENTE_USER} (Enter = usar la conexión de arriba): " EYA_MYSQL_AGENTE_PASSWORD; echo
+if [ -n "${EYA_MYSQL_AGENTE_PASSWORD}" ]; then
+  export EYA_MYSQL_AGENTE_USER EYA_MYSQL_AGENTE_PASSWORD
+  echo "Consultas del tablero como ${EYA_MYSQL_AGENTE_USER}."
+else
+  unset EYA_MYSQL_AGENTE_USER EYA_MYSQL_AGENTE_PASSWORD
+  echo "Consultas del tablero con la conexión de arriba (${EYA_MYSQL_USER})."
+fi
+
 export Datos__Origen=mysql
 
 # Asistente del panel junto a Power BI (POST /asistente/preguntar): SOLO para desarrollo local.

@@ -48,6 +48,21 @@ if ((builder.Configuration["Datos:Origen"] ?? "ejemplo") == "mysql")
         Lista("Datos:DominiosExcluidos", ""),
         Lista("Datos:EscuelasExcluidas", "Escuela Facilitadores MSJ"));
     builder.Services.AddSingleton<IConsultasUso>(new ConsultasMySql(cadena, offsetMin, exclusion));
+
+    // Consultas «del tablero» (P1–P10) sobre el esquema `agente` (sql/09). Cadena propia: EYA_MYSQL_AGENTE, o la misma
+    // conexión con base `agente` y, si existen, EYA_MYSQL_AGENTE_USER/_PASSWORD (el usuario de solo lectura agente_lector).
+    var cadenaAgente = builder.Configuration["EYA_MYSQL_AGENTE"];
+    if (string.IsNullOrWhiteSpace(cadenaAgente))
+    {
+        var b = new MySqlConnectionStringBuilder(cadena) { Database = "agente" };
+        if (!string.IsNullOrWhiteSpace(builder.Configuration["EYA_MYSQL_AGENTE_USER"]))
+        {
+            b.UserID = builder.Configuration["EYA_MYSQL_AGENTE_USER"];
+            b.Password = builder.Configuration["EYA_MYSQL_AGENTE_PASSWORD"];
+        }
+        cadenaAgente = b.ConnectionString;
+    }
+    builder.Services.AddSingleton(new ConsultasTablero(cadenaAgente));
 }
 else builder.Services.AddSingleton<IConsultasUso, ConsultasEjemplo>();
 
@@ -242,12 +257,144 @@ app.MapGet("/tendencia-conexiones", (HttpRequest r, IConsultasUso c) => Ejecutar
               periodo_con_menos_conexiones = menor?.Periodo, conexiones_del_menor = menor?.Conexiones });
 }));
 
+// ── Consultas «del tablero» (P1–P10), esquema `agente` ─────────────────────────────────────────────
+// Sin fechas = todo el histórico. «definicion»: tablero (la medida de Power BI tal cual) o corregida (lo que su nombre promete).
+static ConsultasTablero TB(HttpContext ctx) => ctx.RequestServices.GetService<ConsultasTablero>()
+    ?? throw new FuenteNoDisponible("Las consultas del tablero solo funcionan con Datos:Origen=mysql (esquema agente).");
+
+app.MapGet("/resumen-usuarios", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var escuela = PT.Escuela(ctx.Request, t);
+    var (porRol, total) = t.ResumenUsuarios(escuela);
+    return new Respuesta("resumen_usuarios", t.Fuente, "no aplica (foto actual)", "foto actual", new { escuela = escuela ?? "todas" }, null, porRol,
+        "Usuarios = usuarios distintos sin el rol client ni la Escuela Facilitadores MSJ (igual que Power BI). Un usuario puede tener a la vez " +
+        "suscripciones activas y canceladas: activos + cancelados + sin_suscripcion NO suman usuarios; solo_cancelados son los que no tienen ninguna activa.",
+        new { total_usuarios = total.Usuarios, usuarios_activos = total.Activos, usuarios_cancelados = total.Cancelados,
+              usuarios_solo_cancelados = total.SoloCancelados, usuarios_sin_suscripcion = total.SinSuscripcion,
+              usuarios_activos_y_cancelados = total.ActivosYCancelados, porcentaje_activos = ConsultasTablero.Pct(total.Activos, total.Usuarios, 1) });
+}));
+
+app.MapGet("/conexion-por-escuela-pct", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var r = ctx.Request;
+    var (d, h) = PT.RangoOpcional(r); var (desc, limite) = P.OrdenLimite(r); var def = PT.Definicion(r);
+    var todas = t.ConexionPorEscuelaPct(d, h, def == "corregida");
+    var ord = (desc ? todas.OrderByDescending(f => f.PorcentajeConectados ?? 0).ThenByDescending(f => f.Escuela, StringComparer.Ordinal)
+                    : todas.OrderBy(f => f.PorcentajeConectados ?? 0).ThenBy(f => f.Escuela, StringComparer.Ordinal)).ToList();
+    var activos = todas.Sum(f => f.UsuariosActivos);
+    return new Respuesta("conexion_por_escuela_pct", t.Fuente, "agente.conexiones.connected_date", PT.Periodo(d, h),
+        new { orden = P.Texto(desc), limite, definicion = def }, t.DatosHastaConexiones(), ord.Take(limite).ToList(),
+        P.Unir(def == "tablero"
+            ? "Definición del tablero: usuarios_conectados = usuarios distintos de la escuela con alguna conexión en el período, tengan o no suscripción activa; usuarios_activos = usuarios con suscripción activa hoy. Por eso el % puede pasar de 100."
+            : "Definición corregida: usuarios_conectados = solo usuarios con suscripción activa que se conectaron en el período.",
+            P.Empates(ord, limite, f => (int)Math.Round((f.PorcentajeConectados ?? 0) * 100), completa: true)),
+        new { escuelas = todas.Count, escuelas_sin_conectados = todas.Count(f => f.UsuariosConectados == 0), total_usuarios_activos = activos });
+}));
+
+app.MapGet("/no-conectados-por-rol", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var r = ctx.Request;
+    var (d, h) = PT.RangoOpcional(r); var def = PT.Definicion(r);
+    var (porRol, total) = t.NoConectadosPorRol(d, h, def == "corregida");
+    return new Respuesta("no_conectados_por_rol", t.Fuente, "agente.conexiones.connected_date", PT.Periodo(d, h),
+        new { definicion = def }, t.DatosHastaConexiones(), porRol,
+        def == "tablero"
+            ? "Definición del tablero (medida «Usuarios NO Conectados (Activos por Rol)»): no_conectados = activos − conectados, pero «conectados» incluye usuarios SIN suscripción activa, así que subestima a los no conectados. Pide definicion=corregida para la cifra real."
+            : "Definición corregida: conectados = solo usuarios con suscripción activa que se conectaron en el período; no_conectados = activos que no se conectaron.",
+        new { total_activos = total.Activos, total_conectados = total.Conectados, total_no_conectados = total.NoConectados,
+              porcentaje_no_conectados = ConsultasTablero.Pct(total.NoConectados, total.Activos, 1),
+              aviso_total = "El total usa usuarios distintos; no es la suma de los roles." });
+}));
+
+app.MapGet("/escuelas-visitadas", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx);
+    var estado = ctx.Request.Query["estado"].FirstOrDefault() ?? "todas";
+    if (estado is not ("todas" or "visitada" or "no_visitada")) throw new ErrorConsulta("'estado' debe ser 'todas', 'visitada' o 'no_visitada'.");
+    var (todas, cargado) = t.EscuelasVisitadas();
+    var filas = todas.Where(f => estado == "todas" || f.Visitada == (estado == "visitada")).ToList();
+    return new Respuesta("escuelas_visitadas", "excel:escuelas visitadas (cargado en agente.escuelas_visitadas)", "no aplica (foto actual)", "foto actual",
+        new { estado }, cargado is { } c ? DateOnly.FromDateTime(c) : null, filas,
+        "Fuente: Excel de visitas a escuelas que mantiene el equipo; 'datos_hasta' es el día en que se cargó. Si una fila trae 'alerta', menciónala.",
+        new { escuelas_visitadas = todas.Count(f => f.Visitada), escuelas_no_visitadas = todas.Count(f => !f.Visitada), total_escuelas = todas.Count,
+              filas_con_alerta = todas.Count(f => f.Alerta is not null) });
+}));
+
+app.MapGet("/quizzes-por-periodo", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var r = ctx.Request;
+    var anio = PT.AnioAcademico(r);
+    var periodo = r.Query["periodo"].FirstOrDefault()?.ToUpperInvariant();
+    if (periodo is not (null or "P1" or "P2" or "P3" or "P4")) throw new ErrorConsulta("'periodo' debe ser P1, P2, P3 o P4.");
+    var excluir = !string.Equals(r.Query["excluir_posprueba"].FirstOrDefault(), "false", StringComparison.OrdinalIgnoreCase);
+    var filas = t.QuizzesPorPeriodo(anio, periodo, excluir);
+    int tom = filas.Sum(f => f.Tomados), asig = filas.Sum(f => f.Asignados);
+    return new Respuesta("quizzes_por_periodo", t.Fuente, "agente.pruebas.academic_year_start (año académico ago–jul) y period_no", "por año académico y período",
+        new { anio_academico = anio ?? "todos", periodo = periodo ?? "todos", excluir_posprueba = excluir }, null, filas,
+        "Asignados = tomados + no tomados (filas de vw_academics_details, como «Pruebas asignadas» de Power BI). " +
+        (excluir ? "Sin la Posprueba, como la página «Reporte Académico»." : "Incluye la Posprueba."),
+        new { total_asignados = asig, total_tomados = tom, total_no_tomados = asig - tom, porcentaje_tomados = ConsultasTablero.Pct(tom, asig) });
+}));
+
+app.MapGet("/conexiones-por-ubicacion", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var r = ctx.Request;
+    var (d, h) = PT.RangoOpcional(r);
+    var agrupar = r.Query["agrupar"].FirstOrDefault() ?? "ciudad";
+    if (agrupar is not ("ciudad" or "ore")) throw new ErrorConsulta("'agrupar' debe ser 'ciudad' u 'ore'.");
+    var fac = PT.IncluirFacilitadores(r);
+    var filas = t.ConexionesPorUbicacion(d, h, agrupar, fac);
+    var (u, n) = t.TotalConexiones(d, h, fac);
+    return new Respuesta("conexiones_por_ubicacion", t.Fuente, "agente.conexiones.connected_date", PT.Periodo(d, h),
+        new { agrupar, incluir_facilitadores = fac }, t.DatosHastaConexiones(), filas,
+        "usuarios_conectados = usuarios distintos; conexiones = un usuario en un día. " +
+        (fac ? "Incluye la Escuela Facilitadores MSJ." : "Sin la Escuela Facilitadores MSJ, como la página de conexiones de Power BI."),
+        new { total_usuarios_conectados = u, total_conexiones = n, grupos = filas.Count });
+}));
+
+app.MapGet("/conexiones-por-mes", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var r = ctx.Request;
+    var anio = PT.AnioAcademico(r);
+    var (d0, h0) = PT.RangoOpcional(r);
+    DateOnly d, h;
+    if (anio is not null) { var a = int.Parse(anio[..4], CultureInfo.InvariantCulture); (d, h) = (new DateOnly(a, 8, 1), new DateOnly(a + 1, 7, 31)); }
+    else if (d0 is { } x && h0 is { } y) (d, h) = (x, y);
+    else throw new ErrorConsulta("Indica 'anio_academico' (AAAA-AAAA, de agosto a julio) o 'desde' y 'hasta'.");
+    var fac = PT.IncluirFacilitadores(r);
+    var serie = t.ConexionesPorMes(d, h, fac);
+    var (u, n) = t.TotalConexiones(d, h, fac);
+    var hasta = t.DatosHastaConexiones();
+    var mayor = serie.OrderByDescending(f => f.Conexiones).ThenBy(f => f.Mes, StringComparer.Ordinal).FirstOrDefault();
+    return new Respuesta("conexiones_por_mes", t.Fuente, "agente.conexiones.connected_date", P.Periodo(d, h),
+        new { anio_academico = anio, incluir_facilitadores = fac }, hasta, serie,
+        P.Nota("Conexiones = un usuario en un día; usuarios_conectados = usuarios distintos del mes (no se suman entre meses: el total de usuarios está en 'resumen'). " +
+               "Año académico = 1 de agosto a 31 de julio (Power BI usa el año calendario en su columna «Año académico»).", h, hasta),
+        new { total_conexiones = n, total_usuarios_conectados = u, mes_con_mas_conexiones = mayor?.Mes, conexiones_del_mayor = mayor?.Conexiones });
+}));
+
+app.MapGet("/suscripciones-por-anio", (HttpContext ctx) => Ejecutar(() =>
+{
+    var t = TB(ctx); var r = ctx.Request;
+    var criterio = r.Query["criterio"].FirstOrDefault() ?? "fin";
+    if (criterio is not ("fin" or "activacion")) throw new ErrorConsulta("'criterio' debe ser 'fin' o 'activacion'.");
+    var anio = PT.AnioAcademico(r);
+    var filas = t.SuscripcionesPorAnio(criterio, anio);
+    return new Respuesta("suscripciones_por_anio", t.Fuente,
+        criterio == "fin" ? "agente.suscripciones.cancellation_date (fecha de fin programada)" : "agente.suscripciones.activated_date",
+        "por año académico", new { criterio, anio_academico = anio ?? "todos" }, null, filas,
+        criterio == "fin"
+            ? "Criterio «fin» = «Academic Year» del tablero: año en que termina la suscripción (cancellation_date es la fecha de fin programada, no un evento de cancelación). Los usuarios no se suman entre años."
+            : "Criterio «activacion»: año académico (ago–jul) en que se activó la suscripción. Los usuarios no se suman entre años.");
+}));
+
 app.Run();
 
 static IResult Ejecutar(Func<Respuesta> consulta)
 {
     try { return Results.Ok(consulta()); }
     catch (ErrorConsulta e) { return Results.Json(new { error = "parametros_invalidos", mensaje = e.Message }, statusCode: 400); }
+    catch (FuenteNoDisponible e) { return Results.Json(new { error = "fuente_no_disponible", mensaje = e.Message }, statusCode: 503); }
     catch (MySqlException) { return Results.Json(new { error = "base_no_disponible", mensaje = "No se pudo consultar la base de datos; intenta de nuevo más tarde." }, statusCode: 503); }
 }
 
@@ -326,5 +473,48 @@ static class P
         var e = r.Query["escuela"].FirstOrDefault();
         if (!string.IsNullOrEmpty(e) && !c.EscuelaExiste(e)) throw new ErrorConsulta($"La escuela '{e}' no existe.");
         return string.IsNullOrEmpty(e) ? null : e;
+    }
+}
+
+/// <summary>Parámetros de las consultas del tablero (fechas opcionales, definición, año académico).</summary>
+static class PT
+{
+    public static (DateOnly?, DateOnly?) RangoOpcional(HttpRequest r)
+    {
+        bool hayD = !string.IsNullOrEmpty(r.Query["desde"].FirstOrDefault()), hayH = !string.IsNullOrEmpty(r.Query["hasta"].FirstOrDefault());
+        if (!hayD && !hayH) return (null, null);
+        if (hayD != hayH) throw new ErrorConsulta("Indica 'desde' y 'hasta' juntos, o ninguno (todo el histórico).");
+        var (d, h) = P.Rango(r);
+        return (d, h);
+    }
+
+    public static object Periodo(DateOnly? d, DateOnly? h) =>
+        d is { } x && h is { } y ? P.Periodo(x, y) : "todo el histórico";
+
+    public static string Definicion(HttpRequest r)
+    {
+        var d = r.Query["definicion"].FirstOrDefault() ?? "tablero";
+        if (d is not ("tablero" or "corregida")) throw new ErrorConsulta("'definicion' debe ser 'tablero' o 'corregida'.");
+        return d;
+    }
+
+    public static string? AnioAcademico(HttpRequest r)
+    {
+        var a = r.Query["anio_academico"].FirstOrDefault();
+        if (string.IsNullOrEmpty(a)) return null;
+        if (a.Length != 9 || a[4] != '-' || !int.TryParse(a[..4], out var i) || !int.TryParse(a[5..], out var f) || f != i + 1)
+            throw new ErrorConsulta("'anio_academico' debe tener el formato AAAA-AAAA con años seguidos, p. ej. 2025-2026.");
+        return a;
+    }
+
+    public static bool IncluirFacilitadores(HttpRequest r) =>
+        string.Equals(r.Query["incluir_facilitadores"].FirstOrDefault(), "true", StringComparison.OrdinalIgnoreCase);
+
+    public static string? Escuela(HttpRequest r, ConsultasTablero t)
+    {
+        var e = r.Query["escuela"].FirstOrDefault();
+        if (string.IsNullOrEmpty(e)) return null;
+        if (!t.EscuelaExiste(e)) throw new ErrorConsulta($"La escuela '{e}' no existe.");
+        return e;
     }
 }

@@ -172,3 +172,38 @@ La primera hipótesis («escuelas con al menos una conexión») dio **43** escue
 - «Escuelas con menor actividad» (1-sep → 10-nov): 35 de 47 escuelas con 0 conexiones; el agente lo dice («hay 25 filas más con cero conexiones, el listado no es exhaustivo»).
 - Agente con datos reales: **7/7** preguntas del ticket y **9/9** trampas sin observaciones.
 - Pruebas: mismas filas que el modelo de Power BI (10.628; 2025-2026 P1–P3 = 6.106 / 217 / 5.889). Sigue sin explicarse solo la tarjeta de la página demo (1.029 / 206 / 823 / 135).
+
+---
+
+# Resultados de `sql/09_crear_vistas_agente.sql` (Workbench, 17-nov-2026)
+Se ejecutaron las 20 sentencias sin errores: el esquema `agente`, 9 vistas, el usuario `agente_lector` y su permiso, y las 8 consultas de verificación. La referencia es el .pbix procesado el 5-nov (`../MSJ_Utilization_modelo_y_10_preguntas.md`).
+
+| Comprobación | Power BI (5-nov) | Vistas `agente` (17-nov) | |
+|---|---|---|---|
+| B1 cancelados · sin suscripción (usuarios / filas) | 14.479 / 62.412 · 489 / 489 | igual | ✅ |
+| B1 activos (usuarios / filas) | 6.988 / 9.674 | 7.277 / 9.982 | ⚠️ datos nuevos |
+| B2 conexiones / usuarios (corte 4-nov) | 6.994 / 2.433 | igual | ✅ |
+| B2 año 2025-2026: regla del tablero · regla ago–jul | 1.481 / 751 · 4.078 / 1.819 | igual | ✅ |
+| B3 conectados (definición del tablero) | 2.432 | 2.432 | ✅ |
+| B3 conectados con suscripción activa | 726 | 935 | ⚠️ datos nuevos |
+| B4 pruebas por año y período (tomadas / no tomadas) | 271 / 10.357 · página 206 / 6.883 | igual, fila por fila | ✅ |
+| B6 suscripciones 2022-23 a 2025-26 | 24 · 424 · 945 · 131 | igual (suscripciones, usuarios y filas) | ✅ |
+| B6 suscripciones 2026-27 (suscripciones / usuarios / filas) | 290 / 6.988 / 9.674 | 301 / 7.277 / 9.982 | ⚠️ datos nuevos |
+
+**Conclusión:** las reglas coinciden con las de Power BI. Las únicas diferencias están en la suscripción activa 2026-27, y salen del crecimiento de los datos después del corte del 5-nov: el total de activos fue 6.988 el 5-nov, 7.199 el 12-nov (servicio) y 7.277 el 17-nov. Los cancelados y los años cerrados coinciden exactos.
+Cierre de la verificación (17-nov):
+- #13 total de usuarios: 17.744 en la base hoy (17.679 en el .pbix del 5-nov; +65 usuarios nuevos).
+- #19 promedio de % Full Quiz (Completed, sin Posprueba, 2025-2026): **60,19**, igual que el tablero ✅.
+- `vw_total_users_with_connection_details` hoy: 949 conectados / 7.277 usuarios / 13,04 %. Los 7.277 coinciden con las vistas `agente` ✅. Las vistas dan 935 conectados porque B3 corta las conexiones al 4-nov; sin ese corte dan **949**, igual que la vista SQL ✅. **Las vistas `agente` quedan validadas.**
+
+# Carga del Excel de escuelas visitadas (17-nov-2026)
+Se creó `agente.escuelas_visitadas` (`sql/10`) y se cargó el Excel con `cargar_escuelas_visitadas.py`: **21 visitadas · 26 no visitadas · 47 en total**.
+El Excel que leía Power BI tenía 17 visitadas. Las 4 de diferencia (Amalia Marín Castilla, Amalia Marín Elemental, Antonio Sarriera Egozcue y Arturo Morales Carrión) están marcadas como visitadas pero no tienen fecha, igual que Manuel Boada. Falta confirmar que el archivo cargado es la versión vigente del Excel.
+
+# API contra producción (17-nov-2026, `correr_api_mysql.sh`; consultas del tablero con `agente_lector`)
+| Endpoint | Resultado | Referencia (Workbench / Power BI) | |
+|---|---|---|---|
+| `/resumen-usuarios` | 17.744 usuarios · 7.277 activos · 14.479 cancelados · 489 sin suscripción | igual que B1 y #13 | ✅ |
+| `/escuelas-visitadas` | 21 visitadas · 26 no visitadas · 47 escuelas · 8 con alerta | igual que la carga del Excel | ✅ |
+| `/no-conectados-por-rol?definicion=corregida` | 7.277 activos · 949 conectados · 6.328 no conectados | igual que la vista SQL de Power BI (949 / 7.277) | ✅ |
+| `/quizzes-por-periodo?anio_academico=2025-2026` | 206 tomados · 6.883 no tomados | igual que la página «Reporte Académico» | ✅ |
