@@ -49,7 +49,7 @@
       "get": {
         "operationId": "conexiones_por_escuela",
         "summary": "Conexiones por escuela en un período",
-        "description": "Devuelve el total de conexiones de cada escuela entre dos fechas, ordenado por conexiones. Incluye las escuelas con cero conexiones. Úsala para las escuelas con más o con menos actividad: orden desc para las de mayor actividad, orden asc para las de menor. Cada fila trae porcentaje_del_total (qué % de todas las conexiones aporta la escuela) y conexiones_por_usuario; la respuesta trae 'resumen' con total_conexiones y cuántas escuelas tuvieron o no conexiones (escuelas_con_conexiones, escuelas_sin_conexiones): úsalos, no los calcules. Con el parámetro escuela (nombre exacto, obtenido con buscar_escuela) devuelve solo esa escuela, pero su porcentaje_del_total sigue siendo sobre todas las escuelas.",
+        "description": "Devuelve el total de conexiones de cada escuela entre dos fechas, ordenado por conexiones. Incluye las escuelas con cero conexiones. Úsala para las escuelas con más o con menos actividad: orden desc para las de mayor actividad, orden asc para las de menor. Cada fila trae porcentaje_del_total (qué % de todas las conexiones aporta la escuela) y conexiones_por_usuario; la respuesta trae 'resumen' con total_conexiones y cuántas escuelas tuvieron o no conexiones (escuelas_con_conexiones, escuelas_sin_conexiones): úsalos, no los calcules. Con el parámetro escuela (nombre exacto, obtenido con buscar_escuela) devuelve solo esa escuela, pero su porcentaje_del_total sigue siendo sobre todas las escuelas. Con min_conexiones y max_conexiones lista solo las escuelas con ese número de conexiones (p. ej. «escuelas conectadas una sola vez»: 1 y 1; «más de una conexión»: min 2). El resumen trae cuántas escuelas cumplen el filtro. Cada fila trae ultima_conexion: la fecha (AAAA-MM-DD, hora de Puerto Rico) del ÚLTIMO día con conexión de esa escuela DENTRO del período pedido; no viene si la escuela no tuvo conexiones en el período. Úsala para «¿cuál fue la última visita/conexión de cada escuela?» (con limite=50 para listarlas todas).",
         "parameters": [
           {
             "$ref": "#/components/parameters/desde"
@@ -65,6 +65,26 @@
           },
           {
             "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "name": "min_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con AL MENOS este número de conexiones en el período (una conexión = un día con ingreso). Ej.: 2 para «más de una conexión».",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "max_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con COMO MÁXIMO este número de conexiones en el período. Para «una sola vez» usa min_conexiones=1 y max_conexiones=1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -81,7 +101,7 @@
       "get": {
         "operationId": "conexiones_por_maestro",
         "summary": "Conexiones por maestro en un período",
-        "description": "Devuelve el total de conexiones de cada maestro entre dos fechas, ordenado por conexiones, con su escuela. Puede filtrarse por una escuela. Úsala para los maestros con más o con menos conexiones: orden desc o asc. Cada fila trae porcentaje_del_total; la respuesta trae 'resumen' con total_conexiones_maestros y cuántos maestros tuvieron o no conexiones (maestros_con_conexiones, maestros_sin_conexiones): úsalos, no los calcules.",
+        "description": "Devuelve el total de conexiones de cada maestro entre dos fechas, ordenado por conexiones, con su escuela. Puede filtrarse por una escuela. Úsala para los maestros con más o con menos conexiones: orden desc o asc. Cada fila trae porcentaje_del_total; la respuesta trae 'resumen' con total_conexiones_maestros y cuántos maestros tuvieron o no conexiones (maestros_con_conexiones, maestros_sin_conexiones): úsalos, no los calcules. Con min_conexiones y max_conexiones lista solo los maestros con ese número de conexiones (p. ej. «maestros que se conectaron una sola vez»: 1 y 1). El resumen trae cuántos maestros cumplen el filtro. Cada fila trae ultima_conexion: la fecha (AAAA-MM-DD, hora de Puerto Rico) del último día con conexión del maestro dentro del período pedido; no viene si no se conectó en el período.",
         "parameters": [
           {
             "$ref": "#/components/parameters/desde"
@@ -97,6 +117,26 @@
           },
           {
             "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "name": "min_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con AL MENOS este número de conexiones en el período (una conexión = un día con ingreso). Ej.: 2 para «más de una conexión».",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "max_conexiones",
+            "in": "query",
+            "required": false,
+            "description": "Solo filas con COMO MÁXIMO este número de conexiones en el período. Para «una sola vez» usa min_conexiones=1 y max_conexiones=1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -317,6 +357,203 @@
               "type": "string",
               "format": "date"
             }
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/conexiones-acumuladas": {
+      "get": {
+        "operationId": "conexiones_acumuladas",
+        "summary": "Conexiones y usuarios conectados acumulados, y usuarios activos de la plataforma",
+        "description": "Devuelve, por día, mes, trimestre o año entre dos fechas, las conexiones del período, las conexiones acumuladas (suma corrida desde 'desde'), los usuarios_nuevos (usuarios cuya primera conexión del rango cae en ese período) y los usuarios_acumulados. Es la página «Conexiones acumuladas» y las tarjetas de «% de conexiones» de Power BI. El 'resumen' trae total_conexiones, usuarios_conectados (usuarios distintos del período) y, sin filtro de escuela, usuarios_activos (usuarios con suscripción activa), porcentaje_conexion_usuarios (usuarios conectados del período / activos), usuarios_conectados_alguna_vez y porcentaje_conectados_alguna_vez: úsalos, no los calcules. Úsala para preguntas de cuántos usuarios distintos se conectaron, crecimiento acumulado, usuarios activos o % de usuarios que se conecta.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "name": "granularidad",
+            "in": "query",
+            "required": false,
+            "description": "Cómo agrupar el tiempo. Por defecto mes. 'dia' solo para períodos de hasta 93 días.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dia",
+                "mes",
+                "trimestre",
+                "anio"
+              ],
+              "default": "mes"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/uso-docentes": {
+      "get": {
+        "operationId": "uso_docentes",
+        "summary": "Uso de la plataforma por los maestros en un período académico",
+        "description": "Por escuela y período académico: maestros (distintos, con suscripción activa), con_conexiones (se conectaron en el período), con_planes (crearon planes instruccionales en el período), planes_con_datos (esos planes tienen quizzes o lecciones), con_grupos (crearon grupos en el año académico) y con_asignaciones (han creado alguna asignación). Es la página de uso de maestros de Power BI. Cada escuela tiene su propio calendario: por defecto se usa el período vigente HOY de cada escuela; con 'fecha' el período que contiene esa fecha; con 'periodo_desde' el período que empieza ese día. El 'resumen' trae los totales de maestros distintos de todas las filas (escuelas, maestros, con_conexiones, …, maestros_sin_conexiones): úsalos, no los calcules.",
+        "parameters": [
+          {
+            "name": "fecha",
+            "in": "query",
+            "required": false,
+            "description": "Fecha AAAA-MM-DD: se usa el período académico de cada escuela que la contiene. Si se omite, hoy (período vigente).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "periodo_desde",
+            "in": "query",
+            "required": false,
+            "description": "Fecha AAAA-MM-DD en que EMPIEZA el período (igual al filtro «Periodo desde» de Power BI). Tiene prioridad sobre 'fecha'.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/patrones-conexion": {
+      "get": {
+        "operationId": "patrones_conexion",
+        "summary": "Patrones de conexión por día de la semana o por rol",
+        "description": "Devuelve las conexiones agrupadas por día de la semana (siempre los 7 días, lunes a domingo) o por rol (teacher, student, director…), con usuarios_conectados y porcentaje_del_total. El 'resumen' trae el día o rol con más y con menos conexiones y si hay empate: úsalo, no lo calcules. Úsala para «qué día se conectan más» o «qué rol se conecta más». NO hay datos por hora (la base guarda un registro por usuario y día).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "name": "agrupar",
+            "in": "query",
+            "required": false,
+            "description": "Eje del patrón. Por defecto dia_semana.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dia_semana",
+                "rol"
+              ],
+              "default": "dia_semana"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/participacion-escuelas": {
+      "get": {
+        "operationId": "participacion_escuelas",
+        "summary": "Participación (% de usuarios activos que se conectaron) por escuela",
+        "description": "Por escuela: usuarios_activos (con suscripción activa), usuarios_conectados en el período y porcentaje_participacion (conectados / activos), ordenado por ese porcentaje. Es el gráfico «% de usuarios conectados por escuela» de Power BI. El 'resumen' trae el total de usuarios activos y conectados y el porcentaje global. Úsala para comparar la PARTICIPACIÓN entre escuelas (no solo el número de conexiones, que depende del tamaño de la escuela). Nota: el porcentaje puede pasar de 100 % porque se cuentan conectados sin suscripción activa.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/desde"
+          },
+          {
+            "$ref": "#/components/parameters/hasta"
+          },
+          {
+            "$ref": "#/components/parameters/orden"
+          },
+          {
+            "$ref": "#/components/parameters/limite"
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/ParametrosInvalidos"
+          }
+        }
+      }
+    },
+    "/usuarios-por-suscripcion": {
+      "get": {
+        "operationId": "usuarios_por_suscripcion",
+        "summary": "Usuarios por estado de suscripción (activa, inactiva, cancelada, sin suscripción)",
+        "description": "Cuenta los usuarios (rol distinto de client) por estado de suscripción: activas, canceladas y sin_suscripcion (inactivas solo aparece si existieran usuarios en otro estado; hoy la plataforma solo tiene active y canceled), en total, por escuela o por rol. Cada usuario cuenta UNA vez: activa = tiene una suscripción con status 'active' (sin mirar la fecha de cancelación; es la definición del tablero de Power BI); cancelada = sin suscripción activa y con alguna cancelada; inactiva (solo si existe) = tiene suscripciones pero ninguna activa ni cancelada; sin_suscripcion = no tiene ninguna. Es el estado ACTUAL: no lleva fechas ni período. Con agrupar=total (por defecto) devuelve una fila por estado (Activas, Canceladas, Sin suscripción) con usuarios y porcentaje_del_total; con agrupar=escuela o rol devuelve una fila por grupo con las columnas de esos estados y total_usuarios. El 'resumen' trae los totales (activas, inactivas, canceladas, sin_suscripcion, total_usuarios, porcentaje_activas), estados_originales (usuarios por cada valor real de status) y activas_con_fecha_de_cancelacion_vencida: úsalos, no los calcules. Úsala para «¿cuántos usuarios tienen la suscripción inactiva o cancelada y cuántos no tienen suscripción?». NO da planes, pagos ni vencimientos de usuarios individuales.",
+        "parameters": [
+          {
+            "name": "agrupar",
+            "in": "query",
+            "required": false,
+            "description": "Cómo agrupar. total (por defecto) = una fila por estado; escuela = una fila por escuela; rol = una fila por rol.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "total",
+                "escuela",
+                "rol"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/escuela"
           },
           {
             "$ref": "#/components/parameters/orden"

@@ -6,7 +6,7 @@ import {
     MathSquareBrackets, MathSubScript, MathSubSuperScript, MathSuperScript, Packer, Paragraph, ShadingType, Table,
     TableCell, TableRow, TextRun, WidthType,
 } from 'docx';
-import { stripEditorMetadata, latexToReadable } from './general-functions-exporters';
+import { stripEditorMetadata, latexToReadable, documentHeaderTitle } from './general-functions-exporters';
 import { INLINE_MATH_RE } from '../tool-modal-utils';
 import { WORD_STYLES, PAGE, CONTENT_WIDTH, MAX_IMAGE_WIDTH_PX, TABLE, listIndent, listLevels } from './exporters-word-styles';
 
@@ -34,7 +34,7 @@ export const buildWordDocument = async (markdown, title = '') => {
     };
 
     const children = [
-        ...(title ? [new Paragraph({ style: 'DocTitle', text: title })] : []),
+        ...(documentHeaderTitle(clean, title) ? [new Paragraph({ style: 'DocTitle', text: title })] : []),
         ...tokens.flatMap((token) => blockToDocx(token, ctx)),
     ];
 

@@ -57,16 +57,47 @@ const nullIfBlank = (v) => {
 // 'YYYY-MM-DD HH:mm:ss' → the calendar day it belongs to, without constructing
 // a Date (which would shift the day for timezones behind/ahead of the wall
 // time the backend sent).
-const dayKeyFromRaw = (value) => {
+export const dayKeyFromRaw = (value) => {
     const m = String(value ?? '').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 };
+
+const previousDayKey = (key) => {
+    const [year, month, day] = String(key).split('-').map(Number);
+    if (!year || !month || !day) return key;
+
+    const previous = new Date(Date.UTC(year, month - 1, day - 1));
+    return dateKey(previous.getUTCFullYear(), previous.getUTCMonth(), previous.getUTCDate());
+};
+
+const endsExactlyAtMidnight = (value) =>
+    typeof value === 'string' && /[T ]00:00(?::00)?(?:\.0+)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(value.trim());
 function normalizeEvent(item) {
     const m = item?.EventModel ?? item;
     if (!m) return null;
 
     const { type, color } = mapEventType(m.EventType);
-    const attachments = item?.EventAttachmentModelList ?? [];
+    const attachments = (item?.EventAttachmentModelList ?? []).map((attachment) => {
+        const storedName = nullIfBlank(
+            pick(attachment, 'AttachmentUrl')
+            ?? pick(attachment, 'Url')
+            ?? pick(attachment, 'Path')
+            ?? pick(attachment, 'Link'),
+        );
+
+        return {
+            ...attachment,
+            name: nullIfBlank(
+                pick(attachment, 'Name')
+                ?? pick(attachment, 'FileName')
+                ?? pick(attachment, 'Title'),
+            ) ?? storedName,
+            attachmentUrl: storedName,
+            // Some integrations may already return a public URL. TeacherAPI normally
+            // returns a stored filename, which the UI resolves to a signed URL on click.
+            url: storedName && /^https?:\/\//i.test(storedName) ? storedName : null,
+        };
+    });
 
     return {
         id: m.Id,
@@ -97,7 +128,10 @@ function normalizeEvent(item) {
 // date. Capped so a malformed end date can't spray an event across the year.
 const MAX_SPAN_DAYS = 31;
 
-function dayKeysCovered(event) {
+// Original coverage semantics for lessons, lesson quizzes and homework.
+// Keep this path stable: calendar-event improvements must not alter the
+// behaviour of those independent planning items.
+function legacyDayKeysCovered(event) {
     const startKey = dayKeyFromRaw(event.startDate);
     if (!startKey) return [];
 
@@ -112,6 +146,32 @@ function dayKeysCovered(event) {
         const key = dateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
         keys.push(key);
         if (key >= endKey) break;
+        cursor.setDate(cursor.getDate() + 1);
+    }
+    return keys;
+}
+
+// Fallback for calendar events when a view does not supply timezone-aware keys.
+function calendarEventDayKeysCovered(event) {
+    const startKey = dayKeyFromRaw(event.startDate);
+    if (!startKey) return [];
+
+    const endKey = dayKeyFromRaw(event.endDate) ?? startKey;
+    // Calendar intervals are end-exclusive. An event ending exactly at
+    // 2026-11-10 00:00 occupies the 9th through 24:00, not the 10th.
+    const lastCoveredKey = endKey > startKey && endsExactlyAtMidnight(event.endDate)
+        ? previousDayKey(endKey)
+        : endKey;
+    if (lastCoveredKey <= startKey) return [startKey];
+
+    const keys = [];
+    const [y, mo, d] = startKey.split('-').map(Number);
+    const cursor = new Date(y, mo - 1, d);
+
+    for (let i = 0; i < MAX_SPAN_DAYS; i++) {
+        const key = dateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+        keys.push(key);
+        if (key >= lastCoveredKey) break;
         cursor.setDate(cursor.getDate() + 1);
     }
     return keys;
@@ -136,7 +196,9 @@ export function resolveTypeMeta(eventType) {
 
 // ─── Public entry point ──────────────────────────────────────────────────────
 // Raw API payload → { 'YYYY-MM-DD': Event[] }, each day sorted by start time.
-export function buildEventsMap(data) {
+// `calendarEventDayKeys` is deliberately scoped to EventType 4. Planning items
+// retain their historical mapping regardless of a calendar view's timezone.
+export function buildEventsMap(data, { calendarEventDayKeys } = {}) {
     const map = {};
     if (!Array.isArray(data)) return map;
 
@@ -144,8 +206,19 @@ export function buildEventsMap(data) {
         const event = normalizeEvent(item);
         if (!event || !event.available) return;
 
-        dayKeysCovered(event).forEach((key) => {
-            (map[key] ||= []).push(event);
+        const isCalendarEvent = event.type === 'calendarEvent';
+        const timezoneAwareKeys = isCalendarEvent && typeof calendarEventDayKeys === 'function'
+            ? calendarEventDayKeys(event)
+            : null;
+        const coveredKeys = isCalendarEvent
+            ? (Array.isArray(timezoneAwareKeys) ? timezoneAwareKeys : calendarEventDayKeysCovered(event))
+            : legacyDayKeysCovered(event);
+
+        coveredKeys.forEach((key) => {
+            // Only calendar events need per-day identity for clipped rendering.
+            // Other event types retain the same object shape they had before.
+            const mappedEvent = isCalendarEvent ? { ...event, occurrenceDateKey: key } : event;
+            (map[key] ||= []).push(mappedEvent);
         });
     });
 

@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Sparkles, X, Send, RotateCcw, ChevronDown, ChevronUp, Info, TriangleAlert } from "lucide-react";
-import { preguntar } from "./assistant-api";
+import { Sparkles, X, Send, RotateCcw, ChevronDown, ChevronUp, Info, TriangleAlert, Download } from "lucide-react";
+import { preguntar, leerAdjuntos, descargarExcel } from "./assistant-api";
+import Grafica from "./grafica";
+import ExportarDirecto from "./exportar-directo";
 import { textosPara } from "./textos";
+import { mensajeDeError } from "./errores";
 import "./style.css";
+
+export { mensajeDeError };
 
 /**
  * Panel del asistente de datos junto a los tableros de Power BI (REQ-3741).
@@ -104,25 +109,52 @@ function Referencias({ refs, consultas, t, idioma }) {
   );
 }
 
-function Mensaje({ m, t, idioma }) {
-  if (m.rol === "usuario") return <div className="asst-msg asst-msg-usuario"><p>{m.texto}</p></div>;
+function BotonExcel({ descarga, t }) {
+  const [estado, setEstado] = useState("");
+  const [error, setError] = useState("");
+  const ctlRef = useRef(null);
+  useEffect(() => () => { if (ctlRef.current) ctlRef.current.abort(); }, []);
+  const bajar = async () => {
+    if (estado === "cargando") return;
+    setEstado("cargando"); setError("");
+    const ctl = new AbortController();
+    ctlRef.current = ctl;
+    try {
+      await descargarExcel(descarga, ctl.signal);
+      setEstado("");
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      setError(mensajeDeError(e, t)); setEstado("");
+    }
+  };
   return (
-    <div className={`asst-msg asst-msg-asistente${m.error || m.bloqueado ? " asst-msg-error" : ""}`}>
-      <TextoRespuesta texto={m.texto} />
-      {(m.avisos || []).map((a, i) => <div className="asst-aviso-dato" key={i}><TriangleAlert size={13} /> <span>{a}</span></div>)}
-      {(m.advertencias || []).map((a, i) => <div className="asst-advertencia" key={i}><b>{t.verificacion}:</b> {a}</div>)}
-      <Referencias refs={m.referencias} consultas={m.consultas} t={t} idioma={idioma} />
+    <div className={`asst-descarga-fila${descarga.destacar ? " asst-descarga-fila--destacada" : ""}`}>
+      <button type="button" className="asst-descarga" onClick={bajar} disabled={estado === "cargando"} title={descarga.nombre || ""}>
+        <Download size={14} /> {estado === "cargando" ? t.descargando : t.descargarExcel}
+      </button>
+      <span className="asst-descarga-nota">{t.excelFilas}{typeof descarga.filas_estimadas === "number" ? ` (~${descarga.filas_estimadas})` : ""}</span>
+      {error && <div className="asst-advertencia" role="alert">{error}</div>}
     </div>
   );
 }
 
-function mensajeDeError(e, t) {
-  switch (e && e.codigo) {
-    case "sin_conexion": return t.errRed;
-    case "sin_acceso_al_modelo": return t.errModelo;
-    case "modelo_no_disponible": return t.errNoDisponible;
-    default: return t.errGenerico;
-  }
+/** La descarga (Excel) de la misma consulta que la gráfica: comparten `id`. Sin `id` (servicio antiguo) la ventana ampliada no ofrece Excel. */
+function descargaDeGrafica(g, descargas) {
+  return g && g.id ? (descargas || []).find((d) => d.id === g.id) || { id: g.id, url: `/asistente/descargas/${g.id}`, nombre: `${g.consulta || "datos"}.xlsx` } : undefined;
+}
+
+function Mensaje({ m, t, idioma }) {
+  if (m.rol === "usuario") return <div className="asst-msg asst-msg-usuario"><p>{m.texto}</p></div>;
+  return (
+    <div className={`asst-msg asst-msg-asistente${m.error || m.bloqueado ? " asst-msg-error" : ""}${(m.graficas || []).length > 0 ? " asst-msg--ancho" : ""}`}>
+      <TextoRespuesta texto={m.texto} />
+      {(m.avisos || []).map((a, i) => <div className="asst-aviso-dato" key={i}><TriangleAlert size={13} /> <span>{a}</span></div>)}
+      {(m.advertencias || []).map((a, i) => <div className="asst-advertencia" key={i}><b>{t.verificacion}:</b> {a}</div>)}
+      {(m.graficas || []).map((g, k) => <Grafica key={`g${k}`} spec={g} t={t} idioma={idioma} descarga={descargaDeGrafica(g, m.descargas)} />)}
+      {(m.descargas || []).map((d, k) => <BotonExcel key={d.id || `d${k}`} descarga={d} t={t} />)}
+      <Referencias refs={m.referencias} consultas={m.consultas} t={t} idioma={idioma} />
+    </div>
+  );
 }
 
 // ---------- componente ----------
@@ -190,8 +222,9 @@ const AssistantPanel = ({ report, contextoReporte, contextoPagina, idioma, onTog
         signal: ctl.signal,
       });
       if (d.conversacion_id) setConversacionId(d.conversacion_id);
+      const { descargas, graficas } = leerAdjuntos(d);
       setMensajes((m) => [...m, {
-        id: nuevoId(), rol: "asistente",
+        id: nuevoId(), rol: "asistente", descargas, graficas,
         texto: d.error === "contenido_bloqueado" ? t.bloqueado : d.respuesta,
         referencias: d.referencias || [], avisos: d.avisos || [], advertencias: d.advertencias || [], consultas: d.consultas || [],
         bloqueado: d.error === "contenido_bloqueado",
@@ -245,6 +278,7 @@ const AssistantPanel = ({ report, contextoReporte, contextoPagina, idioma, onTog
             {t.sugerencias.map((s) => (
               <button type="button" key={s} className="asst-sug" onClick={() => enviar(s)} disabled={cargando}>{s}</button>
             ))}
+            <ExportarDirecto t={t} mensajeDeError={mensajeDeError} />
           </div>
         )}
         {mensajes.map((m) => <Mensaje key={m.id} m={m} t={t} idioma={lang} />)}

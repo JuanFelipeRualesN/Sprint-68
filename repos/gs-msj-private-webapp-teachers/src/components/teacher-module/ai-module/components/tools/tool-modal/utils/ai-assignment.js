@@ -27,7 +27,6 @@ const escapeHtml = (text) => String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 
 const stripImages = (markdown) => String(markdown || '').replace(/!\[[^\]]*\]\([^)]*\)/g, '');
 
@@ -39,7 +38,7 @@ const toParagraphs = (text) => String(text || '')
     .map(line => `<p>${escapeHtml(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`)
     .join('');
 
-export const createAssignment = async ({ output, sourceText = '', t }) => {
+export const createAssignment = async ({ output, sourceText = '', sourceIsReading = false, conversionKey = 'conversionSystem', t }) => {
     const text = (key, vars = {}) => t(`tool-modal:assignment.${key}`, { ...vars, interpolation: { escapeValue: false } });
 
     // The assignment shows text as is, so formulas go as plain text
@@ -48,7 +47,7 @@ export const createAssignment = async ({ output, sourceText = '', t }) => {
         sourceBlock: String(sourceText || '').trim() ? text('sourceBlock', { text: latexToPlainText(sourceText) }) : '',
     });
 
-    const raw = await generateStreamedResponse(text('conversionSystem'), request, undefined, TEMPERATURE);
+    const raw = await generateStreamedResponse(text(conversionKey), request, undefined, TEMPERATURE);
 
     let data = null;
 
@@ -69,7 +68,8 @@ export const createAssignment = async ({ output, sourceText = '', t }) => {
     if (questions.length === 0) throw assignmentError(ASSIGNMENT_ERRORS.NO_QUESTIONS);
 
     const title = String(data.title || '').trim();
-    const readingText = String(data.readingText || '').trim();
+    const ownReading = sourceIsReading ? latexToPlainText(String(sourceText || '')).trim() : '';
+    const readingText = ownReading || String(data.readingText || '').trim();
 
     let response;
     try {
