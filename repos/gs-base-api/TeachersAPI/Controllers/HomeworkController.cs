@@ -14,6 +14,7 @@ using TeachersAPI.Domain.Models.UserQuizzes;
 using TeachersAPI.TeachersAPI.Infrastructure.DapperHandler;
 using TeachersAPI.TeachersAPI.Services.FeignAPI;
 using TeachersAPI.TeachersAPI.Services.Lessons;
+using TeachersAPI.TeachersAPI.Services.Lessons.CustomClasses;
 using TeachersAPI.TeachersAPI.Services.Teachers;
 using TeachersAPI.TeachersAPI.Services.UserQuizzes;
 using TeachersAPI.Domain.Models.Lessons.Response;
@@ -252,19 +253,19 @@ namespace TeachersAPI.Controllers
             try
             {
                 // Get user ID 
-                ValidationResponseModel responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "Homework");
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "Homework");
                 if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
                 {
                     return Unauthorized();
                 }
 
                 // Create Homework
-                QuizModifierManager quizModifierManager = new QuizModifierManager(
+                var quizModifierManager = new QuizModifierManager(
                     AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"],
                     AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], responseSession.LangCode);
-               Domain.Models.Generals.Responses.QuizResponseModel quizResponseModel = new Domain.Models.Generals.Responses.QuizResponseModel();
+               var quizResponseModel = new Domain.Models.Generals.Responses.QuizResponseModel();
 
-               Domain.Models.Lessons.Response.QuizResponseModel quizResponseModelLib =
+               var quizResponseModelLib =
                  quizModifierManager.CreateSimpleQuiz(quizModifierModel, responseSession.UserId);
                 quizResponseModel.QuizRequestModel = new QuizRequestModel()
                 {
@@ -287,11 +288,11 @@ namespace TeachersAPI.Controllers
                 return BadRequest(quizResponseModel);
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 // Return error about invalid json
-                return BadRequest();
+                return BadRequest(ex.ToString());
             }
         }
 
@@ -310,14 +311,14 @@ namespace TeachersAPI.Controllers
             {
 
                 // Get user ID 
-                ValidationResponseModel responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "Homework");
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "Homework");
                 if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
                 {
                     return Unauthorized();
                 }
 
                 // Create Homework
-                QuizModifierManager quizModifierManager = new QuizModifierManager(
+                var quizModifierManager = new QuizModifierManager(
                     AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"],
                     AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], 
                     responseSession.LangCode);
@@ -470,8 +471,20 @@ namespace TeachersAPI.Controllers
                     }
                 })[0];
 
-               Domain.Models.UserQuizzes.UserQuizResultModel response = userQuizManager.CorrectManualQuiz(quizModifierModel.UserResponseModelList, 
-                    quizModifierModel.UserQuizResultsId, responseSession.UserId, decimal.Parse(quizModel.CustomValue), quizModifierModel.Feedback);
+                // Decide how to correct based on the AutoCorrect flag sent from the frontend.
+                Domain.Models.UserQuizzes.UserQuizResultModel response;
+                if (quizModifierModel.AutoCorrect)
+                {
+                    // Auto-corrected quiz: the score was already calculated at submission, so only add the feedback.
+                    response = userQuizManager.AddFeedbackForAutomaticQuiz(
+                        quizModifierModel.UserQuizResultsId, responseSession.UserId, quizModifierModel.Feedback);
+                }
+                else
+                {
+                    // Open quiz: the teacher assigns the value per response and the score is calculated.
+                    response = userQuizManager.CorrectManualQuiz(quizModifierModel.UserResponseModelList,
+                        quizModifierModel.UserQuizResultsId, responseSession.UserId, decimal.Parse(quizModel.CustomValue), quizModifierModel.Feedback);
+                }
 
                 if (!response.Valid)
                 {
@@ -565,6 +578,43 @@ namespace TeachersAPI.Controllers
 
                 // Now continue with everything else 
                 return Ok(StudentAssignmentsAndResults.GetStudentsHomework(responseSession.UserId, detailsRequest.FromPage, detailsRequest.Limiter, responseSession.Token, responseSession.IpAddress, detailsRequest?.SubjectCode, detailsRequest?.LevelCode, "P", true));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
+        /// <summary>
+        /// Returns the pending assignments of the student due within a given month, for the student's calendar
+        /// </summary>
+        /// <param name="month">The month (1-12)</param>
+        /// <param name="year">The four-digit year</param>
+        /// <param name="subjectCode">The subject code</param>
+        /// <param name="levelCode">The level code to filter</param>
+        [HttpGet("pending/student/calendar")]
+        public async Task<IActionResult> GetUserHomeworksByMonth(int month, int year, string subjectCode = null, string levelCode = null)
+        {
+            try
+            {
+                ValidationResponseModel responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "PlanningStudentRead");
+                if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+                {
+                    return Unauthorized();
+                }
+
+                if (month < 1 || month > 12)
+                {
+                    return BadRequest("Month must be between 1 and 12.");
+                }
+
+                if (year < 1)
+                {
+                    return BadRequest("Enter a valid year.");
+                }
+
+                return Ok(StudentAssignmentsAndResults.GetStudentsHomeworkByMonth(responseSession.UserId, 
+                    month, year, responseSession.Token, responseSession.IpAddress, subjectCode, levelCode, langCode: responseSession.LangCode));
             }
             catch (Exception ex)
             {
@@ -1225,10 +1275,16 @@ namespace TeachersAPI.Controllers
                     userResponseModelListToInsert.Add(userResponseModelToInsert);
                 }
 
-                if (quizRequestModel.AutoCorrect)
+                // A mixed quiz carries no auto-correct flag of its own: the flag above comes from
+                // the quiz type, and the mixed type is marked as not auto-correctable because it
+                // may hold open questions. Resolve it per question instead, so a mixed quiz whose
+                // questions are all of auto-correctable types is still corrected on submission.
+                var canAutoCorrect = quizRequestModel.AutoCorrect || AllQuestionTypesAreAutoCorrectable(quizReaderManager, quizRequestModel);
+
+                if (canAutoCorrect)
                 {
                     userQuizResultModelToInsert.Status = "C"; // Completed
-                    var responseUserQuiz = 
+                    var responseUserQuiz =
                         userQuizManager.InsertUserQuizAndResponsesFullProccess(quizRequestModel.QuestionRequestModelList,
                         userQuizResultModelToInsert, userResponseModelListToInsert, true,
                         decimal.Parse(quizRequestModel.QuizModel.CustomValue));
@@ -1337,5 +1393,44 @@ namespace TeachersAPI.Controllers
                 return BadRequest();
             }
         }
-    }
+    
+        /// <summary>
+        /// Whether every question of the quiz is of a type that can be corrected without a teacher.
+        /// </summary>
+        /// <remarks>
+        /// <param name="quizReaderManager">Reader used to look the types up.</param>
+        /// <param name="quizRequestModel">The quiz being submitted.</param>
+        /// <returns>True when all questions are auto-correctable.</returns>
+        private static bool AllQuestionTypesAreAutoCorrectable(QuizReaderManager quizReaderManager, QuizRequestModel quizRequestModel)
+        {
+            var questions = quizRequestModel?.QuestionRequestModelList;
+            if (questions == null || questions.Count == 0)
+            {
+                return false;
+            }
+
+            var quizTypes = quizReaderManager.GetQuizType();
+            if (quizTypes == null || quizTypes.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var question in questions)
+            {
+                var questionTypeId = question?.QuizQuestionModel?.QuestionTypeId;
+                if (string.IsNullOrWhiteSpace(questionTypeId))
+                {
+                    return false;
+                }
+
+                var quizType = quizTypes.Find(type => type.Id == questionTypeId);
+                if (quizType == null || quizType.AutoCorrect != "1")
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+}
 }

@@ -67,7 +67,7 @@ namespace SubscriptionsAPI.Controllers
                     return Unauthorized();
                 }
                 var subscriptionManager = new ProductsCreatorManager(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnection"], AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], RequestHandler.GetLanguage(HttpContext));
-                var responseModel = subscriptionManager.CreateProduct(requestModel.ProductModel, requestModel.ProductItemProductModelList, AppConfiguration.Configuration["AppSettings:subs_stripe_key"], responseSession.UserId);
+                var responseModel = subscriptionManager.CreateProduct(requestModel.ProductModel, requestModel.ProductItemProductModelList, AppConfiguration.Configuration["AppSettings:SubsStripeKey"], responseSession.UserId);
                 if (requestModel.ProductModel.IsCommercial == "0" && responseModel.TransactionValid)
                 {
                     new PlanCreatorManager(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnection"], AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], RequestHandler.GetLanguage(HttpContext)).CreatePlan(
@@ -97,7 +97,7 @@ namespace SubscriptionsAPI.Controllers
                     return Unauthorized();
                 }
                 var subscriptionManager = new ProductsCreatorManager(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnection"], AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], RequestHandler.GetLanguage(HttpContext));
-                var responseModel = subscriptionManager.UpdateProduct(requestModel.ProductModel, requestModel.ProductItemProductModelList, AppConfiguration.Configuration["AppSettings:subs_stripe_key"], responseSession.UserId);
+                var responseModel = subscriptionManager.UpdateProduct(requestModel.ProductModel, requestModel.ProductItemProductModelList, AppConfiguration.Configuration["AppSettings:SubsStripeKey"], responseSession.UserId);
                 if ((string.IsNullOrWhiteSpace(requestModel.ProductModel.IsCommercial) || requestModel.ProductModel.IsCommercial == "0") && responseModel.TransactionValid)
                 {
                     var planModels = new PlansReaderManager(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], RequestHandler.GetLanguage(HttpContext)).GetPlanModels(new List<SubscriptionsAPI.Domain.Models.Subscriptions.PlanModel>()

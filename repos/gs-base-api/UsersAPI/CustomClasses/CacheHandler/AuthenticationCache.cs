@@ -37,7 +37,7 @@ namespace UsersAPI.CustomClasses.CacheHandler
         }
 
         private bool IsCacheEnabled() =>
-            !string.Equals(_configuration["AppSettings:cache_on_off"], "0", StringComparison.Ordinal);
+            !string.Equals(AppConfiguration.Configuration["AppSettings:AppSettings:cache_on_off"], "0", StringComparison.Ordinal);
 
         /// <summary>
         /// Gets the user access details from cache (Redis in normal mode, IMemoryCache in debug).

@@ -60,7 +60,7 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
                 ModifiedBy = userId
 
             };
-             if (stripeRequired)
+            if (stripeRequired)
             {
                 StripeConfiguration.ApiKey = stripeApiKey;
                 var options = new CustomerCreateOptions
@@ -70,7 +70,7 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
                 var service = new CustomerService();
                 var customer = service.Create(options);
                 customerModel.PlatformId = customer.Id;
-            } 
+            }
 
             if (string.IsNullOrWhiteSpace(customerModel.PlatformId))
             {
@@ -115,7 +115,6 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
         /// <param name="sourceToken">The source Token</param>
         public async Task<ResponseModel> StoreCustomerPaymentToken(string userId, string email, string sourceToken, string stripeApiKey, string userIdCreatedBy)
         {
-            
             var responseModel = new ResponseModel
             {
                 TransactionValid = true
@@ -125,10 +124,9 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
             var customerDetails = new CustomerDAO().Read(_connectionStringRead, new CustomerModel { UserId = userId }, true, true);
 
             string customerPlatformId;
-            // If does not exists, create it
+            // If does not exist, create it
             if (customerDetails == null || customerDetails.Count == 0)
             {
-                // Create the customer in Stripe
                 var customerModel = CreateCustomer(email, userId, stripeApiKey, true);
                 if (customerModel == null)
                 {
@@ -143,14 +141,13 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
                 customerPlatformId = customerDetails[0].PlatformId;
             }
 
-            // Check if the customer exists in Stripe. 
+            // Check if the customer exists in Stripe
             StripeConfiguration.ApiKey = stripeApiKey;
             var customerService = new CustomerService();
-            Customer customer;
 
             try
             {
-                customer = customerService.Get(customerPlatformId);
+                await customerService.GetAsync(customerPlatformId);
             }
             catch (StripeException ex)
             {
@@ -174,49 +171,75 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
                 }
             }
 
-            // Now, check if the source token already exists for the customer
-            var subscriptionReaderManager = new SubscriptionReadersManager(_connectionString, _langCode);
-            var customerSourceTokenModel = subscriptionReaderManager.GetCustomerSourceToken(customerPlatformId);
-
-
-            // Finally, create it in stripe 
             try
             {
-                await CreateCustomerSourceTokenStripe(customerPlatformId, sourceToken, stripeApiKey);
+                // 1. Detach all existing payment methods (cards) from the customer in Stripe
+                var paymentMethodService = new PaymentMethodService();
+                var existingPaymentMethods = await paymentMethodService.ListAsync(new PaymentMethodListOptions
+                {
+                    Customer = customerPlatformId,
+                    Type = "card",
+                });
+
+                foreach (var pm in existingPaymentMethods)
+                {
+                    await paymentMethodService.DetachAsync(pm.Id);
+                }
+
+                // 2. sourceToken is already a PaymentMethod ID (pm_...), attach it directly
+                await paymentMethodService.AttachAsync(sourceToken, new PaymentMethodAttachOptions
+                {
+                    Customer = customerPlatformId,
+                });
+
+                // 3. Set it as the customer's default payment method
+                await customerService.UpdateAsync(customerPlatformId, new CustomerUpdateOptions
+                {
+                    InvoiceSettings = new CustomerInvoiceSettingsOptions
+                    {
+                        DefaultPaymentMethod = sourceToken,
+                    },
+                });
+
+                // 4. Sync the token in the local database (delete old, insert new)
+                var subscriptionReaderManager = new SubscriptionReadersManager(_connectionString, _langCode);
+                var customerSourceTokenModel = subscriptionReaderManager.GetCustomerSourceToken(customerPlatformId);
 
                 var customerSourceTokenDAO = new CustomerSourceTokenDAO();
-                if (customerSourceTokenModel == null)
+                if (customerSourceTokenModel != null)
                 {
-                    // Just created
-                    customerSourceTokenDAO.Create(_connectionString, new CustomerSourceTokenModel { 
-                        CustomerPlatformId = customerPlatformId, Active = "1", SourceToken = sourceToken, ModifiedBy = userIdCreatedBy });
-                }
-                else
-                {
-                    // Delete it
-                    customerSourceTokenDAO.Delete(_connectionString, new CustomerSourceTokenModel()
+                    customerSourceTokenDAO.Delete(_connectionString, new CustomerSourceTokenModel
                     {
                         CustomerPlatformId = customerPlatformId
                     });
-
-                    // Then, create the new 
-                    customerSourceTokenDAO.Create(_connectionString, new CustomerSourceTokenModel { CustomerPlatformId = customerPlatformId, Active = "1", SourceToken = sourceToken, ModifiedBy = userIdCreatedBy });
                 }
+
+                customerSourceTokenDAO.Create(_connectionString, new CustomerSourceTokenModel
+                {
+                    CustomerPlatformId = customerPlatformId,
+                    Active = "1",
+                    SourceToken = sourceToken,
+                    ModifiedBy = userIdCreatedBy
+                });
+
                 var messageManager = new MessageManager(_connectionStringRead, _langCode);
-                responseModel.Messages.Add(messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:subr_message_subscription_payment_updated"]));
+                responseModel.Messages.Add(messageManager.GetMessageDetails(
+                    AppConfiguration.Configuration["AppSettings:subr_message_subscription_payment_updated"]));
+
                 return responseModel;
             }
             catch (Exception ex)
             {
-                responseModel.Messages = new List<string>();
-                responseModel.Messages.Add(new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(
-                    AppConfiguration.Configuration["AppSettings:subr_message_payment_failed"]));
-           
+                responseModel.Messages =
+                [
+                    new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(
+                AppConfiguration.Configuration["AppSettings:subr_message_payment_failed"]),
+        ];
+
                 responseModel.TransactionValid = false;
                 return responseModel;
-
-            } 
-         }
+            }
+        }
 
         /// <summary>
         /// To create the customer payment method.
@@ -782,7 +805,7 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
             if (platformCode == "STR" && int.Parse(planResponseModel.Amount) > 0)
             {
                 return await CreateSubscriptionStripeWithoutCountryValidations(
-                    planResponseModel, customerPlatformId, sourceToken, 
+                    planResponseModel, customerPlatformId, sourceToken,
                     stateIsoCode, countryIsoCode, quantityOfPlans, stripeApiKey,
                     userIdCreatedBy, couponPlatformId, subscriptionType);
             }
@@ -994,7 +1017,7 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
 
             // Prepare the SubscriptionProfileModel list to delete
             var profileSubscriptionsToDeleteList = new List<SubscriptionProfileModel>();
-            foreach(var profileId in profileIds)
+            foreach (var profileId in profileIds)
             {
                 if (!string.IsNullOrWhiteSpace(profileId))
                 {
@@ -1007,7 +1030,7 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
             }
 
             // Just return an okay. There is nothing to remove.
-            if(profileSubscriptionsToDeleteList.Count == 0)
+            if (profileSubscriptionsToDeleteList.Count == 0)
             {
                 responseModel.TransactionValid = true;
                 return responseModel;

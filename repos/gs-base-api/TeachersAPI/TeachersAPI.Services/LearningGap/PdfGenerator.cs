@@ -1,14 +1,7 @@
-﻿using CacheHandlerLibrary;
-using TeachersAPI.Domain.Models.FeignAPI;
-using TeachersAPI.Domain.Models.Generals;
+﻿using TeachersAPI.Domain.Models.FeignAPI;
 using TeachersAPI.Utils;
-using HtmlRendererCore.PdfSharp;
-using Microsoft.AspNetCore.StaticFiles; 
-using PdfSharpCore.Drawing;             
-using PdfSharpCore.Pdf;                 
-using System;
-using System.IO;
-using System.Threading.Tasks;
+using WkHtmlToPdfDotNet;
+
 
 namespace TeachersAPI.TeachersAPI.Services.LearningGap
 {
@@ -25,103 +18,145 @@ namespace TeachersAPI.TeachersAPI.Services.LearningGap
         /// <returns>Returns the url where the file is stored.</returns>
         public static async Task<string> GenerateLearningSheetPDF(string langCode, LearningSheetModel athenasLearningSheet)
         {
-            string competencyText = "";
-            string competencyExplanationPart1 = "";
-            string competencyExplanationPart2 = "";
-            string whyIsItImportant = "";
+            // --- 1. BUILD HTML & LOCALIZED TEXT (Same for all OS) ---
+
+            string competencyText;
+            string competencyExplanationPart1;
+            string competencyExplanationPart2;
+            string whyIsItImportant;
 
             if (langCode == "es")
             {
                 competencyText = "Competencia: ";
-                competencyExplanationPart1 = @"Según los resultados de las evaluaciones, 
-                    el estudiante debe reforzar conceptos relacionados a: ";
+                competencyExplanationPart1 = @"Según los resultados de las evaluaciones, el estudiante debe reforzar conceptos relacionados a: ";
                 competencyExplanationPart2 = "Le recomendamos lo siguiente para mejorar su dominio.";
                 whyIsItImportant = "¿Por qué es importante?";
             }
             else
             {
                 competencyText = "Competency: ";
-                competencyExplanationPart1 = @"According to the evaluation results, 
-                    the student must reinforce concepts related to: ";
+                competencyExplanationPart1 = @"According to the evaluation results, the student must reinforce concepts related to: ";
                 competencyExplanationPart2 = "The following is recommended to improve mastery.";
                 whyIsItImportant = "Why is it important?";
             }
 
+            var currentYear = DateTime.Now.Year;
+
             string htmlToGenerate = $@"
-                <html>
-                  <body style=""font-family: sans-serif;"">
-                    <img src=""{AppConfiguration.Configuration["AppSettings:img_src_learning_gap_banner"]}"" style=""width:100%;height:100px;""/>
-                   <table style=""margin-top:15px;width:100%;border:solid;"">
-                      <tr style=""border:solid;"">
-                        <td style=""border:none;background-color: #c5dded; height: 45px;padding: 10px"">
-                            <b>{competencyText} 
-                            {athenasLearningSheet?.KeyWord}
-                            </b></td>
-                      </tr>
-                      <tr>
-                        <td style=""border:none;"">{competencyExplanationPart1} 
-                        <b>{athenasLearningSheet?.KeyWord}</b>. 
-                        {competencyExplanationPart2} 
-                        </td>
-                      </tr>
-                    </table>
-                   <div style=""margin-left:5%;margin-top:15px;width:90%;"">
-                      {athenasLearningSheet?.TextDescription}
-                    </div>
-                    <table style=""margin-top:15px;width:100%;border:solid;"">
-                      <tr style=""border:solid;"">
-                        <td style=""border:none;background-color: #c5dded; height:45px;padding: 10px""><b>{whyIsItImportant}</b></td>
-                      </tr>
-                      <tr>
-                        <td style=""border:none;"">
-                         {athenasLearningSheet?.TextImportance}</td>
-                      </tr>
-                    </table>
-                  </body>
-                </html>";
+<html>
+  <head>
+    <meta charset='UTF-8' />
+    <style>
+      body {{
+        font-family: sans-serif;
+        font-size: 12px;
+        margin: 0;
+        padding: 0;
+      }}
+      .content-wrapper {{
+        padding: 20px;
+      }}
+      .footer {{
+        position: fixed;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 10px;
+        color: #555;
+      }}
+    </style>
+  </head>
+  <body>
+    <div class='content-wrapper'>
+      <img src=""{AppConfiguration.Configuration["AppSettings:img_src_learning_gap_banner"]}"" style=""width:100%;height:100px;""/>
+      <table style=""margin-top:15px;width:100%;border:solid;"">
+        <tr style=""border:solid;"">
+          <td style=""border:none;background-color: #c5dded; height: 45px;padding: 10px"">
+              <b>{competencyText}
+              {athenasLearningSheet?.KeyWord}
+              </b></td>
+        </tr>
+        <tr>
+          <td style=""border:none;"">{competencyExplanationPart1}
+          <b>{athenasLearningSheet?.KeyWord}</b>.
+          {competencyExplanationPart2}
+          </td>
+        </tr>
+      </table>
+      <div style=""margin-left:5%;margin-top:15px;width:90%;"">
+        {athenasLearningSheet?.TextDescription}
+      </div>
+      <table style=""margin-top:15px;width:100%;border:solid;"">
+        <tr style=""border:solid;"">
+          <td style=""border:none;background-color: #c5dded; height:45px;padding: 10px""><b>{whyIsItImportant}</b></td>
+        </tr>
+        <tr>
+          <td style=""border:none;"">
+            {athenasLearningSheet?.TextImportance}
+          </td>
+        </tr>
+      </table>
+    </div>
 
-            var config = new PdfGenerateConfig
-            {
-                PageSize = PdfSharpCore.PageSize.A4,
-                MarginTop = 10,
-                MarginRight = 20,
-                MarginBottom = 10,
-                MarginLeft = 20
-            };
+    <div class='footer'>
+      Estudia y Avanza {currentYear}
+    </div>
+  </body>
+</html>";
 
-            // Generate PDF using HtmlRendererCore.PdfSharp + PdfSharpCore
-            PdfDocument pdf = HtmlRendererCore.PdfSharp.PdfGenerator.GeneratePdf(htmlToGenerate, config);
-
-            // Add footer to each page
-            foreach (PdfPage page in pdf.Pages)
-            {
-                using var gfx = XGraphics.FromPdfPage(page);
-                var font = new XFont("Arial", 8, XFontStyle.Regular);
-                var brush = XBrushes.Black;
-                double x = page.Width / 2.0;     // Centered
-                double y = page.Height - 20.0;   // Near bottom
-
-                gfx.DrawString("Estudia y Avanza " + DateTime.Now.Year, font, brush, new XPoint(x, y), XStringFormats.Center);
-            }
-
-            // Save and upload
-            await using var stream = new MemoryStream();
-            pdf.Save(stream);
-            stream.Position = 0;
+            // --- 2. GENERATE PDF (same for Windows & Linux using WkHtmlToPdfDotNet) ---
 
             string fileName = athenasLearningSheet.Id + langCode + ".pdf";
+            byte[] pdfBytes = GeneratePdf_FromHtml(htmlToGenerate);
 
-            // Replace MimeMapping with ASP.NET Core provider
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(fileName, out var contentType))
-                contentType = "application/pdf";
+            // --- 3. COMMON FILE HANDLING ---
 
-            string fullFilePath = $"{AwsAssets.FolderPath}{fileName}";
+            await using var stream = new MemoryStream(pdfBytes);
+            stream.Position = 0;
 
-            await AwsAssets.WritingObjectToS3BucketAsync(fullFilePath, stream, contentType);
+            await AzureAssets.UploadFileToAzureStorage(stream, fileName);
 
-            string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(fullFilePath);
+            string signedUrl = AzureAssets.GetFileFromAzureStorage(fileName);
             return signedUrl;
+        }
+
+        /// <summary>
+        /// Generates PDF using WkHtmlToPdfDotNet (cross-platform).
+        /// Requires wkhtmltopdf binary installed in the environment.
+        /// </summary>
+        private static byte[] GeneratePdf_FromHtml(string htmlToGenerate)
+        {
+            var doc = new HtmlToPdfDocument
+            {
+                GlobalSettings =
+                {
+                    PaperSize = PaperKind.A4,
+                    Orientation = Orientation.Portrait,
+                    ColorMode = ColorMode.Color,
+                    Margins = new MarginSettings
+                    {
+                        Top = 10,
+                        Right = 20,
+                        Bottom = 10,
+                        Left = 20
+                    },
+                    Out = null
+                },
+                Objects =
+                {
+                    new ObjectSettings
+                    {
+                        HtmlContent = htmlToGenerate,
+                        WebSettings =
+                        {
+                            DefaultEncoding = "utf-8"
+                        }
+                    }
+                }
+            };
+
+            return WkHtmlConverterSingleton.Instance.Convert(doc);
         }
     }
 }

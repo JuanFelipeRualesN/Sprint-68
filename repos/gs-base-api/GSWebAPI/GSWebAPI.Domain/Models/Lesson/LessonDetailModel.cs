@@ -9,6 +9,9 @@
         private string _modifiedBy;
         private string _createdAt;
         private string _updatedAt;
+        private string _activityInitial;
+        private string _activityDevelopment;
+        private string _activityClosing;
 
         public string Id { get { return _id; } set { _id = value; } }
         public string LessonId { get { return _lessonId; } set { _lessonId = value; } }
@@ -17,6 +20,9 @@
         public string ModifiedBy { get { return _modifiedBy; } set { _modifiedBy = value; } }
         public string CreatedAt { get { return _createdAt; } set { _createdAt = value; } }
         public string UpdatedAt { get { return _updatedAt; } set { _updatedAt = value; } }
+        public string ActivityInitial { get { return _activityInitial; } set { _activityInitial = value; } }
+        public string ActivityDevelopment { get { return _activityDevelopment; } set { _activityDevelopment = value; } }
+        public string ActivityClosing { get { return _activityClosing; } set { _activityClosing = value; } }
 
     }
 }

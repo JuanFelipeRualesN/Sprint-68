@@ -7,10 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="DataAnalysisAPI.Domain\Models\" />
+    <None Update="appsettings.dataanalysis.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="DataAnalysisAPI.Infrastructure\Repositories\" />
-    <Folder Include="DataAnalysisAPI.Services\" />
   </ItemGroup>
 
   <ItemGroup>

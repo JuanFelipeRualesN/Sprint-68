@@ -342,6 +342,35 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
                 return null;
         }
 
+        /// <summary>
+        /// To retrieve the users' full names.
+        /// </summary>
+        /// <param name="userIds">The ids to find.</param>
+        /// <returns>Returns a list of user full names.</returns>
+        public List<UserFullNameModel> GetUsersFullName(List<string> userIds)
+        {
+            if(userIds == null || userIds.Count == 0)
+            {
+                return new List<UserFullNameModel>();
+            }
+
+            var userFullNamesToFind = new List<UserFullNameModel>(); 
+            foreach(var userId in userIds)
+            {
+                userFullNamesToFind.Add(new UserFullNameModel()
+                {
+                    UserId = userId
+                });
+            }
+            // Get User full name
+            var userFullNameModelList = new UserFullNameDAO().Read(this._connectionStringRead, userFullNamesToFind);
+            if (userFullNameModelList.Count > 0)
+                return userFullNameModelList;
+            else
+                return new List<UserFullNameModel>();
+        }
+
+
         #endregion UserFullName
 
         #region UserPhone 

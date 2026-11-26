@@ -19,4 +19,13 @@
     <ProjectReference Include="..\CacheHandlerLibrary\CacheHandlerLibrary.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="UsersAPI.Domain\Models\Metrics\ReadingAndContent\" />
+    <Folder Include="UsersAPI.Domain\Models\Metrics\ProgressAndMastery\" />
+    <Folder Include="UsersAPI.Infrastructure\DapperHandler\Metrics\ReadingAndContent\" />
+    <Folder Include="UsersAPI.Infrastructure\DapperHandler\Metrics\ProgressAndMastery\" />
+    <Folder Include="UsersAPI.Services\Metrics\ReadingAndContent\" />
+    <Folder Include="UsersAPI.Services\Metrics\ProgressAndMastery\" />
+  </ItemGroup>
+
 </Project>

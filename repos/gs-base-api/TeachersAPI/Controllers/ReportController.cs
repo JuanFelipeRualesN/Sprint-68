@@ -1,23 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TeachersAPI.Domain.Models.Generals.Responses.APIs;
-using TeachersAPI.TeachersAPI.Services.FeignAPI;
-using TeachersAPI.TeachersAPI.Services.UserQuizzes;
+﻿using GSPlanning.Domain;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TeachersAPI;
 using TeachersAPI.CustomClasses;
 using TeachersAPI.Domain.Models.Generals;
+using TeachersAPI.Domain.Models.Generals.Responses.APIs;
+using TeachersAPI.Domain.Models.Generals.Responses.Reports;
 using TeachersAPI.Domain.Models.Lessons;
 using TeachersAPI.Domain.Models.Lessons.Response;
 using TeachersAPI.Domain.Models.Teachers;
 using TeachersAPI.Domain.Models.UserQuizzes;
 using TeachersAPI.TeachersAPI.Infrastructure.DapperHandler;
 using TeachersAPI.TeachersAPI.Infrastructure.Repositories.Teachers;
+using TeachersAPI.TeachersAPI.Services.FeignAPI;
 using TeachersAPI.TeachersAPI.Services.Teachers;
 using TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses;
-using TeachersAPI.Domain.Models.Generals.Responses.Reports;
-using TeachersAPI;
+using TeachersAPI.TeachersAPI.Services.UserQuizzes;
 
 namespace TeachersAPI.Controllers
 {
@@ -83,6 +84,8 @@ namespace TeachersAPI.Controllers
             // Return subject code, level code, average, grade (A, B, C...). 
             return Ok(StudentAssignmentsAndResults.GetAccumulatedUserResultsByPeriod(periodId, !string.IsNullOrWhiteSpace(userId) ? userId : responseSession.UserId, null, null, subjectCode, levelCode, includeDetails, responseSession.LangCode));
         }
+
+
         [HttpGet("profile/average/{planId}/profile/{profileId}/lesson/{lessonId}")]
         public async Task<IActionResult> GetProfilePlanLessonAverage(string planId, string profileId, string lessonId)
         {
@@ -100,6 +103,7 @@ namespace TeachersAPI.Controllers
             }
             return Ok("-");
         }
+
         [HttpGet("group/scores/average/plan/{planId}")]
         public async Task<IActionResult> GetGroupsScoreLessonQuizzesAverage(string planId, bool isAssignment)
         {
@@ -122,6 +126,14 @@ namespace TeachersAPI.Controllers
             }
             return Ok(StudentAssignmentsAndResults.GetGroupResultsTeacherAssignments(responseSession.Token, responseSession.IpAddress, planId, quizLimiter, quizFromLimiter, studentLimiter, studentFromLimiter, groupCode, teacherGroupId, fromDate, toDate));
         }
+
+        /// <summary>
+        /// To get the results with the PDF.
+        /// </summary>
+        /// <param name="planLessonId">The plan lesson id.</param>
+        /// <param name="quizId">The id of the quiz.</param>
+        /// <param name="profileId">The profile's id.</param>
+        /// <returns>Returns the results with the PDF.</returns>
         [HttpGet("plan-lesson-id/{planLessonId}/profile/{profileId}/quiz/{quizId}")]
         public async Task<IActionResult> GetProfileQuizResultDetails(string planLessonId, string quizId, string profileId)
         {
@@ -145,23 +157,28 @@ namespace TeachersAPI.Controllers
                 }
                 var planningReaderManager = new PlanningReaderManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], responseSession.LangCode);
                 var generalResponseModel = planningReaderManager.GetUserLessonQuizResultReport(planLessonId: planLessonId, quizId: quizId, userId: profileId, token: responseSession.Token, ipAddress: responseSession.IpAddress, responseSession.LangCode);
-                if (!string.IsNullOrWhiteSpace(generalResponseModel.UserQuizResultId))
-                {
-                    generalResponseModel.PDFLocation = await PDFResultGenerator.GeneratePDF(generalResponseModel);
-                }
                 return Ok(generalResponseModel);
             }
             catch (Exception ex)
             {
+                Console.Error.WriteLine($"Exception: {ex}");
                 return BadRequest(ex.Message);
             }
         }
+
+        /// <summary>
+        /// To get the results of the student for a specific quiz of a plan lesson.
+        /// </summary>
+        /// <param name="studentId">The id of the student.</param>
+        /// <param name="userQuizId">The user quiz id.</param>
+        /// <param name="planLessonId">The plan lesson id.</param>
+        /// <returns>Returns the details of the student result.</returns>
         [HttpGet("profile/quiz/results/{studentId}/{userQuizId}/{planLessonId}")]
         public async Task<IActionResult> GetStudentQuizResultDetails(string studentId, string userQuizId, string planLessonId)
         {
             try
             {
-                ReportPlanLessonQuizResponseModel generalResponseModel = new ReportPlanLessonQuizResponseModel();
+                var generalResponseModel = new ReportPlanLessonQuizResponseModel();
                 // Token validation in Users API
                 var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "ProfileQuizResultDetailsRead");
                 if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
@@ -172,7 +189,7 @@ namespace TeachersAPI.Controllers
 
                 // Check if user can access to the student details.
                 // Verify if users are related.
-                bool related = GetUserDetails.CanUserAManageUserB(responseSession.UserId, studentId, responseSession.Token) || responseSession.UserId == studentId;
+                var related = GetUserDetails.CanUserAManageUserB(responseSession.UserId, studentId, responseSession.Token) || responseSession.UserId == studentId;
                 // If it is the same user, just allow it.
                 if (!related)
                 {
@@ -180,62 +197,17 @@ namespace TeachersAPI.Controllers
                 }
                 // End of related validation
                 var planningReaderManager = new PlanningReaderManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], responseSession.LangCode);
+                
                 // Get score and usqui_user_result_id from plan_lesson_quiz_user_results
-                PlanLessonQuizUserResultModel planLessonQuizUserResultModel = planningReaderManager.GetUserQuizResponse(studentId, userQuizId, planLessonId);
+                var planLessonQuizUserResultModel = planningReaderManager.GetUserQuizResponse(studentId, userQuizId, planLessonId);
                 // Get User responses, send responseSession user id to see if the user can see the results from GSWebAPI by usqui_user_result_id 
                 // use GSWebDetails
-                UserQuizResponseModel userQuizResponseModel = GSWebDetails.GetUserResults(responseSession.Token, planLessonQuizUserResultModel.UsquiUserResultId);
-                AthenasJSONQuizResponseModel modelObject = AthenasHandler.GetQuizById(userQuizId, responseSession.Token);
-                // Now connect the data
-                generalResponseModel.UserQuizFullDetails = new QuizUserResultsCompletedInfoResponseModel
-                {
-                    QuizId = userQuizResponseModel.UserQuizResult.QuizId,
-                    QuizTitle = modelObject.QuizRequestModel.QuizModel.Title,
-                    Instructions = modelObject.QuizRequestModel.QuizModel.Instruction,
-                    ExtraInfo = modelObject.QuizRequestModel?.QuizExtraInfoModel?.ExtraInfo,
-                    UserQuizId = userQuizResponseModel.UserQuizResult.Id,
-                    QuestionQuizList = new List<QuestionQuiz>(),
-                    TotalPercent = planLessonQuizUserResultModel.Score,
-                    DoK = userQuizResponseModel.UserQuizResult.Dok,
-                    TotalCorrect = userQuizResponseModel.UserQuizResult.TotalCorrect,
-                    TryNo = userQuizResponseModel.UserQuizResult.TryNo,
-                };
-                for (int i = 0; i < modelObject.QuizRequestModel.QuestionRequestModelList.Count; i++)
-                {
-                    QuestionQuiz questionQuizToAdd = new QuestionQuiz
-                    {
-                        QuestionId = modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionModel.Id,
-                        Question = modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionModel.Desc,
-                        QuestionResponses = new List<QuestionResponse>(),
-                    };
-                    List<Domain.Models.UserQuizzes.UserResponseModel> userQuizQuestionsResponsesToFind = userQuizResponseModel.UserResponsesList.FindAll(x => x.QuestionId == modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionModel.Id);
-                    for (int j = 0; j < userQuizQuestionsResponsesToFind.Count; j++)
-                    {
-                        QuizQuestionResponseModel quizQuestionResponseModelToFind = modelObject.QuizRequestModel.QuestionRequestModelList[i].QuizQuestionResponseModelList.Find(x => x.Id == userQuizQuestionsResponsesToFind[j].ResponseId);
-                        if (quizQuestionResponseModelToFind != null)
-                        {
-                            QuestionResponse questionResponse = new QuestionResponse
-                            {
-                                ResponseId = userQuizQuestionsResponsesToFind[j].ResponseId,
-                                Response = quizQuestionResponseModelToFind.Response,
-                                ResponseUserId = userQuizQuestionsResponsesToFind[j].Id,
-                                Correct = userQuizQuestionsResponsesToFind[j].Correct == "1" ? 1 : 0
-                            };
-                            questionQuizToAdd.QuestionResponses.Add(questionResponse);
-                            generalResponseModel.UserQuizFullDetails.QuestionQuizList.Add(questionQuizToAdd);
-                        }
-                    }
-                }
-                List<UserResponse> userSharedDetails = GetUserDetails.GetUsersSharedDetails(responseSession.Token, responseSession.IpAddress, new List<string> { userQuizResponseModel.UserQuizResult.UserId });
-                if (userSharedDetails != null && userSharedDetails.Count > 0)
-                {
-                    generalResponseModel.StudentName = userSharedDetails[0]?.Surname + ", " + userSharedDetails[0]?.GivenName;
-                }
-                else
-                {
-                    generalResponseModel.StudentName = string.Empty;
-                }
-                generalResponseModel.PDFLocation = await PDFResultGenerator.GeneratePDF(generalResponseModel);
+                var userQuizResponseModel = GSWebDetails.GetUserResults(responseSession.Token, studentId, planLessonQuizUserResultModel.UsquiUserResultId);
+      
+                var userUsquiReport = planningReaderManager.GetUserLessonQuizResultReport(planLessonId, userQuizResponseModel.UserQuizFullDetails.QuizId,
+                    studentId, responseSession.Token, responseSession.IpAddress, responseSession.LangCode);
+                generalResponseModel.UserQuizFullDetails = userUsquiReport.UserQuizFullDetails;
+
                 return Ok(generalResponseModel);
             }
             catch (Exception ex)

@@ -60,6 +60,52 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
         }
 
         /// <summary>
+        /// To get the groups (with their students) created by a set of teachers
+        /// Used by a director to list the groups of all of their teachers.
+        /// </summary>
+        /// <param name="teacherIds">The teachers' ids.</param>
+        /// <returns>Returns the teacher group student model list across all the given teachers.</returns>
+        public static List<TeacherGroupStudentModel> GetTeacherGroupsByTeachers(List<string> teacherIds)
+        {
+            if (teacherIds == null || teacherIds.Count == 0)
+            {
+                return new List<TeacherGroupStudentModel>();
+            }
+
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+            var parameters = new { teacherIds, available = true };
+
+            string query = @"SELECT DISTINCT gr.id as `group_id`, gr.teacher_id, gr.subject_code, gr.level_code, gr.name as `group_name`, gr.available,
+                st.id as `teacher_group_student_id`, st.student_id
+                FROM gs_teachers_web_db_prod.teacher_groups gr
+                LEFT JOIN gs_teachers_web_db_prod.teacher_group_students st ON st.teacher_group_id = gr.id
+                WHERE
+                gr.teacher_id IN @teacherIds
+                AND gr.available = @available;";
+
+            IEnumerable<TeacherGroupStudentModel> items = null;
+            MySqlConnection connection = new MySqlConnection
+            {
+                ConnectionString = AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"]
+            };
+            connection.Open();
+            try
+            {
+                items = connection.Query<TeacherGroupStudentModel>(query, parameters);
+            }
+            catch (Exception)
+            {
+
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return items != null ? items.ToList() : new List<TeacherGroupStudentModel>();
+        }
+
+        /// <summary>
         /// To get the students of a teacher plan.
         /// </summary>
         /// <param name="planId">The id of the teacher's plan.</param>

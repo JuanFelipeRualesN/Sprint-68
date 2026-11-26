@@ -1,0 +1,53 @@
+{
+  "KeyVault": {
+	"VaultUrl": "https://kv-msj-private.vault.azure.net/",
+	"ReloadInterval": "00:05:00"
+  },
+  "ConnectionStrings": {
+	"ReadingModuleStringReader": "{{Loaded from Azure Key Vault}}",
+	"AthenasDBConnectionStringReader": "{{Loaded from Azure Key Vault}}",
+	"AnalysisConnectionStringReader": "{{Loaded from Azure Key Vault}}",
+	"AddressDBConnection": "{{Loaded from Azure Key Vault}}",
+	"AddressDBConnectionReader": "{{Loaded from Azure Key Vault}}",
+	"EmailSystemManagerConnectionString": "{{Loaded from Azure Key Vault}}",
+	"EmailSystemManagerConnectionStringReader": "{{Loaded from Azure Key Vault}}",
+	"GSWebDBConnection": "{{Loaded from Azure Key Vault}}",
+	"GSWebDBConnectionReader": "{{Loaded from Azure Key Vault}}",
+	"SchoolDBConnection": "{{Loaded from Azure Key Vault}}",
+	"SchoolDBConnectionReader": "{{Loaded from Azure Key Vault}}",
+	"GenialSkillsUsersAPIDBConnection": "{{Loaded from Azure Key Vault}}",
+	"GenialSkillsUsersAPIDBConnectionReader": "{{Loaded from Azure Key Vault}}",
+	"TeacherWebAPIConnectionString": "{{Loaded from Azure Key Vault}}",
+	"TeacherWebAPIConnectionStringReader": "{{Loaded from Azure Key Vault}}",
+	"SubscriptionsStripeDBConnection": "{{Loaded from Azure Key Vault}}",
+	"SubscriptionsStripeDBConnectionReader": "{{Loaded from Azure Key Vault}}"
+  },
+  "Logging": {
+	"LogLevel": {
+	  "Default": "Information",
+	  "Microsoft": "Warning",
+	  "Microsoft.Hosting.Lifetime": "Information"
+	}
+  },
+  "AppSettings": {
+	"webpages:Version": "3.0.0.0",
+	"webpages:Enabled": "false",
+	"ClientValidationEnabled": "true",
+	"UnobtrusiveJavaScriptEnabled": "true",
+	"OpenAiApiKey": "{{Loaded from Azure Key Vault}}",
+	"AzureSpeechKey": "{{Loaded from Azure Key Vault}}",
+	"azure_speech_region": "eastus",
+	"azure_storage_account_name": "stmsjprod001",
+	"AzureStorageAccountKey": "{{Loaded from Azure Key Vault}}",
+	"AzureStorageConnectionString": "{{Loaded from Azure Key Vault}}",
+	"azure_storage_container_name_message": "messages-api",
+	"azure_storage_container_name_teachers": "teachers-api",
+	"azure_storage_container_name_users": "users-api",
+	"azure_storage_container_name_subscriptions": "subscriptions-api",
+	"azure_storage_container_name_gsweb": "gsweb-api",
+	"azure_storage_container_name_data_analysis": "datanalysis-api",
+	"__SUBSCRIPTIONS_SETTINGS": "",
+	"redis_cache_writer_endpoint": ""
+  },
+  "AllowedHosts": "*"
+}

@@ -64,5 +64,20 @@ namespace GSWebAPI.GSWebAPI.Domain.Models.General.Responses
         /// Gets or sets the created at date of the quiz result.
         /// </summary>
         public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the lesson title related to the quiz result.
+        /// </summary>
+        public string LessonTitle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the subject of the quiz result.
+        /// </summary>
+        public string Subject { get; set; }
+
+        /// <summary>
+        /// Gets or sets the grade/level of the quiz result.
+        /// </summary>
+        public string Grade { get; set; }
     }
 }

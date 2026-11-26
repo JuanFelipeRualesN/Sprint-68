@@ -1108,13 +1108,14 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
                 TeacherPlanLessonQuizModels = planLessonQuizzessModels.ToList(),
             };
         }
-        
+
         /// <summary>
         /// To retrieve the plan lessons by plan ids.
         /// </summary>
         /// <param name="planIds">The ids of the plans.</param>
         /// <returns>Returns the plan lesson model.</returns>
-        public static List<TeacherPlanLessonModel> GetPlanLessonsByPlanIds(List<int> planIds)
+        /// <param name="planLessonIds">(optional) Restricts the result to these plan lesson ids.</param>
+        public static List<TeacherPlanLessonModel> GetPlanLessonsByPlanIds(List<int> planIds, List<int> planLessonIds = null)
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             var parameters = new DynamicParameters();
@@ -1124,6 +1125,12 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
                   WHERE ls.available = 1 
                   AND ls.plan_id IN @planIds";
             parameters.Add("@planIds", planIds);
+
+            if (planLessonIds != null)
+            {
+                query += " AND ls.id IN @planLessonIds";
+                parameters.Add("@planLessonIds", planLessonIds);
+            }
 
             var studentLessonAssignmentDetails = new List<TeacherPlanLessonModel>();
             var connection = new MySqlConnection
@@ -1146,7 +1153,55 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
 
             return studentLessonAssignmentDetails;
         }
-        
+
+        /// <summary>
+        /// To retrieve the ids of the plan lessons that have at least one required quiz due within the given range.
+        /// Used by the student's calendar to narrow the whole pending calculation down to a month.
+        /// </summary>
+        /// <param name="planIds">The ids of the plans.</param>
+        /// <param name="from">The start of the date range.</param>
+        /// <param name="to">The end of the date range.</param>
+        /// <returns>Returns the ids of the matching plan lessons</returns>
+        public static List<int> GetPlanLessonIdsWithQuizzesDueWithin(List<int> planIds, DateTime from, DateTime to)
+        {
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+            var parameters = new DynamicParameters();
+
+            var query = @"SELECT DISTINCT plq.plan_lesson_id
+                  FROM gs_teachers_web_db_prod.teacher_plan_lesson_quizs plq
+                  INNER JOIN gs_teachers_web_db_prod.teacher_plan_lessons ls
+                          ON ls.id = plq.plan_lesson_id AND ls.available = 1
+                  WHERE plq.required = 1
+                  AND ls.plan_id IN @planIds
+                  AND plq.due_date >= @from
+                  AND plq.due_date < @to";
+
+            parameters.Add("@planIds", planIds);
+            parameters.Add("@from", from);
+            parameters.Add("@to", to);
+
+            var planLessonIds = new List<int>();
+            var connection = new MySqlConnection
+            {
+                ConnectionString = AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"]
+            };
+            connection.Open();
+            try
+            {
+                planLessonIds = connection.Query<int>(query, parameters).ToList();
+            }
+            catch (Exception)
+            {
+                // Handle exception
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return planLessonIds;
+        }
+
         /// <summary>
         /// To retrieve the plan lesson quizzes by plan ids.
         /// </summary>
@@ -1524,9 +1579,11 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
         /// <param name="filterOutPastDates">To filter the ones that has expired.</param>
         /// <param name="pendingOrComplete">Pending or completed.</param>
         /// <param name="planId">The id of the plan.</param>
+        /// <param name="from">(optional)The start of date the range.</param>
+        /// <param name="to">(optional) The end of the date range.</param>
         /// <returns>Return a list of pending homeworks.</returns>
         public static List<StudentHomeworkDetail> GetStudentHomework(string studentId, string subjectCode,
-            string levelCode, string pendingOrComplete, bool filterOutPastDates, string planId = null)
+            string levelCode, string pendingOrComplete, bool filterOutPastDates, string planId = null, DateTime? from = null, DateTime? to = null)
         {
             var studentOpenPlans = GetStudentOpenPlans(studentId, subjectCode, levelCode, planId);
             if (studentOpenPlans.Count == 0)
@@ -1546,7 +1603,7 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
                 return new List<StudentHomeworkDetail>();
             }
 
-            var studentPlanQuizzes = GetPlanQuizByPlanIds(planIds, filterOutPastDates);
+            var studentPlanQuizzes = GetPlanQuizByPlanIds(planIds, filterOutPastDates, from, to);
             if (studentPlanQuizzes.Count == 0)
             {
                 return new List<StudentHomeworkDetail>();
@@ -1572,6 +1629,7 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
                     Subject = planDetails.Subject,
                     Title = studentPlanQuiz.Title,
                     LevelCode = planDetails.LevelCode,
+                    PlanSubject = planDetails.Subject,
                     DueDate = studentPlanQuiz.DueDate,
                     TriesQuantity = studentPlanQuiz.TriesQuantity,
                     ForGrading = studentPlanQuiz.ForGrading,
@@ -1605,7 +1663,7 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             DynamicParameters parameters = new DynamicParameters();
-            string query = @"SELECT DISTINCT pl.subject_code, pl.level_code, fo.id, fo.teacher_plan_id, fo.title, fo.active, fo.author, fo.description, fo.modified_by
+            string query = @"SELECT DISTINCT pl.subject_code, pl.level_code, fo.id, fo.teacher_plan_id, fo.title, fo.active, fo.author, fo.description, fo.modified_by, fo.created_at
             FROM gs_teachers_web_db_prod.teacher_plans pl
             INNER JOIN `gs_teachers_web_db_prod`.`teacher_plan_groups` plgr ON plgr.teacher_plan_id = pl.id
             INNER JOIN `gs_teachers_web_db_prod`.`teacher_groups` gro ON gro.id = plgr.group_id
@@ -1632,7 +1690,7 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
                 parameters.Add("@levelCode", levelCode);
             }
 
-            query += ";";
+            query += " ORDER BY fo.created_at DESC;";
 
             List<Domain.Models.Generals.Models.ForumModel> forums = new List<Domain.Models.Generals.Models.ForumModel>();
 
@@ -1762,8 +1820,10 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
         /// </summary>
         /// <param name="planIds">The id of the plans.</param>
         /// <param name="filterOutPastDates">To filter out past dates.</param>
+        /// <param name="from">(optional)The start of date the range.</param>
+        /// <param name="to">(optional) The end of date the range.</param>
         /// <returns>Return the list of student lessons.</returns>
-        private static List<StudentHomeworkDetail> GetPlanQuizByPlanIds(List<int> planIds, bool filterOutPastDates)
+        private static List<StudentHomeworkDetail> GetPlanQuizByPlanIds(List<int> planIds, bool filterOutPastDates, DateTime? from = null, DateTime? to = null)
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             var parameters = new DynamicParameters();
@@ -1778,6 +1838,13 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
             if (filterOutPastDates)
             {
                 query += " AND qu.due_date >= DATE_SUB(NOW(), INTERVAL 12 HOUR) ";
+            }
+
+            if (from.HasValue && to.HasValue)
+            {
+                query += " AND qu.due_date >= @from AND qu.due_date < @to ";
+                parameters.Add("@from", from.Value);
+                parameters.Add("@to", to.Value);
             }
 
             var connection = new MySqlConnection

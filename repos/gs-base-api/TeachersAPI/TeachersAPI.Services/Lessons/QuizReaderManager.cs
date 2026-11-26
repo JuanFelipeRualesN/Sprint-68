@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Dapper;
+using MySqlConnector;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -269,6 +271,7 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
             List<QuizQuestionModel> quizQuestionModelListToFind = new List<QuizQuestionModel>();
             List<QuizAttachmentModel> quizAttachmentModelsToFind = new List<QuizAttachmentModel>();
             List<QuizRubricModel> quizRubricModelsToFind = new List<QuizRubricModel>();
+            List<QuizMatchInstructionsModel> quizMatchInstructionsModelsToFind = new List<QuizMatchInstructionsModel>();
 
             quizRequestModel.QuizModel = new QuizEditModel(quizModelResult);
             if (!string.IsNullOrWhiteSpace(quizRequestModel.QuizModel.Title))
@@ -285,11 +288,17 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
             quizQuestionModelListToFind.Add(new QuizQuestionModel() { QuizId = quizId });
             quizAttachmentModelsToFind.Add(new QuizAttachmentModel() { QuizId = quizId });
             quizRubricModelsToFind.Add(new QuizRubricModel() { QuizId = quizId });
+            quizMatchInstructionsModelsToFind.Add(new QuizMatchInstructionsModel() { QuizId = quizId });
 
-            // Now call all the details 
+            // Now call all the details
             List<QuizQuestionModel> quizQuestionModelResult = new QuizQuestionDAO().Read(_connectionStringRead,
                 quizQuestionModelListToFind);
 
+            // call match instructions
+            List<QuizMatchInstructionsModel> quizMatchInstructionsModelsResult = new QuizMatchInstructionsDAO().Read(
+                _connectionStringRead, quizMatchInstructionsModelsToFind);
+
+            quizRequestModel.QuizMatchInstructionsModel = quizMatchInstructionsModelsResult;
 
             // Now we have to find the criterion, related terms, responses 
             List<QuizQuestionRubricModel> quizQuestionRubricModelListToFind = new List<QuizQuestionRubricModel>();
@@ -505,8 +514,19 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 
             quizRequestModel.QuizExtraInfoModel =
                     quizExtraInfoModelsResult.Find(x => x.QuizId == quizRequestModel.QuizModel.Id);
-            quizRequestModel.QuestionRequestModelList = questionRequestModelList.FindAll(
+            var filteredQuestions = questionRequestModelList.FindAll(
                     x => x.QuizQuestionModel.QuizId == quizRequestModel.QuizModel.Id);
+
+            var questionPositions = GetQuizQuestionPositions(quizId);
+
+            quizRequestModel.QuestionRequestModelList = questionPositions.Count > 0
+                ? filteredQuestions
+                    .OrderBy(q => questionPositions.ContainsKey(q.QuizQuestionModel.Id)
+                        ? questionPositions[q.QuizQuestionModel.Id]
+                        : int.MaxValue)
+                    .ToList()
+                : filteredQuestions;
+
             quizRequestModel.QuizRubricModel = quizRubricModelsResult.Find(x => x.QuizId == quizRequestModel.QuizModel.Id);
 
 			if (quizAttachmentModelsResult.Count > 0)
@@ -515,8 +535,8 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 				foreach (QuizAttachmentModel attachment in quizRequestModel.QuizAttachmentModelList)
 				{
 					string fileName = Path.GetFileName(attachment.AttachmentUrl);
-					string filePath = $"{AwsAssets.FolderPath}{fileName}";
-					string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(filePath);
+					string filePath = $"{fileName}";
+					string signedUrl = AzureAssets.GetFileFromAzureStorage(filePath);
 					attachment.AttachmentUrl = signedUrl;
 				}
 			}
@@ -572,7 +592,7 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                 foreach (var attachment in quizAttachmentModelsResult)
                 {
                     var fileName = Path.GetFileName(attachment.AttachmentUrl);
-                    var signedUrl = AwsAssets.GetSignedUrlFronCloudFront(fileName);
+                    var signedUrl = AzureAssets.GetFileFromAzureStorage(fileName);
                     attachment.AttachmentUrl = signedUrl;
                 }
             }
@@ -599,8 +619,8 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                 foreach (QuizAttachmentModel quizAttachmentModel in quizAttachmentModels)
                 {
                     string fileName = Path.GetFileName(quizAttachmentModel.AttachmentUrl);
-                    string filePath = $"{AwsAssets.FolderPath}{fileName}";
-                    string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(filePath);
+                    string filePath = $"{fileName}";
+                    string signedUrl = AzureAssets.GetFileFromAzureStorage(filePath);
                     attachmentsURL.Add(signedUrl);
                 }
             }
@@ -697,5 +717,23 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 
             return planningQuizzes == null || planningQuizzes.Count <= 0;
         }
-    }
+
+        private Dictionary<string, int> GetQuizQuestionPositions(string quizId)
+        {
+            var query = @"SELECT quiz_question_id, quiz_question_position
+                          FROM quiz_question_positions
+                          WHERE quiz_id = @quizId
+                          ORDER BY quiz_question_position ASC;";
+
+            using var connection = new MySqlConnection(_connectionStringRead);
+            connection.Open();
+
+            var results = connection.Query(query, new { quizId });
+
+            return results.ToDictionary(
+                row => ((object)row.quiz_question_id).ToString(),
+                row => (int)row.quiz_question_position
+            );
+        }
+}
 }

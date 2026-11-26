@@ -30,8 +30,8 @@ namespace SubscriptionsAPI.Controllers
             _connectionString = AppConfiguration.Configuration["AppSettings:SubscriptionsStripeDBConnection"];
             _connectionStringReader = AppConfiguration.Configuration["AppSettings:SubscriptionsStripeDBConnectionReader"];
             _langCode = "en"; // Or get from config if dynamic
-            _stripeWebhookSecret = AppConfiguration.Configuration["AppSettings:subs_stripe_webhook_secret"];
-            _stripeApiKey = AppConfiguration.Configuration["AppSettings:subs_stripe_key"];
+            _stripeWebhookSecret = AppConfiguration.Configuration["AppSettings:SubsStripeWebhookSecret"];
+            _stripeApiKey = AppConfiguration.Configuration["AppSettings:SubsStripeKey"];
         }
 
         [HttpPost("webhook")]

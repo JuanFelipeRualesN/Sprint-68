@@ -107,22 +107,19 @@ namespace MessagesAPI.Controllers
                 }
 
                 var newFileName = $"{Guid.NewGuid()}.{extensionFile}";
-                var fullFilePath = $"{AwsAssets.FolderPath}{newFileName}";
-                var response = await AwsAssets.WritingObjectToS3BucketAsync(fullFilePath, file);
-
-                if (response.HttpStatusCode == HttpStatusCode.OK)
+                object fileUrl = await AzureAssets.UploadFileToAzureStorage(file, newFileName);
+                if (fileUrl == null)
                 {
-                    // TODO: Specify the private key path if needed
-                    var signedUrl = AwsAssets.GetSignedUrlFronCloudFront(fullFilePath);
-                    return StatusCode(StatusCodes.Status201Created, new MessageAPI.Domain.Models.General.ResponseModel
-                    {
-                        SessionValid = true,
-                        TransactionValid = true,
-                        Messages = new List<string> { signedUrl, fullFilePath }
-                    });
+                    return StatusCode(StatusCodes.Status500InternalServerError);
                 }
-
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                // Else, return the file. 
+                object fullFilePath = AzureAssets.GetFileFromAzureStorage(newFileName);
+                return StatusCode(StatusCodes.Status201Created, new MessageAPI.Domain.Models.General.ResponseModel
+                {
+                    SessionValid = true,
+                    TransactionValid = true,
+                    Messages = new List<string> { fileUrl.ToString(), fullFilePath.ToString() }
+                });
             }
             catch (Exception ex)
             {

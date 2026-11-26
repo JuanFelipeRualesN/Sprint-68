@@ -53,7 +53,7 @@ namespace SubscriptionsAPI.Controllers
                 }
                 var generalResponseModel = new SubscriptionsAPI.Domain.Models.Generals.Responses.PlanResponseModel();
                 var subscriptionManager = new PlanCreatorManager(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnection"], AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], RequestHandler.GetLanguage(HttpContext));
-                var planResponseModel = subscriptionManager.CreatePlan(requestModel, AppConfiguration.Configuration["AppSettings:subs_stripe_key"], responseSession.UserId, isCommercial);
+                var planResponseModel = subscriptionManager.CreatePlan(requestModel, AppConfiguration.Configuration["AppSettings:SubsStripeKey"], responseSession.UserId, isCommercial);
                 generalResponseModel.Plans = new List<SubscriptionsAPI.Domain.Models.Subscriptions.Responses.PlanResponseModel> { planResponseModel };
                 generalResponseModel.Messages = planResponseModel.Messages;
                 if (!planResponseModel.TransactionValid)

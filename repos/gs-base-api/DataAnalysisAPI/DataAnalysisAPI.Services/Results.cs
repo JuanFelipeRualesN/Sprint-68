@@ -54,7 +54,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             // Skip by pagination 
             if (results.Count > 0)
             {
-                results = results.Skip(fromPage.Value * limiter.Value).Take(limiter.Value).ToList();
+                results = results.Skip(fromPage.Value).Take(limiter.Value).ToList();
             }
 
             return new ResponseModel<ResultGenericModel>()

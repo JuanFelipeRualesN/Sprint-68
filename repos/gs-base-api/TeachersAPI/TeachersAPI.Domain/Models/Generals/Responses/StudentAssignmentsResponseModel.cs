@@ -11,6 +11,8 @@ namespace TeachersAPI.Domain.Models.Generals.Responses
         /// Gets or sets the total pages.
         /// </summary>
         public int TotalPages { get; set; }
+        public int TotalPendingLessons { get; set; }
+        public int TotalHomework { get; set; }
 
         public List<StudentLessonAssignmentDetail> PendingLessonsModelList { get; set; }
 

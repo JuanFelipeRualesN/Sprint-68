@@ -23,6 +23,7 @@ namespace DataAnalysisAPI.Controllers
         /// <param name="sie">Optional: User SIE.</param>
         /// <param name="oreId">Optional: ORE ID. If requester is an ORE admin, it will be applied automatically.</param>
         /// <param name="roleId">Optional: Role ID.</param>
+        /// <param name="status">Optional: User Status.</param>
         /// <param name="limit">Optional: Items per page. Default 10.</param>
         /// <param name="offset">Optional: Page offset. Default 0.</param>
         [HttpGet("users-list")]
@@ -31,6 +32,7 @@ namespace DataAnalysisAPI.Controllers
             [FromQuery] string? sie = null,
             [FromQuery] int? oreId = null,
             [FromQuery] int? roleId = null,
+            [FromQuery] string? status = null,
             [FromQuery] int limit = 10,
             [FromQuery] int offset = 0)
         {
@@ -52,6 +54,7 @@ namespace DataAnalysisAPI.Controllers
                     sie: sie,
                     roleIds: roleId.HasValue ? new List<int> { roleId.Value } : null,
                     schoolIds: schoolId.HasValue ? new List<int> { schoolId.Value } : null,
+                    status: status,
                     oreId: oreId,
                     fromPage: offset,
                     limiter: limit
@@ -73,12 +76,14 @@ namespace DataAnalysisAPI.Controllers
         /// <param name="sie">Optional: User SIE.</param>
         /// <param name="oreId">Optional: ORE ID. If requester is an ORE admin, it will be applied automatically.</param>
         /// <param name="roleId">Optional: Role ID.</param>
+        /// <param name="status">Optional: User Subscription Status.</param>
         [HttpGet("users-document")]
         public async Task<IActionResult> GetUsersDocument(
             [FromQuery] int? schoolId = null,
             [FromQuery] string? sie = null,
             [FromQuery] int? oreId = null,
-            [FromQuery] int? roleId = null)
+            [FromQuery] int? roleId = null,
+            [FromQuery] string? status = null)
         {
             try
             {
@@ -96,6 +101,7 @@ namespace DataAnalysisAPI.Controllers
                     sie: sie,
                     roleIds: roleId.HasValue ? new List<int> { roleId.Value } : null,
                     schoolIds: schoolId.HasValue ? new List<int> { schoolId.Value } : null,
+                    status: status,
                     oreId: oreId,
                     languageCode: session.LangCode
                 );

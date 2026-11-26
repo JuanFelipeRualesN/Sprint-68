@@ -9,6 +9,7 @@ namespace SubscriptionsAPI.Controllers
     /// <summary>
     /// To handle the billing intervals. This is used only for commercial version. However, we do not recommend to remove it, since 
     /// we do not know if the frontend calls it in the non-commercial version.
+    /// This applies only to commercial products.
     /// </summary>
     [ApiController]
     [Route("subscriptionsapi/billing-interval")]

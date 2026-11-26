@@ -39,10 +39,13 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
         /// <param name="levelCode">(optional) The level code to call.</param>
         /// <param name="testTitle">Custom test title.</param>
         /// <param name="planId">(optional) The id of the plan.</param>
+        /// <param name="month">(optional) The month (1-12). When set together with the year the lessons due within that month are returned and the pagination is ignored.</param>
+        /// <param name="year">(optional) The four-digit year. Requires the month.</param>
+        /// <param name="langCode">(optional) The language used to resolve the plan subject's display name.</param>
         /// <returns>Returns the student homework response.</returns>
         public static StudentAssignmentsResponseModel GetStudentPendingLessons(string studentId, int fromPage,
             int limiter, string testTitle,
-            string subjectCode = null, string levelCode = null, string planId = null)
+            string subjectCode = null, string levelCode = null, string planId = null, int? month = null, int? year = null, string langCode = null)
         {
 
             var homeworkResponseModel = new StudentAssignmentsResponseModel()
@@ -57,8 +60,25 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
                 return homeworkResponseModel;
             }
 
+            var planIds = studentOpenPlans.Select(x => x.PlanId).ToList();
+
+            // Resolve the month's lessons first. Everything below derives its ids from this list, so
+            // filtering here keeps the queries from reading the whole pending student backlog.
+            List<int> planLessonIdsInMonth = null;
+
+            if (month.HasValue && year.HasValue)
+            {
+                var monthStart = new DateTime(year.Value, month.Value, 1);
+                planLessonIdsInMonth = TeacherPlans.GetPlanLessonIdsWithQuizzesDueWithin(planIds, monthStart, monthStart.AddMonths(1));
+
+                if (planLessonIdsInMonth.Count == 0)
+                {
+                    return homeworkResponseModel;
+                }
+            }
+
             // Now, retrieve the plans lessons if any. 
-            var planLessons = TeacherPlans.GetPlanLessonsByPlanIds(studentOpenPlans.Select(x => x.PlanId).ToList());
+            var planLessons = TeacherPlans.GetPlanLessonsByPlanIds(planIds, planLessonIdsInMonth);
             if (planLessons.Count == 0)
             {
                 return homeworkResponseModel;
@@ -99,8 +119,10 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
                 var studentLessonAssignment = new StudentLessonAssignmentDetail()
                 {
                     LessonId = planLesson.LessonId,
+                    DueDate = planLesson.DueDate,
                     Subject = planDetails?.Subject,
                     LevelCode = planDetails?.LevelCode,
+                    PlanSubject = planDetails?.Subject,
                     PlanId = planDetails.PlanId,
                     TeacherId = planDetails.TeacherId,
                     TriesQuantity = 1,
@@ -237,12 +259,23 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
                 ex.ToString();
             }
 
-            // Set the total 
-            homeworkResponseModel.TotalPages = int.Parse(Math
-                .Ceiling((decimal)homeworkResponseModel.PendingLessonsModelList.Count() / limiter).ToString());
-            // Set the limit
-            homeworkResponseModel.PendingLessonsModelList = homeworkResponseModel.PendingLessonsModelList
-                .Skip(fromPage * limiter).Take(limiter).ToList();
+            // Set total pending lessons
+            homeworkResponseModel.TotalPendingLessons = homeworkResponseModel.PendingLessonsModelList.Count();
+
+            if (month.HasValue && year.HasValue)
+            {
+                // The calendar is not paginated, so everything that matched is returned at once.
+                homeworkResponseModel.TotalPages = 1;
+            }
+            else
+            {
+                // Set the total 
+                homeworkResponseModel.TotalPages = int.Parse(Math
+                    .Ceiling((decimal)homeworkResponseModel.PendingLessonsModelList.Count() / limiter).ToString());
+                // Set the limit
+                homeworkResponseModel.PendingLessonsModelList = homeworkResponseModel.PendingLessonsModelList
+                    .Skip(fromPage * limiter).Take(limiter).ToList();
+            }
 
             var userIdsToCall = new List<string>();
             var lessonModelsToCallAthenas = new List<LessonModel>();
@@ -261,6 +294,9 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
                 lessonsAthenas = AthenasHandler.GetAthenasLessons(lessonModelsToCallAthenas, false);
             }
 
+            // Retrieve the plan subject's display names
+            var athenasSubjects = AthenasHandler.GetAthenasSubjects(langCode);
+
             foreach (var pendingLessonModel in homeworkResponseModel.PendingLessonsModelList)
             {
                 var lesson = lessonsAthenas?.LessonModelList?.Find(x => x.Id == pendingLessonModel.LessonId);
@@ -271,6 +307,9 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
                     pendingLessonModel.LevelCode = lesson.LevelCode;
                 }
 
+                pendingLessonModel.PlanSubjectName = athenasSubjects?
+                    .Find(x => x.Code == pendingLessonModel.PlanSubject)?.Name;
+
                 int examNo = 1;
                 foreach (var exam in pendingLessonModel.StudentExamModels)
                 {
@@ -280,6 +319,47 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
             }
 
             return homeworkResponseModel;
+        }
+
+        /// <summary>
+        /// Retrieve the student pending lessons that are due within a given month.
+        /// Used for the student's calendar
+        /// </summary>
+        /// <param name="studentId">The student's id</param>
+        /// <param name="month">The number of the month</param>
+        /// <param name="year">The four digit year</param>
+        /// <param name="testTitle">The test title</param>
+        /// <param name="subjectCode">The subject code</param>
+        /// <param name="levelCode">The level code</param>
+        /// <param name="planId">The id of the plan</param>
+        /// <param name="langCode">(optional) The language used to resolve the plan subject's display name.</param>
+        /// <returns>Returns the student homework response</returns>
+        public static StudentAssignmentsResponseModel GetStudentPendingLessonsByMonth(string studentId, int month,
+            int year, string testTitle, string subjectCode = null, string levelCode = null, string planId = null, string langCode = null)
+        {
+            // The page params are unused, the month replaces the pagination
+            return GetStudentPendingLessons(studentId, 0, int.MaxValue, testTitle, subjectCode, levelCode, planId, month, year, langCode);
+        }
+
+        /// <summary>
+        /// Retrieve the student pending homework due within a given month
+        /// Used for the student's calendar
+        /// </summary>
+        /// <param name="studentId">The student's id</param>
+        /// <param name="month">The number of the month</param>
+        /// <param name="year">The four digit year</param>
+        /// <param name="token">The user's token</param>
+        /// <param name="ipAddress">The Ip Address</param>
+        /// <param name="subjectCode">The subject's code</param>
+        /// <param name="levelCode">The level's code</param>
+        /// <param name="planId">The id of the plan</param>
+        /// <param name="langCode">(optional) The language used to resolve the plan subject's display name.</param>
+        /// <returns>Returns the student homework response</returns>
+        public static StudentAssignmentsResponseModel GetStudentsHomeworkByMonth(string studentId, int month, int year, string token, string ipAddress, string subjectCode, string levelCode, string planId = null, string langCode = null)
+        {
+            // Past due dates are kept, so the student can go back to a previous month.
+            // The page params are unused, the month replaces the pagination.
+            return GetStudentsHomework(studentId, 0, int.MaxValue, token, ipAddress, subjectCode, levelCode, "P", false, planId, month, year, langCode);
         }
 
         /// <summary>
@@ -632,18 +712,31 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
         /// <param name="subjectCode">The subject's code.</param>
         /// <param name="levelCode">The level's code.</param>
         /// <param name="pendingOrComplete">C for complete, P for pending.</param>
+        /// <param name="month">(optional) The month (1-12). When set together with the year the homework due within that month is returned and the pagination is ignored.</param>
+        /// <param name="year">(optional) The four-digit year. Requires the month.</param>
+        /// <param name="langCode">(optional) The language used to resolve the plan subject's display name.</param>
         /// <returns>Returns the student homework response.</returns>
         public static StudentAssignmentsResponseModel GetStudentsHomework(string studentId, int fromPage, int limiter,
             string token, string ipAddress, string subjectCode, string levelCode, string pendingOrComplete,
-            bool filterOutPastDates, string planId = null)
+            bool filterOutPastDates, string planId = null, int? month = null, int? year = null, string langCode = null)
         {
             var homeworkResponseModel = new StudentAssignmentsResponseModel()
             {
                 PendingLessonsModelList = new List<StudentLessonAssignmentDetail>(),
             };
 
+            // Turn the month into a date range the query can filter by, so it only reads that month
+            DateTime? from = null;
+            DateTime? to = null;
+
+            if (month.HasValue && year.HasValue)
+            {
+                from = new DateTime(year.Value, month.Value, 1);
+                to = from.Value.AddMonths(1);
+            }
+
             homeworkResponseModel.HomeworkModelList = TeacherPlans.GetStudentHomework(studentId, subjectCode, levelCode,
-                pendingOrComplete, filterOutPastDates, planId);
+                pendingOrComplete, filterOutPastDates, planId, from, to);
 
             // Now prepare the other details
             if (homeworkResponseModel.HomeworkModelList == null || homeworkResponseModel.HomeworkModelList.Count == 0)
@@ -655,18 +748,34 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
             homeworkResponseModel.HomeworkModelList = homeworkResponseModel.HomeworkModelList
                 .OrderBy(x => DateTime.Parse(x.DueDate)).ToList();
 
-            // Set the total 
-            homeworkResponseModel.TotalPages =
-                int.Parse(Math.Ceiling((double)homeworkResponseModel.HomeworkModelList.Count() / limiter).ToString());
-            // Set the limit
-            homeworkResponseModel.HomeworkModelList = homeworkResponseModel.HomeworkModelList.Skip(fromPage * limiter)
-                .Take(limiter).ToList();
+            // Set total homework
+            homeworkResponseModel.TotalHomework = homeworkResponseModel.HomeworkModelList.Count();
+
+            if (month.HasValue && year.HasValue)
+            {
+                // The calendar is not paginated, so everything that matched is returned at once.
+                homeworkResponseModel.TotalPages = 1;
+            }
+            else
+            {
+                // Set the total 
+                homeworkResponseModel.TotalPages =
+                    int.Parse(Math.Ceiling((double)homeworkResponseModel.HomeworkModelList.Count() / limiter).ToString());
+                // Set the limit
+                homeworkResponseModel.HomeworkModelList = homeworkResponseModel.HomeworkModelList.Skip(fromPage * limiter)
+                    .Take(limiter).ToList();
+            }
 
             List<string> userIdsToCall = new List<string>();
+
+            // Resolve the plan subject's display names
+            var athenasSubjects = AthenasHandler.GetAthenasSubjects(langCode);
 
             foreach (StudentHomeworkDetail pendingLessonsModel in homeworkResponseModel.HomeworkModelList)
             {
                 userIdsToCall.Add(pendingLessonsModel.TeacherId);
+                pendingLessonsModel.PlanSubjectName = athenasSubjects?
+                    .Find(x => x.Code == pendingLessonsModel.PlanSubject)?.Name;
             }
 
             // Call the users 
@@ -792,13 +901,13 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
         /// <returns></returns>
         public static LessonAssignmentResponseModel GetStudentLessonResults(DetailsRequestModel detailsRequest, string token, List<string> userIds, string ipAddress, int typePendingOrComplete, string planningId, string perioId = null)
         {
-            LessonAssignmentResponseModel homeworkResponseModel = new LessonAssignmentResponseModel()
+            var homeworkResponseModel = new LessonAssignmentResponseModel()
             {
                 PlanDetails = new List<PlanDetailLessonModel>(),
             };
 
             // Get the plans by students. Planning Id and User Ids are optional. Can be sent as null.
-            List<TeacherPlanGroupStudentModel> planStudentsDetails = TeacherPlans.GetTeacherPlanWithGroupDetails(!string.IsNullOrWhiteSpace(planningId) ? new List<string> { planningId } : null, userIds, null, perioId);
+            var planStudentsDetails = TeacherPlans.GetTeacherPlanWithGroupDetails(!string.IsNullOrWhiteSpace(planningId) ? new List<string> { planningId } : null, userIds, null, perioId);
             if (planStudentsDetails.Count == 0)
             {
                 return homeworkResponseModel;
@@ -806,28 +915,30 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
 
             // Now, for each plan, call the details 
             List<string> planningsToCall = new List<string>();
-            foreach (TeacherPlanGroupStudentModel teacherStudentPlan in planStudentsDetails)
+            foreach (var teacherStudentPlan in planStudentsDetails)
             {
                 planningsToCall.Add(teacherStudentPlan.PlanId);
             }
-            List<TeacherPlanFullDetailsModel> planDetails = TeacherPlans.GetTeacherPlanFullDetails(planningsToCall, detailsRequest != null ? detailsRequest?.SubjectCode : null, detailsRequest != null ? detailsRequest?.LevelCode : null);
+            var planDetails = TeacherPlans.GetTeacherPlanFullDetails(planningsToCall, detailsRequest != null ? detailsRequest?.SubjectCode : null, detailsRequest != null ? detailsRequest?.LevelCode : null);
             if (planDetails.Count == 0)
             {
                 return homeworkResponseModel;
             }
 
             // Get the assignments results 
-            List<string> userIdsToCall = new List<string>();
+            var userIdsToCall = new List<string>();
             userIdsToCall.AddRange(userIds); // Add the students already
 
-            List<string> lessonIds = new List<string>();
+            var lessonIds = new List<string>();
+            var planLessonIds = new List<string>();
 
-            foreach (TeacherPlanFullDetailsModel teacherPlan in planDetails)
+            foreach (var teacherPlan in planDetails)
             {
-                foreach (LessonAssignmentModel assignmentPlan in teacherPlan.LessonAssignmentModels)
+                foreach (var assignmentPlan in teacherPlan.LessonAssignmentModels)
                 {
                     lessonIds.Add(assignmentPlan.LessonId);
                     userIdsToCall.Add(teacherPlan.TeacherPlanModel.TeacherId);
+                    planLessonIds.Add(assignmentPlan.Id);
                 }
             }
 
@@ -839,7 +950,7 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
 
 
             // Get the teacher and student information.
-            List<UserResponse> userSharedDetails = new List<UserResponse>();
+            var userSharedDetails = new List<UserResponse>();
             try
             {
                 userSharedDetails = GetUserDetails.GetUsersSharedDetails(token, ipAddress, userIdsToCall);
@@ -850,7 +961,7 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
             }
 
             // Now get the details 
-            return CalculateLessonAverages(userIds, userSharedDetails, planDetails, typePendingOrComplete, UserResults.GetUserLessonsAverages(userIds, lessonIds), detailsRequest.FromPage, detailsRequest.Limiter);
+            return CalculateLessonAverages(userIds, userSharedDetails, planDetails, typePendingOrComplete, UserResults.GetUserLessonsAverages(userIds, lessonIds, planLessonIds), detailsRequest.FromPage, detailsRequest.Limiter);
         }
 
         /// <summary>
@@ -921,7 +1032,7 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
             var quizzesAthenas = AthenasHandler.GetQuizAthenasModelList(teacherPlanLessonQuizzes.Select(x => x.QuizId).ToList());
 
             // Now, get the student results for the planning-exams 
-            var studentResults = UserResults.GetStudentPlanningLessonsResults(studentId, planningId);
+            var studentResults = UserResults.GetStudentPlanningLessonsResults(studentId, planningId, lessonId);
 
             // Call the teacher and student details.
             var userIdsToCall = new List<string> { studentId };

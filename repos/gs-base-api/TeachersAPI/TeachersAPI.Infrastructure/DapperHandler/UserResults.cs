@@ -1084,7 +1084,7 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.DapperHandler
             FROM gs_teachers_web_db_prod.plan_lesson_quiz_user_results pllqur
             INNER JOIN `gs_teachers_web_db_prod`.`teacher_plan_lessons` tpl ON tpl.id = pllqur.plan_lesson_id
             INNER JOIN `gs_teachers_web_db_prod`.`teacher_plan_lesson_quizs` tplq ON tplq.plan_lesson_id = tpl.id AND tplq.quiz_id = pllqur.quiz_id
-            WHERE tpl.plan_id = @planId AND pllqur.user_id = @studentId; ";
+            WHERE tpl.plan_id = @planId AND pllqur.user_id = @studentId ";
             parameters.Add("@planId", planId, System.Data.DbType.String, System.Data.ParameterDirection.Input);
             parameters.Add("@studentId", studentId, System.Data.DbType.String, System.Data.ParameterDirection.Input);
 

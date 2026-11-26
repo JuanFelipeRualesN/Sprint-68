@@ -120,45 +120,52 @@ namespace TeachersAPI.Controllers
         [Route("archive/{planningId}/")]
         public async Task<IActionResult> ArchivePlanning(string planningId)
         {
-            // Check access
-            var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "Planning");
-            if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+            try
             {
-                return Unauthorized();
-            }
+                // Check access
+                var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "Planning");
+                if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+                {
+                    return Unauthorized();
+                }
 
-            // Check if the planning is from the user 
-            PlanningReaderManager planningReaderManager = new PlanningReaderManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"], responseSession.LangCode);
-            List<Domain.Models.Teachers.TeacherPlanModel> teacherPlanList =
-                planningReaderManager.GetTeacherPlanModels(new List<Domain.Models.Teachers.TeacherPlanModel>()
-            {
+                // Check if the planning is from the user 
+                var planningReaderManager = new PlanningReaderManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"], responseSession.LangCode);
+                var teacherPlanList =
+                    planningReaderManager.GetTeacherPlanModels(new List<Domain.Models.Teachers.TeacherPlanModel>()
+                {
                new Domain.Models.Generals.Responses.TeacherPlanModel()
                {
                    Id = planningId,
                    UserId = responseSession.UserId
                }
-            });
+                });
 
-            if (teacherPlanList.Count == 0)
-            {
-                // It doesn't belong to the user. 
-                return Unauthorized();
+                if (teacherPlanList.Count == 0)
+                {
+                    // It doesn't belong to the user. 
+                    return Unauthorized();
+                }
+
+                // Archive it 
+                var planningModifierManager =
+                    new PlanningModifierManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"],
+                    AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], responseSession.LangCode);
+
+                var responseModel =
+                    await planningModifierManager.ArchivePlanning(planningId, responseSession);
+
+                if (!responseModel.Valid)
+                {
+                    return BadRequest(responseModel);
+                }
+
+                return Ok(responseModel);
             }
-
-            // Archive it 
-            PlanningModifierManager planningModifierManager =
-                new PlanningModifierManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionString"],
-                AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], responseSession.LangCode);
-
-            Domain.Models.Teachers.TeacherPlanModel responseModel =
-                await planningModifierManager.ModifyPlanning(new Domain.Models.Generals.Responses.TeacherPlanModel() { Id = planningId, Available = "0" }, responseSession, HttpContext);
-
-            if (!responseModel.Valid)
+            catch(Exception ex)
             {
-                return BadRequest(responseModel);
+                return BadRequest(ex.ToString());
             }
-
-            return Ok(responseModel);
         }
 
         /// <summary>
@@ -1059,6 +1066,46 @@ namespace TeachersAPI.Controllers
         }
 
         /// <summary>
+        /// To get the lessons attached to the instructional plan that the student still has
+        /// pending and that are due within the given month, for the student's calendar
+        /// </summary>
+        /// <param name="month">The month (1-12).</param>
+        /// <param name="year">The four-digit year.</param>
+        /// <param name="subjectCode">The subject code.</param>
+        /// <param name="levelCode">The level code to filter.</param>
+        /// <returns>A list of pending lessons due within the month.</returns>
+        [HttpGet]
+        [Route("student/lessons/calendar")]
+        public async Task<IActionResult> GetStudentPlanningLessonsByMonth(int month, int year, string subjectCode = null, string levelCode = null)
+        {
+            try
+            {
+                ValidationResponseModel responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "PlanningStudentRead");
+                if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
+                {
+                    return Unauthorized();
+                }
+
+                if (month < 1 || month > 12)
+                {
+                    return BadRequest("Month must be between 1 and 12.");
+                }
+
+                if (year < 1)
+                {
+                    return BadRequest("Enter a valid year.");
+                }
+
+                return Ok(StudentAssignmentsAndResults.GetStudentPendingLessonsByMonth(responseSession.UserId, 
+                    month, year, RequestHandler.GetLanguage(HttpContext) == "en" ? "Test" : "Examen", subjectCode, levelCode, langCode: responseSession.LangCode));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
+        /// <summary>
         /// This endpoint is for students. It returns the exams, including the pre and posts, that are available for the student for an specific lesson.
         /// </summary>
         /// <param name="lessonId">The lesson Id to check.</param>
@@ -1464,7 +1511,7 @@ namespace TeachersAPI.Controllers
                 return Unauthorized();
             }
 
-            return Ok(AthenasHandler.GetAthenasLessonPDFUrl(null, lessonId, false));
+            return Ok(AthenasHandler.GetAthenasLessonPDFUrl(RequestHandler.GetLanguage(HttpContext), lessonId, false));
         }
 
         /// <summary>

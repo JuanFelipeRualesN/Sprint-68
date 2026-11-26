@@ -29,7 +29,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanStratergyServiceFactory.CreateService(dbConn);
-                    var strategyTypes = await service.GetStrategyTypes();
+                    var strategyTypes = await service.GetStrategyTypeTranslations(responseSession.LangCode);
                     return Ok(strategyTypes);
                 }
             }
@@ -75,7 +75,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanStratergyServiceFactory.CreateService(dbConn);
-                    var strategyCategories = await service.GetStrategyCategories();
+                    var strategyCategories = await service.GetStrategyCategoryTranslations(responseSession.LangCode);
                     return Ok(strategyCategories);
                 }
             }
@@ -97,7 +97,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanStratergyServiceFactory.CreateService(dbConn);
-                    var teacherPlanStrategyByTeacherPlanId = await service.GetTeacherPlanStrategyByTeacherPlanId(teacherPlanId);
+                    var teacherPlanStrategyByTeacherPlanId = await service.GetTeacherPlanStrategyByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanStrategyByTeacherPlanId);
                 }
             }

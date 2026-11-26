@@ -52,8 +52,9 @@ namespace DataAnalysisAPI.Controllers
 
                 return Ok(DataAnalysisAPI.Services.Generics.GetCountries());
             }
-            catch
+            catch (Exception ex)
             {
+                return BadRequest(ex.ToString());
                 var lang = RequestHandler.GetLanguage(HttpContext);
                 return BadRequest(Configurations.GetGenericMessageOnFail(lang));
             }
@@ -74,8 +75,9 @@ namespace DataAnalysisAPI.Controllers
 
                 return Ok(DataAnalysisAPI.Services.Generics.GetOres(oreId, countryIso));
             }
-            catch
+            catch (Exception ex)
             {
+                return BadRequest(ex.ToString());
                 var lang = RequestHandler.GetLanguage(HttpContext);
                 return BadRequest(Configurations.GetGenericMessageOnFail(lang));
             }
@@ -175,6 +177,25 @@ namespace DataAnalysisAPI.Controllers
                     return Unauthorized();
 
                 return Ok(DataAnalysisAPI.Services.Generics.GetRoles());
+            }
+            catch
+            {
+                var lang = RequestHandler.GetLanguage(HttpContext);
+                return BadRequest(Configurations.GetGenericMessageOnFail(lang));
+            }
+        }
+
+        /// <summary>Get subscription status.</summary>
+        [HttpGet("status")]
+        public IActionResult GetStatus()
+        {
+            try
+            {
+                var session = GetUserDetails.GetUserIdRequestOnOtherAPI(HttpContext, "status");
+                if (!session.SessionValid || string.IsNullOrWhiteSpace(session.UserId))
+                    return Unauthorized();
+
+                return Ok(DataAnalysisAPI.Services.Generics.GetStatus());
             }
             catch
             {

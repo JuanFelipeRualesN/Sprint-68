@@ -16,6 +16,7 @@ namespace MessagesAPI.Utils
     /// <summary>
     /// AWS Assets helper to manage files uploading.
     /// </summary>
+    /*
     public class AwsAssets
     {
         /// <summary>
@@ -101,7 +102,7 @@ namespace MessagesAPI.Utils
             catch (AmazonCloudFrontException e)
             {
                 throw new AmazonCloudFrontException(e.Message, e);
-            } */
+            } 
         }
-    }
+    } */
 }
