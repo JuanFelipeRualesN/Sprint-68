@@ -30,7 +30,7 @@ namespace GSAIServicesAPI.Filters
 
                 var message = config[$"Messages:AIDisabled:{isoCode}"] ?? config["Messages:AIDisabled:en"];
 
-                context.Result = new ObjectResult(new { error = message })
+                context.Result = new ObjectResult(new { error = message, ErrorCode = "ai_disabled" })   // ErrorCode is additive: the existing field is unchanged
                 {
                     StatusCode = StatusCodes.Status503ServiceUnavailable
                 };

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
@@ -21,13 +21,22 @@ namespace SubscriptionsAPI.CustomClasses.CacheHandler
         private const string COURSES_STRING = "courses";
         private const string USER_STRING = "user";
         private const string SUBSCRIPTION_STRING = "subscription";
+        private const string PROFILES_STRING = "profiles";
+
+        /// <summary>user:subscription:{token}, or user:subscription:{token}:profiles for the variant with the related users.</summary>
+        private static string UserRelatedSubscriptionsKey(string token, bool withProfiles) =>
+            withProfiles
+                ? $"{USER_STRING}{COLON_STRING}{SUBSCRIPTION_STRING}{COLON_STRING}{token}{COLON_STRING}{PROFILES_STRING}"
+                : $"{USER_STRING}{COLON_STRING}{SUBSCRIPTION_STRING}{COLON_STRING}{token}";
 
         /// <summary>
         /// Get user-related subscriptions from cache: prefer local in-memory (short TTL), otherwise Redis (with 4s timeout).
         /// </summary>
-        public List<SubscriptionAcademicFullResponseModel>? GetUserRelatedSubscriptions(string token)
+        /// <param name="token">The session token (part of the key).</param>
+        /// <param name="withProfiles">True for the variant that includes the related users (its own key, so the two shapes never mix).</param>
+        public List<SubscriptionAcademicFullResponseModel>? GetUserRelatedSubscriptions(string token, bool withProfiles = false)
         {
-            var cacheKey = $"{USER_STRING}{COLON_STRING}{SUBSCRIPTION_STRING}{COLON_STRING}{token}";
+            var cacheKey = UserRelatedSubscriptionsKey(token, withProfiles);
 
             // 1) Local in-memory first
             if (LocalCache.TryGetValue(cacheKey, out List<SubscriptionAcademicFullResponseModel> localHit))
@@ -76,12 +85,15 @@ namespace SubscriptionsAPI.CustomClasses.CacheHandler
         /// <summary>
         /// Store user-related subscriptions in Redis + local in-memory cache.
         /// </summary>
-        public void StoreUserRelatedSubscriptions(string token, List<SubscriptionAcademicFullResponseModel> subscriptions)
+        /// <param name="token">The session token (part of the key).</param>
+        /// <param name="subscriptions">The response to store.</param>
+        /// <param name="withProfiles">True for the variant that includes the related users (its own key).</param>
+        public void StoreUserRelatedSubscriptions(string token, List<SubscriptionAcademicFullResponseModel> subscriptions, bool withProfiles = false)
         {
             if (!ConfigCache.IsRedisOn())
                 return;
 
-            var cacheKey = $"{USER_STRING}{COLON_STRING}{SUBSCRIPTION_STRING}{COLON_STRING}{token}";
+            var cacheKey = UserRelatedSubscriptionsKey(token, withProfiles);
             var payload = JsonConvert.SerializeObject(subscriptions);
 
             // Redis (expiration in hours from config)

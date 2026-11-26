@@ -5,6 +5,7 @@ using GSWebAPI.CustomClasses;
 using GSWebAPI.GSWebAPI.Domain.Models.General.Requests;
 using GSWebAPI.GSWebAPI.Domain.Models.General.Responses;
 using GSWebAPI.GSWebAPI.Domain.Models.UserQuiz;
+using GSWebAPI.GSWebAPI.Services.CustomPlans;
 using GSWebAPI.GSWebAPI.Services.FeignAPIs;
 using GSWebAPI.GSWebAPI.Services.UserQuizzes;
 using Microsoft.AspNetCore.Mvc;
@@ -23,11 +24,13 @@ namespace GSWebAPI.Controllers
         /// </summary>
         /// <param name="generalRequestModel">Request details to insert.</param>
         /// <param name="subscriptionType">The subscription's type (H for Homeschooling, S for School).</param>
+        /// <param name="customPlanQuizEvaluator">Applies the submitted quiz to the student's active custom plans (practice, exam or pre/post test and lesson completion); does nothing for students without one and never affects the saved result.</param>
         /// <param name="learningGap">1 if learning Gap, else 0</param>
         /// <returns>Returns a transaction with results details.</returns>
         [HttpPost]
         [Route("quiz/student/submit/")]
-        public async Task<IActionResult> SetStudentQuizResponse(UserResponseRequestModel generalRequestModel, string subscriptionType, int learningGap = 0)
+        public async Task<IActionResult> SetStudentQuizResponse(UserResponseRequestModel generalRequestModel, string subscriptionType,
+            [FromServices] ICustomPlanQuizEvaluator customPlanQuizEvaluator, int learningGap = 0)
         {
             var generalResponseModel = new GameQuizResponseModel();
             try
@@ -83,6 +86,19 @@ namespace GSWebAPI.Controllers
                     userResponseModelListToInsert, responseSession.LangCode,
                     modelObject.QuizRequestModel.SubjectCode,
                     modelObject.QuizRequestModel.LevelCode);
+
+                // Students with an active custom plan: update the plan's practice/exam/test and the lesson. Regular students
+                // have no plan, so nothing changes for them. It never affects the quiz result already saved above.
+                var submission = CustomPlanQuizSubmission.From(
+                    responseSession.UserId,
+                    modelObject.QuizRequestModel.QuizModel.LessonId,
+                    modelObject.QuizRequestModel.QuizModel.Id,
+                    modelObject.QuizRequestModel.QuizModel.IsExam,
+                    response?.UserQuizResultModel);
+                if (submission != null)
+                {
+                    await customPlanQuizEvaluator.EvaluateAsync(submission, HttpContext.RequestAborted);
+                }
 
                 return Ok(response);
             }

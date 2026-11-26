@@ -1,0 +1,462 @@
+[
+  {
+    "Name": "get_subject_area_usage",
+    "Route": "subject-area-usage",
+    "Description": "Usage of each area in a period. Returns the areas (subjects) with their assigned and completed tests between two dates, ordered by completed tests. Use it to know which area was the most or least used: with order desc the first row is the most used; with order asc the first one is the least used. Every test counts in the period by its assignment date; CompletedTests is, of the tests assigned in the period, the ones already taken (it never exceeds AssignedTests) and CompletedPercentage is already calculated by the API; do not recalculate it. Every row has PercentageOfTotalCompleted (what share of all completed tests that area contributes) and the response has a 'Summary' with the totals of ALL the areas (TotalAssignedTests, TotalCompletedTests, GlobalCompletedPercentage, AreasWithoutAssignedTests): use them, do not calculate them.",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "search_schools",
+    "Route": "search-schools",
+    "Description": "Looks up schools by name. Returns the EXACT names of the schools that contain the searched text (case and accent insensitive). ALWAYS use it before filtering by a school. If it returns no rows, the school does not exist. If it returns several, ask which one.",
+    "Parameters": {
+      "text": {
+        "type": "string",
+        "minLength": 2,
+        "description": "Part of the school name, minimum 2 characters."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      }
+    },
+    "Required": [
+      "text"
+    ]
+  },
+  {
+    "Name": "get_connections_by_school",
+    "Route": "connections-by-school",
+    "Description": "Connections by school in a period. Returns the total connections of each school between two dates, ordered by connections. It includes the schools with zero connections. Use it for the schools with the most or the least activity: order desc for the most active, order asc for the least. Every row has PercentageOfTotal (what share of all connections the school contributes) and ConnectionsPerUser; the response has a 'Summary' with TotalConnections and how many schools had or did not have connections (SchoolsWithConnections, SchoolsWithoutConnections): use them, do not calculate them. With the school parameter (exact name, obtained with search_schools) it returns only that school, but its PercentageOfTotal is still over all the schools. With minConnections and maxConnections it lists only the schools with that number of connections (for example \"schools connected only once\": 1 and 1; \"more than one connection\": min 2). The summary says how many schools meet the filter. Every row has LastConnection: the date (YYYY-MM-DD, Puerto Rico time) of the LAST day with a connection of that school INSIDE the requested period; it is absent if the school had no connections in the period. Use it for \"which was the last visit/connection of each school?\" (with limit=50 to list them all).",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      },
+      "minConnections": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Only rows with AT LEAST this number of connections in the period (one connection = one day with a login). Example: 2 for \"more than one connection\"."
+      },
+      "maxConnections": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Only rows with AT MOST this number of connections in the period. For \"only once\" use minConnections=1 and maxConnections=1."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "get_connections_by_teacher",
+    "Route": "connections-by-teacher",
+    "Description": "Connections by teacher in a period. Returns the total connections of each teacher between two dates, ordered by connections, with their school. It can be filtered by a school. Use it for the teachers with the most or the fewest connections: order desc or asc. Every row has PercentageOfTotal; the response has a 'Summary' with TotalTeacherConnections and how many teachers had or did not have connections (TeachersWithConnections, TeachersWithoutConnections): use them, do not calculate them. With minConnections and maxConnections it lists only the teachers with that number of connections (for example \"teachers who connected only once\": 1 and 1). The summary says how many teachers meet the filter. Every row has LastConnection: the date (YYYY-MM-DD, Puerto Rico time) of the last day with a connection of the teacher inside the requested period; it is absent if they did not connect in the period.",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      },
+      "minConnections": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Only rows with AT LEAST this number of connections in the period (one connection = one day with a login). Example: 2 for \"more than one connection\"."
+      },
+      "maxConnections": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Only rows with AT MOST this number of connections in the period. For \"only once\" use minConnections=1 and maxConnections=1."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "compare_subject_areas",
+    "Route": "compare-subject-areas",
+    "Description": "Compares the usage of the areas between two periods. Returns, for each area, the completed tests in period A and in period B, the difference (B minus A) and the percentage variation. Use it when asked to compare the usage of the areas between two periods.",
+    "Parameters": {
+      "fromA": {
+        "type": "string",
+        "description": "Start of period A, format YYYY-MM-DD."
+      },
+      "toA": {
+        "type": "string",
+        "description": "End of period A, format YYYY-MM-DD."
+      },
+      "fromB": {
+        "type": "string",
+        "description": "Start of period B, format YYYY-MM-DD."
+      },
+      "toB": {
+        "type": "string",
+        "description": "End of period B, format YYYY-MM-DD."
+      }
+    },
+    "Required": [
+      "fromA",
+      "toA",
+      "fromB",
+      "toB"
+    ]
+  },
+  {
+    "Name": "compare_schools",
+    "Route": "compare-schools",
+    "Description": "Compares the connections of each school between two periods. Returns, for each school, the connections in period A and in period B, the difference (B minus A) and the percentage variation, ordered by the difference. Use it to know which schools grew or fell the most between two periods: order desc = the ones that grew the most, asc = the ones that fell the most. The 'Summary' has the totals of A and B and their variation already calculated; do not recalculate them.",
+    "Parameters": {
+      "fromA": {
+        "type": "string",
+        "description": "First day of period A, YYYY-MM-DD, inclusive."
+      },
+      "toA": {
+        "type": "string",
+        "description": "Last day of period A, YYYY-MM-DD, inclusive."
+      },
+      "fromB": {
+        "type": "string",
+        "description": "First day of period B, YYYY-MM-DD, inclusive."
+      },
+      "toB": {
+        "type": "string",
+        "description": "Last day of period B, YYYY-MM-DD, inclusive."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      }
+    },
+    "Required": [
+      "fromA",
+      "toA",
+      "fromB",
+      "toB"
+    ]
+  },
+  {
+    "Name": "get_full_quiz_average",
+    "Route": "full-quiz-average",
+    "Description": "Full Quiz % average by school and/or subject. Returns the average of the full test percentage (% Full Quiz, total_percent_full_quiz) between two dates, grouped by school, by subject or by school and subject, ordered by AverageCompletedOnly. Use it for questions like \"Full Quiz % average by school and by subject\", \"which school or subject has the best/worst test score\" or \"average score of a school\". Every test counts in the period by its assignment date. Every row has AssignedTests, CompletedTests, AverageCompletedOnly (average of the tests already taken) and AverageAllAssigned (tests not taken count as 0, like the Power BI view vw_academics_average). The averages are already calculated by the API; do not recalculate them. If they ask by school AND by subject use groupBy=school_subject.",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "groupBy": {
+        "type": "string",
+        "enum": [
+          "school",
+          "subject",
+          "school_subject"
+        ],
+        "description": "How to group: school, subject or school_subject (one row per combination). Default school_subject."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "get_connections_trend",
+    "Route": "connections-trend",
+    "Description": "Connections trend by month, quarter or year. Returns the connections grouped by month, quarter or year between two dates, including the periods with zero connections. It can be filtered by a school. Use it to see how usage changes over time. For the total connections of ONE specific school in a period, use this query with school and granularity=year. Every period (except the first) has DifferenceWithPreviousPeriod and VariationPercentage against the previous one; the 'Summary' has TotalConnections and the period with the most and the fewest connections: use them, do not calculate them.",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "granularity": {
+        "type": "string",
+        "enum": [
+          "month",
+          "quarter",
+          "year"
+        ],
+        "description": "How to group the time. Default month."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "get_cumulative_connections",
+    "Route": "cumulative-connections",
+    "Description": "Cumulative connections and connected users, and active users of the platform. Returns, by day, month, quarter or year between two dates, the connections of the period, the cumulative connections (running sum since 'from'), the NewUsers (users whose first connection of the range falls in that period) and the CumulativeUsers. It is the Power BI page \"Cumulative connections\" and the \"% of connections\" cards. The 'Summary' has TotalConnections, ConnectedUsers (distinct users of the period) and, without a school filter, ActiveUsers (users with an active subscription), ConnectionUsersPercentage (connected users of the period / active), EverConnectedUsers and EverConnectedPercentage: use them, do not calculate them. Use it for questions about how many distinct users connected, cumulative growth, active users or the % of users that connect.",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "granularity": {
+        "type": "string",
+        "enum": [
+          "day",
+          "month",
+          "quarter",
+          "year"
+        ],
+        "description": "How to group the time. Default month. 'day' only for periods of up to 93 days."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "get_teacher_activity",
+    "Route": "teacher-activity",
+    "Description": "Platform usage by teachers in an academic period. By school and academic period: Teachers (distinct, with an active subscription), WithConnections (connected in the period), WithPlans (created instructional plans in the period), PlansWithData (those plans have quizzes or lessons), WithGroups (created groups in the academic year) and WithAssignments (have ever created an assignment). It is the Power BI teacher usage page. Every school has its own calendar: by default the period in force TODAY of each school is used; with 'date' the period that contains that date; with 'periodFrom' the period that starts that day. The 'Summary' has the totals of distinct teachers of all the rows (Schools, Teachers, WithConnections, ..., TeachersWithoutConnections): use them, do not calculate them.",
+    "Parameters": {
+      "date": {
+        "type": "string",
+        "description": "Date YYYY-MM-DD: the academic period of each school that contains it is used. If omitted, today (period in force)."
+      },
+      "periodFrom": {
+        "type": "string",
+        "description": "Date YYYY-MM-DD on which the period STARTS (same as the Power BI filter \"Period from\"). It has priority over 'date'."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      }
+    },
+    "Required": []
+  },
+  {
+    "Name": "get_connection_patterns",
+    "Route": "connection-patterns",
+    "Description": "Connection patterns by weekday or by role. Returns the connections grouped by weekday (always the 7 days, Monday to Sunday) or by role (teacher, student, director...), with ConnectedUsers and PercentageOfTotal. The 'Summary' has the day or role with the most and the fewest connections and whether there is a tie: use it, do not calculate it. Use it for \"which day do they connect the most\" or \"which role connects the most\". There is NO data by hour (the database keeps one record per user and day).",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "groupBy": {
+        "type": "string",
+        "enum": [
+          "weekday",
+          "role"
+        ],
+        "description": "Axis of the pattern. Default weekday."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "get_school_participation",
+    "Route": "school-participation",
+    "Description": "Participation (% of active users that connected) by school. By school: ActiveUsers (with an active subscription), ConnectedUsers in the period and ParticipationPercentage (connected / active), ordered by that percentage. It is the Power BI chart \"% of connected users by school\". The 'Summary' has the total of active and connected users and the global percentage. Use it to compare the PARTICIPATION between schools (not just the number of connections, which depends on the size of the school). Note: the percentage can pass 100 % because connected users without an active subscription are counted.",
+    "Parameters": {
+      "from": {
+        "type": "string",
+        "description": "First day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "to": {
+        "type": "string",
+        "description": "Last day of the period, format YYYY-MM-DD, inclusive."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      }
+    },
+    "Required": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "Name": "get_users_by_subscription",
+    "Route": "users-by-subscription",
+    "Description": "Users by subscription status (active, inactive, canceled, without subscription). Counts the users (role other than client) by subscription status: Active, Canceled and WithoutSubscription (Inactive only appears if there were users in another status; today the platform only has active and canceled), in total, by school or by role. Every user counts ONCE: active = has a subscription with status 'active' (the cancellation date is not checked; it is the Power BI dashboard definition); canceled = no active subscription and some canceled; inactive (only if it exists) = has subscriptions but none active or canceled; without subscription = has none. It is the CURRENT state: it takes no dates or period. With groupBy=total (default) it returns one row per status (Active, Canceled, Without subscription) with Users and PercentageOfTotal; with groupBy=school or role it returns one row per group with the columns of those statuses and TotalUsers. The 'Summary' has the totals (Active, Inactive, Canceled, WithoutSubscription, TotalUsers, ActivePercentage), OriginalStatuses (users per real value of status) and ActiveWithExpiredCancellationDate: use them, do not calculate them. Use it for \"how many users have an inactive or canceled subscription and how many have no subscription?\". It does NOT give plans, payments or expirations of individual users.",
+    "Parameters": {
+      "groupBy": {
+        "type": "string",
+        "enum": [
+          "total",
+          "school",
+          "role"
+        ],
+        "description": "How to group. total (default) = one row per status; school = one row per school; role = one row per role."
+      },
+      "school": {
+        "type": "string",
+        "description": "Exact name of a school to filter by. If omitted, every school is included."
+      },
+      "order": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "description": "desc = from highest to lowest (default); asc = from lowest to highest."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum number of rows, from 1 to 50. Default 10."
+      }
+    },
+    "Required": []
+  }
+]

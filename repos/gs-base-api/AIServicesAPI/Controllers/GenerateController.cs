@@ -1,9 +1,13 @@
 ﻿using Azure.AI.Extensions.OpenAI;
 using Azure.AI.Projects;
+using GSAIServicesAPI.FeignAPIs.Models;
 using GSAIServicesAPI.Filters;
 using GSAIServicesAPI.Models;
+using GSAIServicesAPI.Models.DTOs.Plannings;
 using GSAIServicesAPI.Models.Quotas;
 using GSAIServicesAPI.Services;
+using GSAIServicesAPI.Services.Foundry;
+using GSAIServicesAPI.Services.Plannings;
 using GSAIServicesAPI.Services.PromptMonitoring;
 using GSAIServicesAPI.Services.Quotas;
 using GSAIServicesAPI.Utils;
@@ -43,20 +47,59 @@ namespace GSAIServicesAPI.Controllers
         private readonly QuotaService _quotaService;
         private readonly string _agentName;
         private readonly long _retrievalTokenAllowance;
+        private readonly RagProjectClient _ragProjectClient;
+        private readonly PlanningsService _planningsService;
+        private readonly AthenasLessonsService _athenasLessonsService;
+        private readonly ILogger<GenerateController> _logger;
 
         /// <summary>
         /// The module name forwarded to the external auth service on every session validation call.
         /// </summary>
         private const string Module = "AIGenerate";
 
+        /// <summary>
+        /// The output limit of a full plan
+        /// </summary>
+        private const int PlanMaxOutputTokens = 12000;
+
+        private static readonly JsonSerializerOptions CandidatesJsonOptions = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+        /// <summary>
+        /// The longest topic a teacher can write for a plan
+        /// </summary>
+        private const int PlanTopicMaxLength = 500;
+
+        /// <summary>
+        /// The model deployment in the RAG Foundry project that generates the plans, when the configuration has none
+        /// </summary>
+        private const string DefaultPlanningDeploymentName = "plannings-gpt-6-luna";
+
+        /// <summary>
+        /// The model deployment in the RAG Foundry project that generates the plans
+        /// </summary>
+        private string PlanningDeploymentName => _config["AppSettings:AiPlanningGenerationDeploymentName"] is { Length: > 0 } name ? name : DefaultPlanningDeploymentName;
+
+        /// <param name="projectClient">The Foundry project of the agent that answers the general requests.</param>
+        /// <param name="ragProjectClient">The RAG Foundry project, whose model deployment generates the plans.</param>
+        /// <param name="planningsService">Reads the unit plannings the plan generation is built from.</param>
+        /// <param name="athenasLessonsService">Finds the Athenas lessons to recommend in a plan.</param>
+        /// <param name="logger">The logger.</param>
         public GenerateController(
             AIProjectClient projectClient,
+            RagProjectClient ragProjectClient,
             IPromptMonitoringService promptMonitoringService,
             IRoleNameResolver roleNameResolver,
             QuotaService quotaService,
+            PlanningsService planningsService,
+            AthenasLessonsService athenasLessonsService,
+            ILogger<GenerateController> logger,
             IConfiguration config) : base(config)
         {
             _projectClient = projectClient;
+            _ragProjectClient = ragProjectClient;
+            _planningsService = planningsService;
+            _athenasLessonsService = athenasLessonsService;
+            _logger = logger;
             _promptMonitoringService = promptMonitoringService;
             _roleNameResolver = roleNameResolver;
             _quotaService = quotaService;
@@ -210,6 +253,242 @@ namespace GSAIServicesAPI.Controllers
                     classificationJson: null);
 
                 await SettleQuotaAsync(reservation, reportedTokens, answer, messages);
+            }
+        }
+
+        /// <summary>
+        /// Streams a full planning, built from the unit's plannings in the RAG.
+        /// </summary>
+        /// <param name="request">The teacher's choices: unit, week, options and the plan's days and lessons.</param>
+        [HttpPost("plan")]
+        [RequiresAiEnabled]
+        public async Task GeneratePlan([FromBody] PlanGenerationRequest request)
+        {
+            var session = await GetAuthenticatedSessionAsync(Module);
+            if (session == null)
+            {
+                Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await Response.WriteAsJsonAsync(new { error = GetLocalizedMessage("Unauthorized") });
+                return;
+            }
+
+            var hasUnit = !string.IsNullOrWhiteSpace(request.UnitId);
+            if (string.IsNullOrWhiteSpace(request.SubjectCode) || string.IsNullOrWhiteSpace(request.LevelCode)
+                || (!hasUnit && string.IsNullOrWhiteSpace(request.Topic)))
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                await Response.WriteAsJsonAsync(new { error = GetLocalizedMessage("MissingModelOrPrompt") });
+                return;
+            }
+
+            if (request.Topic?.Length > PlanTopicMaxLength)
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                await Response.WriteAsJsonAsync(new { error = $"The topic can have at most {PlanTopicMaxLength} characters." });
+                return;
+            }
+
+            var language = RequestHandler.GetLanguage(HttpContext);
+            UnitPlanning? planning = null;
+
+            if (hasUnit)
+            {
+                try
+                {
+                    planning = await _planningsService.GetUnitPlanningAsync(
+                        request.SubjectCode, request.LevelCode, request.UnitId!, request.Week, language, HttpContext.RequestAborted);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogError(ex, "Error reading the plannings of unit {UnitId}.", request.UnitId);
+                    Response.StatusCode = StatusCodes.Status502BadGateway;
+                    await Response.WriteAsJsonAsync(new { error = "The unit plannings could not be read." });
+                    return;
+                }
+
+                if (planning is null)
+                {
+                    Response.StatusCode = StatusCodes.Status404NotFound;
+                    await Response.WriteAsJsonAsync(new { error = "The unit or the week has no plannings." });
+                    return;
+                }
+            }
+
+            var athenasLessons = await FindAthenasLessonsAsync(request, planning);
+            var (system, user) = PlanPromptBuilder.Build(request, planning, athenasLessons);
+            var deploymentName = PlanningDeploymentName;
+
+            // The prompt sets the content's language from the subject
+            var generateRequest = new GenerateRequest(deploymentName, system, user, null, null, null, null);
+
+            // The candidates go first, so the client only accepts lessons that really exist in Athenas.
+            var candidatesEvent = JsonSerializer.Serialize(new
+            {
+                athenasLessons = athenasLessons.Select(lesson => new { id = lesson.Id, title = lesson.Title, description = lesson.Description })
+            }, CandidatesJsonOptions);
+
+            // JSON mode keeps the model from returning a plan that cannot be parsed
+            await StreamCompletionAsync(session, generateRequest, BuildMessages(generateRequest, isStudent: false), isStudent: false, candidatesEvent,
+                options =>
+                {
+                    options.TextOptions = new ResponseTextOptions { TextFormat = ResponseTextFormat.CreateJsonObjectFormat() };
+                    options.MaxOutputTokenCount = PlanMaxOutputTokens;
+                });
+        }
+
+        /// <summary>
+        /// To find the Athenas lessons related to the plan. The plan can still be generated without them,
+        /// so a failure reading them from Athenas is logged and leaves no candidates.
+        /// </summary>
+        private async Task<List<AthenasLessonCandidate>> FindAthenasLessonsAsync(PlanGenerationRequest request, UnitPlanning? planning)
+        {
+            var topicTexts = new List<string?> { request.Topic };
+            if (planning is not null)
+            {
+                topicTexts.AddRange(planning.Preview.Weeks.Select(week => week.Theme));
+                topicTexts.AddRange(planning.Days.Select(day => day.LessonTitle));
+                topicTexts.AddRange(planning.Preview.Weeks.SelectMany(week => week.Objectives));
+            }
+
+            try
+            {
+                return await _athenasLessonsService.FindAsync(request.SubjectCode, request.LevelCode, request.UnitId, RequestHandler.GetLanguage(HttpContext), topicTexts, HttpContext.RequestAborted);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Error searching the Athenas lessons of {SubjectCode} {LevelCode}.", request.SubjectCode, request.LevelCode);
+                return [];
+            }
+        }
+
+        /// <summary>
+        /// Reserves the quota, streams the completion as SSE, and then audits the exchange and settles the quota.
+        /// The completion comes from a model deployment of the RAG Foundry project.
+        /// </summary>
+        /// <param name="firstEvent">A JSON event to send before the completion, if any.</param>
+        /// <param name="configureOptions">Changes to the completion options, if any.</param>
+        private async Task StreamCompletionAsync(ValidationResponseModel session, GenerateRequest request, List<ChatMessage> messages, bool isStudent,
+            string? firstEvent = null, Action<CreateResponseOptions>? configureOptions = null)
+        {
+            // Hold the prompt plus an assumed answer length.
+            // Reserving before the call is what stops an out-of-quota user from costing money
+            var estimatedTokens = EstimatePromptTokens(messages) + TokenEstimator.AssumedOutputTokens;
+
+            var reservation = await _quotaService.ReserveAsync(
+                session.UserId,
+                session.RoleId,
+                session.Token,
+                QuotaResourceType.TextTokens,
+                estimatedTokens,
+                Module);
+
+            if (!reservation.Allowed)
+            {
+                // Rejected before any SSE header is written
+                Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                await Response.WriteAsJsonAsync(new
+                {
+                    error = GetLocalizedMessage(reservation.DenialMessageKey ?? "QuotaExceeded"),
+                    remaining = reservation.RemainingAmount,
+                    resetsAt = reservation.PeriodEnd
+                });
+                return;
+            }
+
+            Response.ContentType = "text/event-stream";
+            Response.Headers.CacheControl = "no-cache, no-transform";
+            Response.Headers.Connection = "keep-alive";
+            await Response.Body.FlushAsync();
+
+            if (firstEvent is not null)
+            {
+                await Response.WriteAsync($"data: {firstEvent}\n\n");
+                await Response.Body.FlushAsync();
+            }
+
+            // Normalize the numeric role id from auth into its name, so the audit record stores a name
+            // and the classifier's student gate reads a name instead of a magic number.
+            var role = _roleNameResolver.Resolve(session.RoleId);
+
+            // Collects the answer while it streams, so the audit record keeps what the user saw.
+            var answerBuilder = new StringBuilder();
+
+            var cancellationToken = HttpContext.RequestAborted;
+            long reportedTokens = 0;
+            var streamedText = new StringBuilder();
+
+            try
+            {
+                // The model deployment in the RAG Foundry project
+                ProjectResponsesClient responsesClient = _ragProjectClient.GetResponsesClientForModel(request.Model);
+
+                // The response is not kept in the project: each one is generated on its own
+                var options = new CreateResponseOptions { StoredOutputEnabled = false };
+                foreach (var item in ToResponseItems(messages))
+                    options.InputItems.Add(item);
+                configureOptions?.Invoke(options);
+
+                await foreach (StreamingResponseUpdate update in
+                    responsesClient.CreateResponseStreamingAsync(options, cancellationToken))
+                {
+                    switch (update)
+                    {
+                        case StreamingResponseOutputTextDeltaUpdate textDelta when !string.IsNullOrEmpty(textDelta.Delta):
+                            answerBuilder.Append(textDelta.Delta);
+                            streamedText.Append(textDelta.Delta);
+                            var outgoingJson = JsonSerializer.Serialize(new { delta = textDelta.Delta });
+                            await Response.WriteAsync($"data: {outgoingJson}\n\n", cancellationToken);
+                            await Response.Body.FlushAsync(cancellationToken);
+                            break;
+
+                        // Usage arrives with the completed response and covers the whole run
+                        case StreamingResponseCompletedUpdate completed when completed.Response?.Usage is not null:
+                            reportedTokens = completed.Response.Usage.TotalTokenCount;
+                            break;
+
+                        // A plan cut by the output limit still arrives; the client repairs or reports it as truncated
+                        case StreamingResponseIncompleteUpdate incomplete when incomplete.Response?.Usage is not null:
+                            reportedTokens = incomplete.Response.Usage.TotalTokenCount;
+                            break;
+
+                        case StreamingResponseFailedUpdate failed:
+                            throw new InvalidOperationException(failed.Response?.Error?.Message ?? "The plan generation failed.");
+
+                        case StreamingResponseErrorUpdate error:
+                            throw new InvalidOperationException(error.Message ?? "The plan generation stream failed.");
+                    }
+                }
+
+                await Response.WriteAsync("data: [DONE]\n\n");
+                await Response.Body.FlushAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Client disconnected
+            }
+            catch (Exception ex)
+            {
+                var errJson = JsonSerializer.Serialize(new { error = ex.Message });
+                await Response.WriteAsync($"data: {errJson}\n\n");
+                await Response.Body.FlushAsync();
+            }
+            finally
+            {
+                // Runs after the user already has the answer, so it adds no perceived latency, and
+                // runs on failure too, so a partial exchange is still on record. The service resolves
+                // the prompt text, bounds the write with its own timeout, and never throws.
+                // classificationJson is null on purpose: the capture runs the dedicated classifier for a
+                // student when none is supplied here.
+                await _promptMonitoringService.CaptureGenerateExchangeAsync(
+                    session.UserId,
+                    role,
+                    request,
+                    isStudent,
+                    answerBuilder.ToString(),
+                    IPAddressDetector.GetClientIpAddress(HttpContext),
+                    classificationJson: null);
+
+                await SettleQuotaAsync(reservation, reportedTokens, streamedText.ToString(), messages);
             }
         }
 

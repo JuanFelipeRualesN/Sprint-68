@@ -2,6 +2,7 @@
 using GSAIServicesAPI.FeignAPIs;
 using GSAIServicesAPI.Models.DTOs;
 using GSAIServicesAPI.Services;
+using GSAIServicesAPI.Services.Plannings;
 using GSAIServicesAPI.Utils;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,17 +23,20 @@ namespace GSAIServicesAPI.Controllers
         private readonly LessonsService _lessonsService;
         private readonly ILogger<AthenasCurriculumController> _logger;
         private readonly AthenasFeignAPI _athenasFeignAPI;
+        private readonly PlanningsService _planningsService;
 
         public AthenasCurriculumController(
             CodesService codesService,
             LessonsService lessonsService,
             AthenasFeignAPI athenasFeignAPI,
+            PlanningsService planningsService,
             ILogger<AthenasCurriculumController> logger, IConfiguration config) : base(config)
         {
             _codesService   = codesService;
             _lessonsService = lessonsService;
             _logger         = logger;
             _athenasFeignAPI = athenasFeignAPI;
+            _planningsService = planningsService;
         }
 
         // ── Codes ─────────────────────────────────────────────────────────────────
@@ -233,6 +237,74 @@ namespace GSAIServicesAPI.Controllers
             {
                 _logger.LogError(ex, "Error searching lessons.");
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred searching lessons.");
+            }
+        }
+
+
+        /// <summary>
+        /// To get the curriculum units of a subject and level that have plannings in the plannings index,
+        /// in the unit number's order and with their weeks. Some subjects take the units of another one.
+        /// </summary>
+        /// <param name="subjectCode">The subject's code</param>
+        /// <param name="levelCode">The level's code</param>
+        /// <returns>Returns the list of units, empty when the subject has no plannings</returns>
+        [HttpGet("units")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetUnitsAsync([FromQuery] string subjectCode, [FromQuery] string levelCode)
+        {
+            var (isValid, userId) = await GetAuthenticatedUserAsync(Module);
+            if (!isValid)
+                return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(subjectCode) || string.IsNullOrWhiteSpace(levelCode))
+                return BadRequest("Request parameters are required.");
+
+            try
+            {
+                var result = await _planningsService.GetUnitsAsync(subjectCode, levelCode, RequestHandler.GetLanguage(HttpContext), HttpContext.RequestAborted);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving units.");
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred retrieving units.");
+            }
+        }
+
+        /// <summary>
+        /// To get the summary of a unit's plannings, to show the teacher what the plan will be based on
+        /// It is not sent to the model.
+        /// </summary>
+        /// <param name="unitId">The unit's id in Athenas</param>
+        /// <param name="subjectCode">The subject's code of the plan</param>
+        /// <param name="levelCode">The level's code of the plan</param>
+        /// <param name="week">The week number, or empty for the whole unit</param>
+        /// <returns>Returns the summary of each week</returns>
+        [HttpGet("units/{unitId}/preview")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetUnitPreviewAsync(string unitId, [FromQuery] string subjectCode, [FromQuery] string levelCode, [FromQuery] int? week = null)
+        {
+            var (isValid, userId) = await GetAuthenticatedUserAsync(Module);
+            if (!isValid)
+                return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(unitId) || string.IsNullOrWhiteSpace(subjectCode) || string.IsNullOrWhiteSpace(levelCode))
+                return BadRequest("Request parameters are required.");
+
+            try
+            {
+                var result = await _planningsService.GetUnitPreviewAsync(subjectCode, levelCode, unitId, week, RequestHandler.GetLanguage(HttpContext), HttpContext.RequestAborted);
+                return result is null ? NotFound("The unit or the week has no plannings.") : Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving the unit preview.");
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred retrieving the unit preview.");
             }
         }
     }

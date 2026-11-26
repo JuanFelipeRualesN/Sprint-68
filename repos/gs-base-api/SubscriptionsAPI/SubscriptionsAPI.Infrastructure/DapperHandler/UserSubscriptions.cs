@@ -15,6 +15,47 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Infrastructure.DapperHandler
     public static class UserSubscriptions
     {
         /// <summary>
+        /// The courses (subject code, subject name and level) of a list of plan products, in one query:
+        /// subst_product_item_products (product_id → item_id) → subst_item_products (available items) →
+        /// gwp_subscription_products (its product_id holds the item id).
+        /// </summary>
+        /// <param name="planProductIds">subst_plans.product_id of the plans (duplicates and blanks are ignored).</param>
+        /// <returns>One row per product and course; empty when there are no ids or the query fails.</returns>
+        public static List<ProductCourseModel> ReadCoursesByPlanProductIds(IEnumerable<string> planProductIds)
+        {
+            var ids = (planProductIds ?? Enumerable.Empty<string>()).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new List<ProductCourseModel>();
+            }
+
+            // Dapper expands IN @ProductIds into one parameter per id.
+            const string query = @"SELECT DISTINCT
+                    pip.product_id AS PlanProductId,
+                    ip.id AS ItemId,
+                    ip.name AS ItemName,
+                    sup.subject AS Subject,
+                    sup.subject_name AS SubjectName,
+                    sup.level AS Level
+                FROM gs_subscription_api_db_prod.subst_product_item_products pip
+                INNER JOIN gs_subscription_api_db_prod.subst_item_products ip ON ip.id = pip.item_id
+                INNER JOIN gs_subscription_api_db_prod.gwp_subscription_products sup ON sup.product_id = ip.id
+                WHERE pip.product_id IN @ProductIds AND ip.available = 1
+                ORDER BY pip.product_id, sup.subject_name, sup.level";
+
+            try
+            {
+                using var connection = new MySqlConnection(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"]);
+                return connection.Query<ProductCourseModel>(query, new { ProductIds = ids }).ToList();
+            }
+            catch (MySqlException)
+            {
+                // Same behavior as the other reads here: the caller gets no courses instead of an error.
+                return new List<ProductCourseModel>();
+            }
+        }
+
+        /// <summary>
         /// Read the profile subscription types.
         /// </summary>
         /// <param name="profileId">The profile's ids.</param>

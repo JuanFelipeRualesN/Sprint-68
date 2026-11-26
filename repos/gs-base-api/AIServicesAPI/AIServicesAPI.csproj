@@ -11,6 +11,10 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Tool definitions and system instructions of the data assistant, read through DataAssistantToolCatalog. -->
+    <EmbeddedResource Include="Resources\DataAssistant\*" LogicalName="DataAssistant/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="appsettings.aiservices.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

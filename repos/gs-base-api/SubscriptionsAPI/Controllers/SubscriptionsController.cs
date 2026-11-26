@@ -32,13 +32,25 @@ namespace SubscriptionsAPI.Controllers
         {
             _coursesCache = coursesCache;
         }
+        /// <summary>
+        /// Role ids allowed to receive the related users (SubscriptionProfiles) in GetActiveSubscriptionsRelatedToUser.
+        /// RoleId comes from the Users API as a string.
+        /// </summary>
+        private static readonly HashSet<string> AllowedProfileRoleIdsInRelatedUserSubscriptions = new() { "1", "2", "4", "5", "6", "8" };
+
 
         /// <summary>
         /// Returns the active subscriptions/enrollments that the user is related with. 
         /// </summary>
+        /// <param name="cacheOnForUserSubscriptions">Use the cache (default true).</param>
+        /// <param name="includeProfiles">
+        /// True to also return, per subscription, the users related to it (subst_subscription_profiles) with their names and role
+        /// (<see cref="SubscriptionAcademicFullResponseModel.SubscriptionProfiles"/>). One query for all the profiles and one Users
+        /// API call each for names and roles, in parallel with the rest of the reads. Default false (the response is unchanged).
+        /// </param>
         /// <returns>Returns an HTTP response with the list of the subscriptions.</returns>
         [HttpGet("active/related/user")]
-        public async Task<IActionResult> GetActiveSubscriptionsRelatedToUser([FromQuery] bool cacheOnForUserSubscriptions = true)
+        public async Task<IActionResult> GetActiveSubscriptionsRelatedToUser([FromQuery] bool cacheOnForUserSubscriptions = true, [FromQuery] bool includeProfiles = false)
         {
             try
             {
@@ -46,7 +58,7 @@ namespace SubscriptionsAPI.Controllers
                 string token = RequestHandler.GetToken(HttpContext);                         // assumes you have a Core-friendly overload
                 if (cacheOnForUserSubscriptions)
                 {
-                    var cached = _coursesCache.GetUserRelatedSubscriptions(token);
+                    var cached = _coursesCache.GetUserRelatedSubscriptions(token, includeProfiles);
                     if (cached != null && cached.Count > 0)
                         return Ok(cached);
                 }
@@ -89,6 +101,15 @@ namespace SubscriptionsAPI.Controllers
                     .Select(s => s.SubscriptionModel.Id)
                     .ToList();
 
+                // Related users: started now so the profiles query and the Users API calls overlap with the reads below.
+                // Only the allowed roles get the profiles; everyone else gets the rest of the response as if includeProfiles were false.
+                var returnProfiles = includeProfiles
+                    && AllowedProfileRoleIdsInRelatedUserSubscriptions.Contains(responseSession.RoleId?.Trim());
+
+                var profilesTask = returnProfiles && subscriptionIds.Count > 0
+                    ? SubscriptionProfileUsersReader.ReadAsync(readConnStr, token, ipAddress, lang, subscriptionIds, responseSession.UserId)
+                    : null;
+
                 var examTryMaxModelsToFind = subscriptionIds
                     .Select(id => new ExamTryMaxModel { SubscriptionId = id })
                     .ToList();
@@ -120,6 +141,10 @@ namespace SubscriptionsAPI.Controllers
                 // Max allowed exam tries (if needed later)
                 var examTryMaxModelsResults = new ExamTryMaxDAO().Read(readConnStr, examTryMaxModelsToFind);
 
+                var profilesBySubscription = profilesTask != null
+                    ? await profilesTask
+                    : new Dictionary<string, List<SubscriptionProfileUserResponseModel>>();
+
                 // -------- Build final response --------
                 foreach (var subscription in validSubscriptions)
                 {
@@ -146,6 +171,13 @@ namespace SubscriptionsAPI.Controllers
                         subAcademic.EntityAcademicDetailFullResponseModel = academicDetail;
                     }
 
+                    if (returnProfiles)
+                    {
+                        subAcademic.SubscriptionProfiles = profilesBySubscription.TryGetValue(subscription.SubscriptionModel.Id, out var related)
+                            ? related
+                            : new List<SubscriptionProfileUserResponseModel>();
+                    }
+
                     subscriptionAcademicFullResponseModelList.Add(subAcademic);
                 }
 
@@ -160,7 +192,7 @@ namespace SubscriptionsAPI.Controllers
                         try
                         {
                             // Note: If StoreUserRelatedSubscriptions supports Async, await it here and pass cts.Token
-                            _coursesCache.StoreUserRelatedSubscriptions(token, subscriptionAcademicFullResponseModelList);
+                            _coursesCache.StoreUserRelatedSubscriptions(token, subscriptionAcademicFullResponseModelList, includeProfiles);
                         }
                         catch (Exception ex)
                         {
@@ -811,7 +843,7 @@ namespace SubscriptionsAPI.Controllers
 
                 return Ok(products);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.ToString());
             }
@@ -1307,8 +1339,21 @@ namespace SubscriptionsAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns the subscriptions the client in session pays for (by its Stripe customer), with their plans.
+        /// </summary>
+        /// <param name="includeProfiles">
+        /// True to also return, per subscription, the users related to it (subst_subscription_profiles) with their names and role
+        /// (<see cref="SubscriptionUserResponseModel.SubscriptionProfileUsers"/>): one query for all the profiles and one Users API
+        /// call each for names and roles, in parallel. Default false (the response is unchanged).
+        /// </param>
+        /// <param name="includeCourses">
+        /// True to also return, per subscription, the courses of its plan's product (subject code, subject name, level)
+        /// (<see cref="SubscriptionUserResponseModel.SubscriptionCourses"/>): one query for all the plans. Default false.
+        /// </param>
+        /// <returns>200 with the subscriptions; 401 if the session or the SubscriptionsClientRead permission is not valid.</returns>
         [HttpGet("clients")]
-        public IActionResult GetSubscriptionClients()
+        public async Task<IActionResult> GetSubscriptionClients([FromQuery] bool includeProfiles = false, [FromQuery] bool includeCourses = false)
         {
             try
             {
@@ -1322,10 +1367,54 @@ namespace SubscriptionsAPI.Controllers
                 if (!responseSession.SessionValid || string.IsNullOrWhiteSpace(responseSession.UserId))
                     return Unauthorized();
 
-                var reader = new SubscriptionReadersManager(
-                    AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"], lang);
+                var readConnStr = AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"];
+                var reader = new SubscriptionReadersManager(readConnStr, lang);
 
                 var subs = reader.GetCustomerSubscriptionsByUserId(responseSession.UserId);
+
+                // Related users and courses of every subscription, in parallel: one profiles query plus two Users API calls, and
+                // one courses query, in total (not per subscription).
+                var subscriptionIds = subs.Where(s => !string.IsNullOrWhiteSpace(s.SubscriptionId)).Select(s => s.SubscriptionId).Distinct().ToList();
+                var profilesTask = includeProfiles && subscriptionIds.Count > 0
+                    ? SubscriptionProfileUsersReader.ReadAsync(readConnStr, token, ip, lang, subscriptionIds, responseSession.UserId)
+                    : null;
+                var coursesTask = includeCourses
+                    ? Task.Run(() => UserSubscriptions.ReadCoursesByPlanProductIds(subs.Select(s => s.Plan?.ProductId)))
+                    : null;
+
+                if (coursesTask != null)
+                {
+                    var coursesByProduct = (await coursesTask)
+                        .Where(c => c.PlanProductId != null)
+                        .GroupBy(c => c.PlanProductId!)
+                        .ToDictionary(g => g.Key, g => g.Select(c => new SubscriptionProductModel
+                        {
+                            Id = c.ItemId,
+                            ProductId = c.ItemId,
+                            Name = c.ItemName,
+                            Subject = c.Subject,
+                            SubjectName = c.SubjectName,
+                            Level = c.Level,
+                        }).ToList());
+                    foreach (var subscription in subs)
+                    {
+                        subscription.SubscriptionCourses = subscription.Plan?.ProductId != null && coursesByProduct.TryGetValue(subscription.Plan.ProductId, out var courses)
+                            ? courses
+                            : new List<SubscriptionProductModel>();
+                    }
+                }
+
+                if (profilesTask != null)
+                {
+                    var profilesBySubscription = await profilesTask;
+                    foreach (var subscription in subs)
+                    {
+                        subscription.SubscriptionProfileUsers = subscription.SubscriptionId != null && profilesBySubscription.TryGetValue(subscription.SubscriptionId, out var related)
+                            ? related
+                            : new List<SubscriptionProfileUserResponseModel>();
+                    }
+                }
+
                 return Ok(subs);
             }
             catch

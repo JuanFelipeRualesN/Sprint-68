@@ -1,6 +1,7 @@
 ﻿using GSAIServicesAPI.FeignAPIs.Models;
 using GSAIServicesAPI.FeignAPIs.Models.Lessons;
 using GSAIServicesAPI.FeignAPIs.Models.Lessons.Requests;
+using GSAIServicesAPI.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
 using System.Text;
@@ -120,6 +121,20 @@ namespace GSAIServicesAPI.FeignAPIs
             => GetCachedList<LevelModel>("levels", "api/grades", langCode);
 
         /// <summary>
+        /// To get the curriculum units of a subject and level from the Athenas API.
+        /// Results are cached per subject, level and language code.
+        /// </summary>
+        /// <param name="subjectCode">The subject's code.</param>
+        /// <param name="levelCode">The level's code.</param>
+        /// <param name="langCode">Language code for the request headers.</param>
+        /// <returns>A list of units, or an empty list if the request fails.</returns>
+        public Task<List<UnitModel>> GetUnits(string subjectCode, string levelCode, string langCode = "en")
+            => GetCachedList<UnitModel>(
+                $"units_{subjectCode}_{levelCode}",
+                $"api/unit/grade-unit/{Uri.EscapeDataString(levelCode)}/{Uri.EscapeDataString(subjectCode)}",
+                langCode);
+
+        /// <summary>
         /// Core helper to build a base <see cref="HttpRequestMessage"/> with standard headers.
         /// </summary>
         private HttpRequestMessage BuildBaseRequest(HttpMethod method, string endpoint, string langCode)
@@ -164,23 +179,20 @@ namespace GSAIServicesAPI.FeignAPIs
         /// <returns>Returns the cached list of items.</returns>
         private async Task<List<T>> GetCachedList<T>(string cacheKeyPrefix, string endpoint, string langCode)
         {
-            var cacheKey = $"{cacheKeyPrefix}_{langCode}";
+            // Concurrent requests for an expired key share one call to Athenas
+            var result = await _cache.GetOrLoadOnceAsync<List<T>?>($"{cacheKeyPrefix}_{langCode}", async () =>
+            {
+                using var request = BuildGetRequest(endpoint, langCode);
+                using var response = await _httpClient.SendAsync(request);
 
-            if (_cache.TryGetValue(cacheKey, out List<T>? cached) && cached is not null)
-                return cached;
+                if (!response.IsSuccessStatusCode)
+                    return null;
 
-            using var request = BuildGetRequest(endpoint, langCode);
-            var response = await _httpClient.SendAsync(request);
+                await using var responseStream = await response.Content.ReadAsStreamAsync();
+                return await JsonSerializer.DeserializeAsync<List<T>>(responseStream, JsonOptions) ?? new List<T>();
+            }, CacheDuration);
 
-            if (!response.IsSuccessStatusCode)
-                return new List<T>();
-
-            await using var responseStream = await response.Content.ReadAsStreamAsync();
-            var result = await JsonSerializer.DeserializeAsync<List<T>>(responseStream, JsonOptions)
-                ?? new List<T>();
-
-            _cache.Set(cacheKey, result, CacheDuration);
-            return result;
+            return result ?? new List<T>();
         }
     }
 }

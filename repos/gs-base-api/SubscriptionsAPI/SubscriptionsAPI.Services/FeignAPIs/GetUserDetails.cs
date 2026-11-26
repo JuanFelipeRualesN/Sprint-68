@@ -18,6 +18,61 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.FeignAPIs
     public class GetUserDetails
     {
         /// <summary>
+        /// Shared client for the async calls: reused across requests (a new HttpClient per call exhausts sockets under load).
+        /// The base address and headers are set per request, so it holds no per-user state.
+        /// </summary>
+        private static readonly HttpClient SharedClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+
+        /// <summary>
+        /// Full names of a list of users, in one call to the Users API (<c>POST usersapi/users/fullnames</c>, AppSettings key
+        /// <c>gus_enpoint_user_full_names_general</c>). Users the API does not return are left out.
+        /// </summary>
+        /// <param name="token">The user's token.</param>
+        /// <param name="langCode">Language sent as Accept-Language; optional.</param>
+        /// <param name="userIds">The user ids to find (duplicates are sent once).</param>
+        /// <returns>The names found; empty when there are no ids, or when the Users API fails, times out (5 s) or refuses the call.</returns>
+        public static async System.Threading.Tasks.Task<List<UserFullNameModel>> GetUserFullNamesAsync(string token, string langCode, IEnumerable<string> userIds)
+        {
+            var ids = new List<string>(new HashSet<string>(userIds ?? new List<string>()));
+            if (ids.Count == 0)
+            {
+                return new List<UserFullNameModel>();
+            }
+
+            try
+            {
+                var baseUrl = new Uri(AppConfiguration.Configuration["AppSettings:gus_endpoint_web_service_url"]);
+                var endpoint = AppConfiguration.Configuration["AppSettings:gus_enpoint_user_full_names_general"] ?? "usersapi/users/fullnames";
+                using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUrl, endpoint))
+                {
+                    // The endpoint binds [FromBody] List<string>: send the raw list.
+                    Content = new StringContent(JsonConvert.SerializeObject(ids), Encoding.UTF8, "application/json"),
+                };
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                request.Headers.Add("Token", token ?? string.Empty);
+                if (!string.IsNullOrWhiteSpace(langCode))
+                {
+                    request.Headers.Add("Accept-Language", langCode);
+                }
+
+                using var response = await SharedClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new List<UserFullNameModel>();
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<List<UserFullNameModel>>(body, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore })
+                    ?? new List<UserFullNameModel>();
+            }
+            catch (Exception ex) when (ex is HttpRequestException || ex is System.Threading.Tasks.TaskCanceledException || ex is JsonException || ex is UriFormatException || ex is ArgumentNullException)
+            {
+                // Display data only: the caller still returns the subscriptions without the names.
+                return new List<UserFullNameModel>();
+            }
+        }
+
+        /// <summary>
         /// To relate profile to main account.
         /// </summary>
         /// <param name="token">The user's token.</param>

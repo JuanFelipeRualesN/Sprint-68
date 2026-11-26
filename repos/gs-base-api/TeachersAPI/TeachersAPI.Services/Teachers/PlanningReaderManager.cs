@@ -188,7 +188,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
 			var subjects = AthenasHandler.GetAthenasSubjects(this._langCode);
             var teacherPlan = teacherFullPlanDetailsList[0].TeacherPlanModel;
 
-			teacherPlan.SubjectName = subjects.Find(x => x.Code == teacherPlan.SubjectCode)?.Name;
+			teacherPlan.SubjectName = subjects?.Find(x => string.Equals(x.Code?.Trim(), teacherPlan.SubjectCode?.Trim(), StringComparison.OrdinalIgnoreCase))?.Name;
 
 			// Prepare object to response 
 			var teacherPlanningDetailResponseModel = new Domain.Models.Generals.Responses.TeacherPlanningDetailResponseModel()

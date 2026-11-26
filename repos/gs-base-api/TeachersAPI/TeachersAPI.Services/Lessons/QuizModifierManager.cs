@@ -618,6 +618,52 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                 }
             }
 
+            // Create or update QuizMatchInstructions
+            QuizMatchInstructionsDAO quizMatchInstructionsDAO = new QuizMatchInstructionsDAO();
+            if (quizRequestModelToUpdate.QuizMatchInstructionsModel != null)
+            {
+                foreach (var matchInstruction in quizRequestModelToUpdate.QuizMatchInstructionsModel)
+                {
+                    // Check if match instruction is new or existing
+                    List<QuizMatchInstructionsModel> existingMatchInstruction = new List<QuizMatchInstructionsModel>();
+                    int parsedId;
+
+                    existingMatchInstruction = quizMatchInstructionsDAO.Read(_connectionStringRead,
+                        new QuizMatchInstructionsModel() { Id = matchInstruction.Id }, false, false);
+                    if (!int.TryParse(matchInstruction.Id, out parsedId) || existingMatchInstruction == null ||
+                        existingMatchInstruction.Count == 0)
+                    {
+                        // save id to change on questions
+                        var matchInstructionId = matchInstruction.Id;
+                        // remove actual id
+                        matchInstruction.Id = null;
+                        // create new match instruction
+                        matchInstruction.QuizId = quizRequestModelToUpdate.QuizModel.Id;
+                        matchInstruction.ModifiedBy = userCreatedBy;
+                        matchInstruction.MatchGroupNumber = "1";
+                        matchInstruction.Id =
+                            quizMatchInstructionsDAO.Create(_connectionString, matchInstruction)[0].Id;
+
+                        // update quizMatchInstructionsId in questions that have the same id
+                        foreach (var questionRequest in quizRequestModelToUpdate.QuestionRequestModelList)
+                        {
+                            if (questionRequest.QuizQuestionModel.QuizMatchInstructionId == matchInstructionId)
+                            {
+                                questionRequest.QuizQuestionModel.QuizMatchInstructionId = matchInstruction.Id;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // update existing math instruction
+                        matchInstruction.UpdatedAt = null; // This is set on DB
+                        matchInstruction.CreatedAt = null; // This is set on DB
+                        quizMatchInstructionsDAO.Update(_connectionString, matchInstruction,
+                            new QuizMatchInstructionsModel() { Id = matchInstruction.Id });
+                    }
+                }
+            }
+
             QuizQuestionDAO quizQuestionDAO = new QuizQuestionDAO();
             QuizQuestionResponseDAO quizQuestionResponseDAO = new QuizQuestionResponseDAO();
 
@@ -704,6 +750,8 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                     quizQuestionModelToEditList.Add(new QuizQuestionModel()
                     {
                         QuizId = quizRequestModelToUpdate.QuizModel.Id,
+                        QuestionTypeId = questionRequest.QuizQuestionModel.QuestionTypeId,
+                        QuizMatchInstructionId = questionRequest.QuizQuestionModel.QuizMatchInstructionId,
 						Desc = !string.IsNullOrWhiteSpace(questionRequest.QuizQuestionModel.Desc) ? 
                             UnsignUrlFromHtmlSourceCode(questionRequest.QuizQuestionModel.Desc) : null,
 						ModifiedBy = userCreatedBy,
@@ -714,6 +762,23 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                         Id = questionRequest.QuizQuestionModel.Id,
                     });
 
+                    // Delete responses that exist in DB but are no longer in the request
+                    var currentResponses = quizQuestionResponseDAO.Read(_connectionStringRead,
+                        new QuizQuestionResponseModel() { QuizQuestionId = questionRequest.QuizQuestionModel.Id },
+                        false, false);
+                    var incomingResponseIds = questionRequest.QuizQuestionResponseModelList
+                        .Where(r => !string.IsNullOrWhiteSpace(r.Id))
+                        .Select(r => r.Id)
+                        .ToHashSet();
+                    var responsesToDelete = currentResponses
+                        .Where(cr => !incomingResponseIds.Contains(cr.Id))
+                        .Select(cr => new QuizQuestionResponseModel() { Id = cr.Id })
+                        .ToList();
+                    if (responsesToDelete.Count > 0)
+                    {
+                        quizQuestionResponseDAO.Delete(_connectionString, responsesToDelete);
+                    }
+
                     // Now get the responses
                     foreach (QuizQuestionResponseModel response in questionRequest.QuizQuestionResponseModelList)
                     {
@@ -721,13 +786,18 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
                         if (string.IsNullOrWhiteSpace(response.Id))
                         {
                             response.Response = response.Response?.Trim();
-							response.Id = quizQuestionResponseDAO.Create(_connectionString, new QuizQuestionResponseModel()
+							var createdResponses = quizQuestionResponseDAO.Create(_connectionString, new QuizQuestionResponseModel()
                             {
                                 QuizQuestionId = questionRequest.QuizQuestionModel.Id,
                                 Correct = response.Correct,
                                 Value = response.Value,
 								Response = !string.IsNullOrWhiteSpace(response.Response) ? UnsignUrlFromHtmlSourceCode(response.Response) : null,
-							})[0].Id;
+                                ModifiedBy = userCreatedBy,
+							});
+                            if (createdResponses != null && createdResponses.Count > 0)
+                            {
+                                response.Id = createdResponses[0].Id;
+                            }
 
 							if (!string.IsNullOrWhiteSpace(response.Response))
 							{
@@ -792,6 +862,7 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons
 			}
 
             responseModel.Messages.Add(messageManager.GetMessageDetails(AppConfiguration.Configuration["AppSettings:ls_message_code_success"]));
+            responseModel.QuizMatchInstructionsModel = quizRequestModelToUpdate.QuizMatchInstructionsModel;
             responseModel.QuestionRequestModelList = quizRequestModelToUpdate.QuestionRequestModelList;
             responseModel.QuizAttachmentModelList = quizRequestModelToUpdate.QuizAttachmentModelList;
             responseModel.QuizModel = quizRequestModelToUpdate.QuizModel;

@@ -10,6 +10,7 @@ using GSWebAPI.AccessLogs.Infrastructure;
 using GSWebAPI.AccessLogs.Infrastructure.Interfaces;
 using GSWebAPI.AccessLogs.Services;
 using GSWebAPI.CustomClasses.CacheHandler;
+using Microsoft.Extensions.FileProviders;
 using MessagesAPI.CustomClasses.CacheHandler;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add AI services error messages configuration file
 builder.Configuration.AddJsonFile("appsettings.aiservices.json", optional: true, reloadOnChange: true);
+
+// Add data analysis (usage insights) localized messages configuration file. It is read from the application folder (where the build copies it):
+// "dotnet run" uses the project folder as content root, so a plain relative path would not find it and the messages would show as keys.
+builder.Configuration.AddJsonFile(new PhysicalFileProvider(AppContext.BaseDirectory), "appsettings.dataanalysis.json", optional: true, reloadOnChange: true);
 
 // Use invariant culture so date/number formatting is consistent across machines.
 // This is needed when running locally on computers with different regional settings (e.g. dd/MM vs MM/dd).
@@ -141,6 +146,7 @@ builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyP
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.TestController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.UsersController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.PowerBIController).Assembly));
+builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DataAnalysisAPI.Controllers.UsageInsightsController).Assembly));
 
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.AddressesController).Assembly));
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(typeof(GSWebAPI.Controllers.AvatarController).Assembly));
@@ -289,8 +295,12 @@ var aiServicesConnString = builder.Configuration.GetConnectionString("AIServices
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(aiServicesConnString, ServerVersion.AutoDetect(aiServicesConnString)));
 
+// GS Web EF Core data layer (Custom Plans and Community modules) on ConnectionStrings:GSWebDBConnection.
+GSWebAPI.GSWebAPIServiceCollectionExtensions.AddGSWebData(builder.Services, builder.Configuration);
+
 builder.Services.AddHttpClient<GSAIServicesAPI.FeignAPIs.AthenasFeignAPI>();
 builder.Services.AddHttpClient<GSAIServicesAPI.FeignAPIs.ImageGenerationFeignAPI>();
+builder.Services.AddHttpClient<GSAIServicesAPI.FeignAPIs.IDataAnalysisFeignAPI, GSAIServicesAPI.FeignAPIs.DataAnalysisFeignAPI>();
 // Image generation providers; the order they are tried in comes from ImageGeneration:ProviderOrder.
 builder.Services.AddHttpClient<GSAIServicesAPI.Services.Images.Providers.IImageGenerationProvider,
                                GSAIServicesAPI.Services.Images.Providers.FoundryImageProvider>();
@@ -299,6 +309,10 @@ builder.Services.AddScoped<GSAIServicesAPI.Services.Images.Providers.IImageGener
 
 builder.Services.AddScoped<GSAIServicesAPI.Services.CodesService>();
 builder.Services.AddScoped<GSAIServicesAPI.Services.LessonsService>();
+builder.Services.AddHttpClient<GSAIServicesAPI.Services.Plannings.PlanningsSearchClient>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Plannings.PlanningsService>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.Plannings.AthenasLessonsService>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.Foundry.RagProjectClient>();
 builder.Services.AddScoped<GSAIServicesAPI.Services.Quotas.QuotaConfigService>();
 builder.Services.AddScoped<GSAIServicesAPI.Services.Quotas.QuotaService>();
 builder.Services.AddScoped<GSAIServicesAPI.Services.Tutor.GenerativeTutorEngine>();
@@ -329,6 +343,14 @@ builder.Services.AddSingleton<GSAIServicesAPI.Services.Images.IImageBlobStorage,
                               GSAIServicesAPI.Services.Images.AzureImageBlobStorage>();
 
 builder.Services.AddSingleton<GSAIServicesAPI.Services.Tutor.TutorSettingsService>();
+
+// Data assistant (usage insights): the model client, the tools and the in-memory state of the conversations and downloads.
+// The state sits behind interfaces so it can move to a store shared by several instances of the monolith.
+builder.Services.AddSingleton<GSAIServicesAPI.Services.DataAssistant.DataAssistantToolCatalog>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.DataAssistant.IDataAssistantConversationStore, GSAIServicesAPI.Services.DataAssistant.DataAssistantConversationStore>();
+builder.Services.AddSingleton<GSAIServicesAPI.Services.DataAssistant.IDataAssistantDownloadRegistry, GSAIServicesAPI.Services.DataAssistant.DataAssistantDownloadRegistry>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.DataAssistant.IDataAssistantChatClient, GSAIServicesAPI.Services.DataAssistant.AzureOpenAiDataAssistantChatClient>();
+builder.Services.AddScoped<GSAIServicesAPI.Services.DataAssistant.DataAssistantService>();
 
 var azureOpenAiEndpoint = builder.Configuration["AzureOpenAI:Endpoint"];
 var azureOpenAiApiKey = builder.Configuration["AzureOpenAI:ApiKey"];

@@ -54,5 +54,10 @@
         /// Gets or sets the Role Id.
         /// </summary>
         public string RoleId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ORE id of the user (only for the ORE roles). Null when the user has none.
+        /// </summary>
+        public string? OreId { get; set; }
     }
 }

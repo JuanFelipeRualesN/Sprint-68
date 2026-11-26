@@ -195,14 +195,16 @@ namespace ReadingAPI.Controllers
                 // 2. Determine the custom language level using the business logic
                 //    We pass the Azure results, the language, and the original reference text.
                 var levelEvaluator = new LanguageLevelEvaluator();
-                var (level, description) = levelEvaluator.DetermineLevel(azureResult, lang, form.ReferenceText, form.StudentGrade);
+                var result = levelEvaluator.DetermineLevel(azureResult, lang, form.ReferenceText, form.StudentGrade);
 
-                // 3. Construct the final response DTO
+                // 3. Construct the final response DTO: the DEPR level in the request language, and the story level
                 var finalResponse = new FinalAssessmentResponse
                 {
                     AzureResult = azureResult,
-                    LanguageLevel = level,
-                    LevelDescription = description
+                    ReadingLevel = result.Level.Number,
+                    LanguageLevel = result.Level.Label(lang),
+                    LevelDescription = result.Level.Description(lang),
+                    StoryLevel = result.StoryLevel
                 };
 
                 // React frontend receives this comprehensive JSON object.

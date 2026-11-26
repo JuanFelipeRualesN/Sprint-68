@@ -423,7 +423,18 @@ public sealed class FinalAssessmentResponse
     // The raw and detailed results from Azure (using your provided DTOs)
     public AssessmentResultDto AzureResult { get; set; } = new();
 
-    // Custom level calculated by your application
+    /// <summary>DEPR reading level: 1 Principiante, 2 Aprendiz, 3 Proficiente, 4 Sobresaliente.</summary>
+    public int ReadingLevel { get; set; }
+
+    /// <summary>DEPR label in the request language (e.g. "Proficiente" for es-MX, "Proficient" for en-US).</summary>
     public string LanguageLevel { get; set; } = default!;
+
+    /// <summary>Official DEPR description of the level, in the request language.</summary>
     public string LevelDescription { get; set; } = default!;
+
+    /// <summary>
+    /// Starting story difficulty: the story_levels id (1-4), which follows the DEPR levels, so it equals ReadingLevel.
+    /// Kept as its own field so the frontend picks the story without parsing the label.
+    /// </summary>
+    public int StoryLevel { get; set; }
 }

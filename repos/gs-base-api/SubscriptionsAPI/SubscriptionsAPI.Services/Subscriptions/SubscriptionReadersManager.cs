@@ -315,6 +315,8 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Services.Subscriptions
                     IsForSchool = planToAdd.IsForSchool,
                     IsPrivate = planToAdd.IsPrivate,
                     Name = planToAdd.Name,
+                    ProductId = planToAdd.ProductId, // subst_plans.product_id: the key to the plan's courses
+                    ProfilesQuantity = planToAdd.ProfilesQuantity,
                     PlanDescriptionByLang = planLangModels.FindAll(x => x.PlanId == planToAdd.Id)
                 };
 
