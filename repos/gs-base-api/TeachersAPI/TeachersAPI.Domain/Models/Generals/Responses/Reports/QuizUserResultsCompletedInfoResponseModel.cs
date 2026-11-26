@@ -54,6 +54,11 @@ namespace TeachersAPI.Domain.Models.Generals.Responses.Reports
         public string ExtraInfo { get; set; }
 
         /// <summary>
+        /// Gets or sets the created at date.
+        /// </summary>
+        public string CreatedAt { get; set; }
+
+        /// <summary>
         /// Gets or sets the question quiz list.
         /// </summary>
         public List<QuestionQuiz> QuestionQuizList { get; set; }

@@ -40,8 +40,8 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
         public bool CheckIfUsersSameSchool(string userIdA, string userIdB)
         {
             // Compare schools of users
-            UserSchoolManager userSchoolManager = new UserSchoolManager(this._connectionString, this._connectionStringRead, null);
-            List<UserSchoolModel> requesterSchools = userSchoolManager.GetUserSchools(new List<UserSchoolModel>()
+            var userSchoolManager = new UserSchoolManager(this._connectionString, this._connectionStringRead, null);
+            var requesterSchools = userSchoolManager.GetUserSchools(new List<UserSchoolModel>()
             {
                 new UserSchoolModel()
                 {
@@ -49,7 +49,7 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
                 },
             });
 
-            List<UserSchoolModel> requestedSchools = userSchoolManager.GetUserSchools(new List<UserSchoolModel>()
+            var requestedSchools = userSchoolManager.GetUserSchools(new List<UserSchoolModel>()
             {
                 new UserSchoolModel()
                 {
@@ -60,7 +60,7 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
             // Compare schools
             if (requestedSchools.Count != 0 && requesterSchools.Count != 0)
             {
-                foreach (UserSchoolModel requesterSchool in requesterSchools)
+                foreach (var requesterSchool in requesterSchools)
                 {
                     if (requestedSchools.Find(x => x.SchoolId == requesterSchool.SchoolId) != null)
                     {
@@ -111,42 +111,44 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
         /// <returns>Returns the response model.</returns>
         public ResponseModel RelateUserToSchool(string userId, string schoolId, bool confirmed, string userSessionId, string userSchoolIdentifier)
         {
-            // First, check the identifier
-            List<UserSchoolModel> idenfierCheckIfExists = new UserSchoolDAO().Read(this._connectionStringRead, new UserSchoolModel()
+            try
             {
-                Identifier = userSchoolIdentifier,
-                SchoolId = schoolId,
-            }, false, false);
-
-            if(idenfierCheckIfExists.Count > 0)
-            {
-                // Check if the user id is the same 
-                if(userId != idenfierCheckIfExists[0].UserId)
+                // First, check the identifier
+                List<UserSchoolModel> idenfierCheckIfExists = new UserSchoolDAO().Read(this._connectionStringRead, new UserSchoolModel()
                 {
-                    // User exists already. 
-                    return new ResponseModel()
+                    Identifier = userSchoolIdentifier,
+                    SchoolId = schoolId,
+                }, false, false);
+
+                if (idenfierCheckIfExists.Count > 0)
+                {
+                    // Check if the user id is the same 
+                    if (userId != idenfierCheckIfExists[0].UserId)
                     {
-                        Valid = false,
-                        Details = new List<string>()
+                        // User exists already. 
+                        return new ResponseModel()
+                        {
+                            Valid = false,
+                            Details = new List<string>()
                         {
                             new MessageManager(this._connectionString, this._langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_user_record_exists"]),
                         }
-                    };
-                }
-                else
-                {
-                    return new ResponseModel()
+                        };
+                    }
+                    else
                     {
-                        Valid = true,
-                        Details = new List<string>()
+                        return new ResponseModel()
+                        {
+                            Valid = true,
+                            Details = new List<string>()
                         {
                              new MessageManager(this._connectionString, this._langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_user_school_related"]),
                         }
-                    };
+                        };
+                    }
                 }
-            }
 
-            CreateUserSchools(new List<UserSchoolModel>()
+                CreateUserSchools(new List<UserSchoolModel>()
             {
                 new UserSchoolModel()
                 {
@@ -158,14 +160,27 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
                 }
             });
 
-            return new ResponseModel()
-            {
-                Valid = true,
-                Details = new List<string>()
+                return new ResponseModel()
+                {
+                    Valid = true,
+                    Details = new List<string>()
                         {
                              new MessageManager(this._connectionString, this._langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_user_school_related"]),
                         }
-            };
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return new ResponseModel()
+                {
+                    Valid = false,
+                    Details = new List<string>()
+                        {
+                             new MessageManager(this._connectionString, this._langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:gus_general_error"]),
+                        }
+                };
+            }
         }
 
         /// <summary>
@@ -174,7 +189,15 @@ namespace UsersAPI.UsersAPI.Services.PersonalDetails
         /// <param name="userSchoolModelList">User schools to create.</param>
         public void CreateUserSchools(List<UserSchoolModel> userSchoolModelList)
         {
-            new UserSchoolDAO().Create(this._connectionString, userSchoolModelList);
+            try
+            {
+                new UserSchoolDAO().Create(this._connectionString, userSchoolModelList);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Creating user schools failed.");
+                Console.WriteLine(ex.ToString());
+            }
         }
 
         /// <summary>

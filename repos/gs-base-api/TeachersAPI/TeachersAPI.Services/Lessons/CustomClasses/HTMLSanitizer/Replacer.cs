@@ -138,8 +138,8 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons.CustomClasses.HTMLSanitizer
 							string style = bodyNode.Attributes["style"].Value;
 							string oldImg = Regex.Match(style, @"(?<=\().+?(?=\))").Value;
 							string fileName = Path.GetFileName(oldImg);
-							string filePath = $"{AwsAssets.FolderPath}{fileName}";
-							string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(filePath);
+							string filePath = $"{fileName}";
+							string signedUrl = AzureAssets.GetFileFromAzureStorage(filePath);
 							string newStyle = style.Replace(oldImg, signedUrl);
 
 							bodyNode.Attributes.Remove("style");
@@ -157,8 +157,8 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons.CustomClasses.HTMLSanitizer
 							string style = bodyNode.Attributes["style"].Value;
 							string oldImg = Regex.Match(style, @"(?<=\().+?(?=\))").Value;
 							string fileName = Path.GetFileName(oldImg);
-							string filePath = $"{AwsAssets.FolderPath}{fileName}";
-							string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(filePath);
+							string filePath = $"{fileName}";
+							string signedUrl = AzureAssets.GetFileFromAzureStorage(filePath);
 							string newStyle = style.Replace(oldImg, signedUrl);
 
 							bodyNode.Attributes.Remove("style");
@@ -260,8 +260,8 @@ namespace TeachersAPI.TeachersAPI.Services.Lessons.CustomClasses.HTMLSanitizer
 		{
 			string src = node.GetAttributeValue("src", null);
 			string fileName = Path.GetFileName(src);
-			string filePath = $"{AwsAssets.FolderPath}{fileName}";
-			string signedUrl = AwsAssets.GetSignedUrlFronCloudFront(filePath);
+			string filePath = $"{fileName}";
+			string signedUrl = AzureAssets.GetFileFromAzureStorage(filePath);
 
 			node.SetAttributeValue("src", signedUrl);
 		}

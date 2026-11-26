@@ -1,14 +1,14 @@
-﻿using NReco.PdfGenerator;
-using System;
-using PdfSharp;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using TeachersAPI.TeachersAPI.Services.Lessons.CustomClasses.HTMLSanitizer;
 using TeachersAPI.Domain.Models.Teachers.Preview;
+using TeachersAPI;
 using System.Diagnostics;
 using System.Globalization;
+using WkHtmlToPdfDotNet;
 
 namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
 {
@@ -18,11 +18,21 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
     public class PDFPreviewGenerator
     {
         /// <summary>
+        /// True when this is the Quindio project, whose planning PDF leaves out the transversal
+        /// themes row at the Secretaria de Colombia-Quindio's request, whether or not the plan has
+        /// themes. Every other project prints the row. Mirrors IsQuindio in Athenas'
+        /// LessonHTMLConverter. If a second project ever needs the same layout, this is the one
+        /// place to change.
+        /// </summary>
+        private static readonly bool IsQuindio =
+            AppConfiguration.Configuration["AppSettings:project_code"] == "med-quindio";
+
+        /// <summary>
         /// Generates a multi-page PDF for teacher plannings
         /// </summary>
         /// <param name="teacherPlanningPreviewPdf">Data to create the planning</param>
         /// <returns>Base64 string of the PDF</returns>
-        public static string GeneratePreviewPdf(TeacherPlanningPreviewPdfData teacherPlanningPreviewPdf)
+        public static string GeneratePreviewPdf(TeacherPlanningPreviewPdfData teacherPlanningPreviewPdf, string langCode = "es")
         {
             try
             {
@@ -30,7 +40,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                 {
                     return "No data available for PDF generation.";
                 }
-            
+
                 // Show 7 days per page
                 int daysPerPage = 7;
 
@@ -50,6 +60,85 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                 // Get footer tags from template
                 string htmlTemplateFooter = htmlTemplate.Substring(bodyEnd);
 
+                #region Html Labels
+
+                var htmlLabels = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["es"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["PlanningTitle"] = "Planificación",
+                        ["NoData"] = "No hay datos disponibles para generar el PDF.",
+                        ["PageTitle"] = "Página {0} de {1} (Días {2}-{3})",
+                        ["TeacherLearningPlanTitle"] = "Plan de aprendizaje del maestro",
+
+                        ["Lessons"] = "Lecciones",
+                        ["Standards"] = "Estándares",
+                        ["Expectations"] = "Expectativas",
+                        ["AcademicStrategy"] = "Estrategia académica",
+                        ["Objectives"] = "Objetivos",
+                        ["TransversalThemes"] = "Temas Transversales",
+                        ["IntroActivity"] = "Actividad de inicio",
+                        ["DevelopmentActivity"] = "Actividad de desarrollo",
+                        ["ClosingActivity"] = "Actividad de cierre",
+                        ["OtherSubjectsIntegration"] = "Integración con otras materias",
+                        ["InitiativeProjectInnovation"] = "Iniciativa o proyecto innovador",
+                        ["EvaluationsAppraisals"] = "Evaluaciones (Avalúos)",
+                        ["DifferentiatedInstructionStrategy"] = "Estrategia de instrucción diferenciada",
+                        ["Materials"] = "Materiales",
+                        ["Assignments"] = "Asignaciones",
+                        ["ReasonableAccommodations"] = "Acomodos razonables",
+                        ["PraxisReflection"] = "Reflexión de la praxis",
+                        ["DifferentiationStrategies"] = "Estrategias de instrucción diferenciada",
+                        ["Observations"] = "Observaciones",
+                        ["CommonExperience"] = "Plan de mejoramiento experiencia común (2–3 min)",
+                        ["ActiveStudentResponse"] = "Plan de mejoramiento respuesta activa del estudiante",
+
+                        ["FailedGeneratePdf"] = "No se pudo generar el PDF",
+                        ["ErrorGeneratingPdf"] = "Error generando PDF"
+                    },
+                    ["en"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["PlanningTitle"] = "Planning",
+                        ["NoData"] = "No data available for PDF generation.",
+                        ["PageTitle"] = "Page {0} of {1} (Days {2}-{3})",
+                        ["TeacherLearningPlanTitle"] = "Teacher learning plan",
+
+                        ["Lessons"] = "Lessons",
+                        ["Standards"] = "Standards",
+                        ["Expectations"] = "Expectations",
+                        ["AcademicStrategy"] = "Academic strategy",
+                        ["Objectives"] = "Objectives",
+                        ["TransversalThemes"] = "Cross-curricular themes",
+                        ["IntroActivity"] = "Opening activity",
+                        ["DevelopmentActivity"] = "Development activity",
+                        ["ClosingActivity"] = "Closing activity",
+                        ["OtherSubjectsIntegration"] = "Integration with other subjects",
+                        ["InitiativeProjectInnovation"] = "Innovation initiative or project",
+                        ["EvaluationsAppraisals"] = "Evaluations (Assessments)",
+                        ["DifferentiatedInstructionStrategy"] = "Differentiated instruction strategy",
+                        ["Materials"] = "Materials",
+                        ["Assignments"] = "Assignments",
+                        ["ReasonableAccommodations"] = "Reasonable accommodations",
+                        ["PraxisReflection"] = "Praxis reflection",
+                        ["DifferentiationStrategies"] = "Differentiated instruction strategies",
+                        ["Observations"] = "Observations",
+                        ["CommonExperience"] = "Improvement plan common experience (2–3 min)",
+                        ["ActiveStudentResponse"] = "Improvement plan student active response",
+
+                        ["FailedGeneratePdf"] = "Failed to generate PDF",
+                        ["ErrorGeneratingPdf"] = "Error generating PDF"
+                    }
+                };
+
+                #endregion
+
+                if (!htmlLabels.TryGetValue(langCode ?? "es", out var labels))
+                    labels = htmlLabels["es"];
+
+                string T(string key) => labels.TryGetValue(key, out var v) ? v : key;
+                string TF(string key, params object[] args) => string.Format(T(key), args);
+
+
                 // Create a single HTML document
                 StringBuilder completeHtml = new StringBuilder();
 
@@ -62,10 +151,10 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
 
                     List<DataDay> pageDays = teacherPlanningPreviewPdf.Days.Skip(startIndex).Take(endIndex - startIndex).ToList();
 
-                    string pageTitle = $"Página {pageIndex + 1} de {totalPages} (Días {startIndex + 1}-{endIndex})";
+                    string pageTitle = TF("PageTitle", pageIndex + 1, totalPages, startIndex + 1, endIndex);
 
-                    var htmlContent = pageTemplate.Replace("{{{header}}}", BuilderHeader(teacherPlanningPreviewPdf));
-                    htmlContent = htmlContent.Replace("{{{tableHeader}}}", BuildTableHeaderForPage(pageDays, daysPerPage));
+                    var htmlContent = pageTemplate.Replace("{{{header}}}", BuilderHeader(teacherPlanningPreviewPdf, langCode));
+                    htmlContent = htmlContent.Replace("{{{tableHeader}}}", BuildTableHeaderForPage(pageDays, daysPerPage, langCode));
 
                     string lessonRow = BuildRowForPage(pageDays, "DataLessons", daysPerPage);
                     string standardRow = BuildRowForPage(pageDays, "DataStandards", daysPerPage);
@@ -84,6 +173,10 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                     string assignmentsRow = BuildRowForPage(pageDays, "DataAssignments", daysPerPage);
                     string customStrategiesRow = BuildRowForPage(pageDays, "DataCustomStrategies", daysPerPage);
                     string praxisReflectionsRow = BuildRowForPage(pageDays, "DataPraxisReflections", daysPerPage);
+                    string differentiationStrategiesRow = BuildRowForPage(pageDays, "DataDifferentiationStrategies", daysPerPage);
+                    string observationsRow = BuildRowForPage(pageDays, "DataObservations", daysPerPage);
+                    string commonExperiencesRow = BuildRowForPage(pageDays, "DataCommonExperiences", daysPerPage);
+                    string activeResponsesRow = BuildRowForPage(pageDays, "DataActiveResponses", daysPerPage);
 
                     bool hasContent = false;
                     foreach (var day in pageDays)
@@ -104,7 +197,12 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                             (day.DataMaterials?.Count > 0) ||
                             (day.DataAssignments?.Count > 0) ||
                             (day.DataCustomStrategies?.Count > 0) ||
-                            (day.DataPraxisReflections?.Count > 0))
+                            (day.DataPraxisReflections?.Count > 0) ||
+                            (day.DataDifferentiationStrategies?.Count > 0) ||
+                            (day.DataObservations?.Count > 0) ||
+                            (day.DataCommonExperiences?.Count > 0) ||
+                            (day.DataActiveResponses?.Count > 0))
+
                         {
                             hasContent = true;
                             break;
@@ -133,28 +231,37 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                     else
                     {
                         string rows =
-                            CreateTableRowIfHasContent("Lecciones", lessonRow) +
-                            CreateTableRowIfHasContent("Estándares", standardRow) +
-                            CreateTableRowIfHasContent("Expectativas", expectationsRow) +
-                            CreateTableRowIfHasContent("Estrategia académica", stratergiesRow) +
-                            CreateTableRowIfHasContent("Objetivos", objetivesRow) +
-                            CreateTableRowIfHasContent("Temas Transversales", transversalThemesRow) +
-                            CreateTableRowIfHasContent("Actividad de inicio", introductoryActivityRow) +
-                            CreateTableRowIfHasContent("Actividad de desarrollo", developmentActivityRow) +
-                            CreateTableRowIfHasContent("Actividad de cierre", closingActivityRow) +
-                            CreateTableRowIfHasContent("Integración con otras materias", otherIntegrationMaterialsRow) +
-                            CreateTableRowIfHasContent("Iniciativa o proyecto innovador", initiativeProjectInnovationsRow) +
-                            CreateTableRowIfHasContent("Evaluaciones (Avalúos)", evaluationsRow) +
-                            CreateTableRowIfHasContent("Estrategia de instrucción diferenciada", accommodationsRow) +
-                            CreateTableRowIfHasContent("Materiales", materialsRow) +
-                            CreateTableRowIfHasContent("Asignaciones", assignmentsRow) +
-                            CreateTableRowIfHasContent("Acomodos razonables", customStrategiesRow) +
-                            CreateTableRowIfHasContent("Reflexión de la praxis", praxisReflectionsRow);
+                            CreateTableRowIfHasContent(T("Lessons"), lessonRow) +
+                            // Quindio omits the transversal themes row entirely, with or without content.
+                            (IsQuindio ? "" : CreateTableRowIfHasContent(T("TransversalThemes"), transversalThemesRow)) +
+                            CreateTableRowIfHasContent(T("Standards"), standardRow) +
+                            CreateTableRowIfHasContent(T("Expectations"), expectationsRow) +
+                            CreateTableRowIfHasContent(T("AcademicStrategy"), stratergiesRow) +
+                            CreateTableRowIfHasContent(T("Objectives"), objetivesRow) +
+                            CreateTableRowIfHasContent(T("IntroActivity"), introductoryActivityRow) +
+                            CreateTableRowIfHasContent(T("DevelopmentActivity"), developmentActivityRow) +
+                            CreateTableRowIfHasContent(T("ClosingActivity"), closingActivityRow) +
+                            CreateTableRowIfHasContent(T("Assignments"), assignmentsRow) +
+                            CreateTableRowIfHasContent(T("OtherSubjectsIntegration"), otherIntegrationMaterialsRow) +
+                            CreateTableRowIfHasContent(T("InitiativeProjectInnovation"), initiativeProjectInnovationsRow) +
+                            CreateTableRowIfHasContent(T("EvaluationsAppraisals"), evaluationsRow) +
+                            CreateTableRowIfHasContent(T("DifferentiatedInstructionStrategy"), accommodationsRow) +
+                            CreateTableRowIfHasContent(T("ReasonableAccommodations"), customStrategiesRow) +
+                            CreateTableRowIfHasContent(T("DifferentiationStrategies"), differentiationStrategiesRow) +
+                            CreateTableRowIfHasContent(T("ActiveStudentResponse"), activeResponsesRow) +
+                            CreateTableRowIfHasContent(T("CommonExperience"), commonExperiencesRow) +
+                            CreateTableRowIfHasContent(T("Materials"), materialsRow) +
+                            CreateTableRowIfHasContent(T("Observations"), observationsRow) +
+                            CreateTableRowIfHasContent(T("PraxisReflection"), praxisReflectionsRow);
 
                         htmlContent = htmlContent.Replace("{{{rows}}}", rows);
                     }
+
+                    htmlContent = htmlContent.Replace("<h1 class=\"heading-h1\">Planificación</h1>",
+                        $"<h1 class=\"heading-h1\">{T("PlanningTitle")}</h1>");
+
                     htmlContent = htmlContent.Replace("<h2 class=\"heading-h2\">Plan de aprendizaje del maestro</h2>",
-                        $"<h2 class=\"heading-h2\">Plan de aprendizaje del maestro - {pageTitle}</h2>");
+                        $"<h2 class=\"heading-h2\">{T("TeacherLearningPlanTitle")} - {pageTitle}</h2>");
 
                     // Add the content to the final HTML
                     completeHtml.Append(htmlContent);
@@ -172,14 +279,40 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                 // Generate single PDF
                 try
                 {
-                    var htmlToPdf = new HtmlToPdfConverter();
+                    var doc = new HtmlToPdfDocument
+                    {
+                        GlobalSettings = new GlobalSettings
+                        {
+                            ColorMode = ColorMode.Color,
+                            Orientation = Orientation.Landscape,   // Equivale a NReco PageOrientation.Landscape
+                            PaperSize = PaperKind.A4,              // Equivale a NReco PageSize.A4
+                            Margins = new MarginSettings           // Equivale a PageMargins
+                            {
+                                Top = 10,
+                                Bottom = 10,
+                                Left = 20,
+                                Right = 20
+                            },
+                            DPI = 300
+                        },
+                        Objects =
+                        {
+                            new ObjectSettings
+                            {
+                                HtmlContent = completeHtml.ToString(),
+                                WebSettings = new WebSettings
+                                {
+                                    DefaultEncoding = "utf-8",
+                                    // Si tu HTML referencia CSS externas o imágenes locales, puedes ajustar:
+                                    // UserStyleSheet = "ruta-a-tu.css",
+                                    // LoadImages = true,
+                                },
+                                // HeaderSettings / FooterSettings disponibles si las necesitas
+                            }
+                        }
+                    };
 
-                    htmlToPdf.Size = NReco.PdfGenerator.PageSize.A4;
-                    htmlToPdf.Orientation = NReco.PdfGenerator.PageOrientation.Landscape;
-                    htmlToPdf.Margins = new PageMargins { Bottom = 10, Left = 20, Right = 20, Top = 10 };
-
-                    // Convert HTML to PDF
-                    byte[] pdfBytes = htmlToPdf.GeneratePdf(completeHtml.ToString());
+                    byte[] pdfBytes = WkHtmlConverterSingleton.Instance.Convert(doc);
 
                     if (pdfBytes != null && pdfBytes.Length > 0)
                     {
@@ -187,12 +320,12 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
                     }
                     else
                     {
-                        return "Failed to generate PDF";
+                        return T("FailedGeneratePdf");
                     }
                 }
                 catch (Exception ex)
                 {
-                    return $"Error generating PDF: {ex.Message}";
+                    return $"{T("ErrorGeneratingPdf")}: {ex.Message}";
                 }
             }
             catch (Exception ex)
@@ -201,8 +334,41 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
             }
         }
 
-        static string BuilderHeader(TeacherPlanningPreviewPdfData pDFData)
+        static string BuilderHeader(TeacherPlanningPreviewPdfData pDFData, string langCode = "es")
         {
+
+            #region Header Labels
+
+            var headerLabels = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["es"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Teacher"] = "Maestro:",
+                    ["WeeklyPlanWeekRange"] = "Plan semanal, Semana #{0} - Rango:",
+                    ["StudentGroup"] = "Grupo de estudiantes:",
+                    ["SubjectAndGrade"] = "Materia y grado:",
+                    ["Units"] = "Unidades:"
+                },
+                ["en"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Teacher"] = "Teacher:",
+                    ["WeeklyPlanWeekRange"] = "Weekly plan, Week #{0} - Range:",
+                    ["StudentGroup"] = "Student group:",
+                    ["SubjectAndGrade"] = "Subject and grade:",
+                    ["Units"] = "Units:"
+                }
+            };
+
+            #endregion
+
+            if (!headerLabels.TryGetValue(langCode ?? "es", out var labels))
+                labels = headerLabels["es"];
+
+            string T(string key) => labels.TryGetValue(key, out var value) ? value : key;
+            string TF(string key, params object[] args) => string.Format(T(key), args);
+
+
+
             HashSet<string> uniqueUnits = new HashSet<string>();
 
             // Render unique units
@@ -221,21 +387,21 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers.CustomClasses
             }
             string unitsList = string.Join(", ", uniqueUnits);
 
-            string header = $"<li><span>Maestro: </span>{pDFData.TeacherFullName}</li>" +
-                            $"<li><span>Plan semanal, Semana #{pDFData.WeekNumber} - Rango:</span> {pDFData.DateRange}</li>" +
-                            (!string.IsNullOrWhiteSpace(pDFData.GroupStudent) ? $"<li><span>Grupo de estudiantes: </span>{pDFData.GroupStudent}</li>" : "") +
-                            $"<li><span>Materia y grado:</span> {pDFData.SubjectAndGrade}</li>" +
-                            (!string.IsNullOrWhiteSpace(unitsList) ? $"<li><span>Unidades:</span> {unitsList}</li>" : "");
+            string header = $"<li><span>{T("Teacher")} </span>{pDFData.TeacherFullName}</li>" +
+                            $"<li><span>{TF("WeeklyPlanWeekRange", pDFData.WeekNumber)}</span> {pDFData.DateRange}</li>" +
+                            (!string.IsNullOrWhiteSpace(pDFData.GroupStudent) ? $"<li><span>{T("StudentGroup")} </span>{pDFData.GroupStudent}</li>" : "") +
+                            $"<li><span>{T("SubjectAndGrade")}</span> {pDFData.SubjectAndGrade}</li>" +
+                            (!string.IsNullOrWhiteSpace(unitsList) ? $"<li><span>{T("Units")}</span> {unitsList}</li>" : "");
             return header;
         }
 
-        static string BuildTableHeaderForPage(List<DataDay> days, int daysPerPage = 7)
+        static string BuildTableHeaderForPage(List<DataDay> days, int daysPerPage = 7, string langCode = "es")
         {
             StringBuilder stringBuilder = new StringBuilder();
 
             days.ToList().ForEach(x =>
             {
-                string dayOfWeek = x.Date.ToString("dddd", new CultureInfo("es-MX"));
+                string dayOfWeek = x.Date.ToString("dddd", new CultureInfo(langCode));
                 dayOfWeek = char.ToUpper(dayOfWeek[0]) + dayOfWeek.Substring(1);
 
                 var html = "<th scope=\"col\">" +
@@ -552,7 +718,7 @@ thead {
     color: #c3902a;
 }
 .list--item_secondTitle {
-    color: #809cb7;
+    color: #c3902a;
 }
 .list--item_neutralTitle {
     color: #868686;

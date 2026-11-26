@@ -188,5 +188,80 @@ namespace TeachersAPI.TeachersAPI.Services.FeignAPI
                 }
             }
         }
+
+        /// <summary>
+        /// To get the school ids that belong to a region (ORE). Used exclusively by
+        /// EventAudienceResolver to translate a RegionId into the same SchoolIds shape already
+        /// consumed by the School audience path.
+        /// </summary>
+        /// <param name="regionId">The region (ORE) id.</param>
+        /// <param name="token">User token.</param>
+        /// <returns>Returns the school ids belonging to the region.</returns>
+        public static List<string> GetSchoolIdsForRegion(string regionId, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:schools_web_service_url"]);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Add("Token", token);
+
+                var response = client.GetAsync(AppConfiguration.Configuration["AppSettings:schools_endpoint_ore_schools_ids"] + regionId + "/schools_ids").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseString = response.Content.ReadAsStringAsync().Result;
+
+                    List<string> schoolIds = JsonConvert.DeserializeObject<List<string>>(responseString,
+                        new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore
+                        });
+
+                    return schoolIds ?? new List<string>();
+                }
+
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves school ORE (address) models for the specified list of school IDs via a GET request.
+        /// </summary>
+        /// <param name="schoolIds">A list of school identifiers.</param>
+        /// <param name="token">The authorization token required by the web service.</param>
+        /// <returns>A task containing a list of address models.</returns>
+        public static async Task<List<AddressModel>> GetSchoolOresAsync(List<int> schoolIds, string token)
+        {
+            if (schoolIds == null || schoolIds.Count == 0)
+            {
+                return new List<AddressModel>();
+            }
+
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:schools_web_service_url"]);
+                client.DefaultRequestHeaders.Add("Token", token);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var queryParams = string.Join("&", schoolIds.Select(id => $"schoolIds={id}"));
+                string endpoint = $"{AppConfiguration.Configuration["AppSettings:schools_endpoint_call_ores"]}?{queryParams}";
+
+                var response = await client.GetAsync(endpoint);
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseString = await response.Content.ReadAsStringAsync();
+
+                    var addressModels = JsonConvert.DeserializeObject<List<AddressModel>>(responseString,
+                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+                    return addressModels ?? new List<AddressModel>();
+                }
+                else
+                {
+                    return new List<AddressModel>();
+                }
+            }
+        }
     }
 }

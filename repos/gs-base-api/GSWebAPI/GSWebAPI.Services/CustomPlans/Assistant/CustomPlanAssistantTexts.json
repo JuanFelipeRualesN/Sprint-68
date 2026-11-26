@@ -1,0 +1,142 @@
+{
+  "welcome": {
+    "es": "¿Cómo te puedo ayudar? Te haré unas preguntas cortas y armaré un plan de estudio con las lecciones de Genial Skills, a la medida de tu hijo(a).",
+    "en": "How can I help you? I'll ask you a few short questions and build a study plan with Genial Skills lessons, tailored to your child."
+  },
+  "type.homeschool": { "es": "Educamos en casa", "en": "We homeschool" },
+  "type.reinforcements": { "es": "Refuerzo en algunas materias", "en": "Reinforcement in some subjects" },
+  "type.specific_task": { "es": "Trabajar una destreza específica", "en": "Work on a specific skill" },
+  "type.customized": { "es": "Customizado", "en": "Custom" },
+
+  "ask_skill": {
+    "es": "¿Qué destreza o tema quieres trabajar? Por ejemplo: fracciones, comprensión lectora, sumas con reagrupación.",
+    "en": "Which skill or topic do you want to work on? For example: fractions, reading comprehension, addition with regrouping."
+  },
+  "ask_needs": {
+    "es": "Cuéntame qué necesita tu hijo(a) y lo tomaré en cuenta al escoger las lecciones.",
+    "en": "Tell me what your child needs and I'll take it into account when choosing the lessons."
+  },
+
+  "ask_student": { "es": "¿Para cuál de tus hijos(as) es el plan?", "en": "Which of your children is the plan for?" },
+  "ask_student_one": { "es": "El plan será para {0}. ¿Es correcto?", "en": "The plan will be for {0}. Is that right?" },
+  "no_children": {
+    "es": "No encontré perfiles de estudiantes en tu cuenta. Crea el perfil de tu hijo(a) y vuelve a intentarlo.",
+    "en": "I couldn't find any student profiles in your account. Create your child's profile and try again."
+  },
+
+  "ask_level": { "es": "¿En qué grado está {0}?", "en": "What grade is {0} in?" },
+  "no_subscription": {
+    "es": "{0} no tiene una suscripción activa con cursos. Para crear un plan, primero suscríbete a Genial Skills para tu hijo(a). Cuando la suscripción esté activa, vuelve y armamos el plan.",
+    "en": "{0} doesn't have an active subscription with courses. To create a plan, first subscribe to Genial Skills for your child. Once the subscription is active, come back and we'll build the plan."
+  },
+  "option.change_student": { "es": "Elegir otro hijo(a)", "en": "Choose another child" },
+
+  "ask_subjects": { "es": "¿Qué materias quieres incluir? Puedes elegir varias.", "en": "Which subjects do you want to include? You can choose several." },
+  "no_subjects": {
+    "es": "La suscripción de {0} no tiene materias para ese grado. Elige otro grado o revisa la suscripción.",
+    "en": "{0}'s subscription has no subjects for that grade. Choose another grade or check the subscription."
+  },
+
+  "ask_framework": {
+    "es": "¿Quieres que el plan esté alineado a los estándares del Departamento de Educación de Puerto Rico (DEPR)?",
+    "en": "Do you want the plan aligned to the Puerto Rico Department of Education (DEPR) standards?"
+  },
+  "option.yes": { "es": "Sí", "en": "Yes" },
+  "option.no": { "es": "No", "en": "No" },
+
+  "ask_days": {
+    "es": "¿Cuántos días a la semana va a estudiar? También puedes escribir un número o los días (por ejemplo: lunes, miércoles y viernes).",
+    "en": "How many days a week will your child study? You can also type a number or the days (for example: Monday, Wednesday and Friday)."
+  },
+  "days.weekdays": { "es": "Lunes a viernes (5)", "en": "Monday to Friday (5)" },
+  "days.3": { "es": "3 días", "en": "3 days" },
+  "days.2": { "es": "2 días", "en": "2 days" },
+  "days.weekend": { "es": "Fines de semana (2)", "en": "Weekends (2)" },
+
+  "ask_daily_time": {
+    "es": "¿Cuánto tiempo va a estudiar cada día? También puedes escribir los minutos.",
+    "en": "How long will your child study each day? You can also type the minutes."
+  },
+  "time.30": { "es": "30 min", "en": "30 min" },
+  "time.45": { "es": "45 min", "en": "45 min" },
+  "time.60": { "es": "1 hora", "en": "1 hour" },
+  "time.120": { "es": "2 horas", "en": "2 hours" },
+  "time.180": { "es": "3 horas", "en": "3 hours" },
+
+  "ask_duration": {
+    "es": "¿Por cuánto tiempo quieres el plan? También puedes escribir el número de semanas.",
+    "en": "How long do you want the plan to last? You can also type the number of weeks."
+  },
+  "duration.month": { "es": "1 mes", "en": "1 month" },
+  "duration.trimester": { "es": "Un trimestre", "en": "A trimester" },
+  "duration.semester": { "es": "Un semestre", "en": "A semester" },
+  "duration.school_year": { "es": "Un año escolar", "en": "A school year" },
+
+  "confirm": {
+    "es": "Este es el plan: {0} lecciones del {1} al {2}, a las {3}. Revisa el resumen. ¿Lo creo? También puedes pedirme cambios, por ejemplo: \"cambia a 45 minutos\", \"quita Ciencias\" o \"empieza el 7 de diciembre\".",
+    "en": "Here's the plan: {0} lessons from {1} to {2}, at {3}. Check the summary. Shall I create it? You can also ask me for changes, for example: \"change to 45 minutes\", \"remove Science\" or \"start on December 7\"."
+  },
+  "confirm_updated": { "es": "Listo, actualicé el plan.", "en": "Done, I updated the plan." },
+  "confirm_again": {
+    "es": "El plan cambió desde que lo viste (por ejemplo, cambiaron las lecciones disponibles). Revisa el resumen nuevo y confírmalo otra vez.",
+    "en": "The plan changed since you saw it (for example, the available lessons changed). Check the new summary and confirm it again."
+  },
+  "option.confirm": { "es": "Sí, crear el plan", "en": "Yes, create the plan" },
+  "option.change": { "es": "Quiero cambiar algo", "en": "I want to change something" },
+  "ask_change": {
+    "es": "¿Qué quieres cambiar? Por ejemplo: los días, el tiempo por día, la duración, la hora de inicio, la fecha de inicio o las materias.",
+    "en": "What do you want to change? For example: the days, the time per day, the duration, the start time, the start date or the subjects."
+  },
+  "no_lessons": {
+    "es": "No encontré lecciones publicadas para esas materias y ese grado con lo que pediste. Cambia las materias, el grado o la alineación a DEPR.",
+    "en": "I couldn't find published lessons for those subjects and that grade with what you asked. Change the subjects, the grade or the DEPR alignment."
+  },
+  "not_understood": { "es": "No entendí tu respuesta. Elige una de las opciones o escríbelo de otra forma.", "en": "I didn't understand your answer. Choose one of the options or write it another way." },
+
+  "created": {
+    "es": "¡Listo! Creé el plan del {0} al {1} con {2} lecciones. Quedó como borrador: puedes revisarlo y activarlo cuando quieras.",
+    "en": "Done! I created the plan from {0} to {1} with {2} lessons. It's saved as a draft: you can review it and activate it whenever you want."
+  },
+  "already_created": {
+    "es": "Este plan ya fue creado. Para hacer otro, empieza una conversación nueva.",
+    "en": "This plan was already created. To make another one, start a new conversation."
+  },
+  "create_failed": {
+    "es": "No pude crear el plan: {0} Puedes pedirme un cambio y lo intento de nuevo.",
+    "en": "I couldn't create the plan: {0} You can ask me for a change and I'll try again."
+  },
+  "create_unavailable": {
+    "es": "No pude crear el plan porque un servicio no respondió. Inténtalo de nuevo en unos minutos.",
+    "en": "I couldn't create the plan because a service didn't respond. Please try again in a few minutes."
+  },
+  "error.default": { "es": "algún dato del plan no es válido.", "en": "some of the plan's data is not valid." },
+  "error.student": { "es": "ese estudiante no está en tu cuenta.", "en": "that student isn't in your account." },
+  "error.dates": { "es": "alguna fecha queda fuera del plan.", "en": "some date falls outside the plan." },
+  "error.activities": { "es": "algunas prácticas o exámenes ya no están en la lección.", "en": "some practices or exams are no longer in the lesson." },
+  "error.only_clients": { "es": "solo una cuenta de padre o madre puede crear planes.", "en": "only a parent account can create plans." },
+
+  "note.fewer_lessons": {
+    "es": "Hay tiempo para {0} lecciones, pero solo encontré {1} que cumplen con lo pedido.",
+    "en": "There's time for {0} lessons, but I only found {1} that match what you asked."
+  },
+  "note.no_match": {
+    "es": "No encontré lecciones que coincidan con \"{0}\"; usé la secuencia del grado.",
+    "en": "I couldn't find lessons matching \"{0}\"; I used the grade's sequence."
+  },
+  "note.reinforced": {
+    "es": "Puse primero {0} lecciones en las que tu hijo(a) tuvo puntuaciones bajas o tareas atrasadas.",
+    "en": "I put first {0} lessons where your child had low scores or overdue work."
+  },
+  "note.one_lesson_short": {
+    "es": "Cada lección necesita unos {0} minutos; con este horario el plan alcanza para una sola lección.",
+    "en": "Each lesson needs about {0} minutes; with this schedule the plan fits only one lesson."
+  },
+
+  "day.1": { "es": "Lunes", "en": "Monday" },
+  "day.2": { "es": "Martes", "en": "Tuesday" },
+  "day.3": { "es": "Miércoles", "en": "Wednesday" },
+  "day.4": { "es": "Jueves", "en": "Thursday" },
+  "day.5": { "es": "Viernes", "en": "Friday" },
+  "day.6": { "es": "Sábado", "en": "Saturday" },
+  "day.7": { "es": "Domingo", "en": "Sunday" }
+}

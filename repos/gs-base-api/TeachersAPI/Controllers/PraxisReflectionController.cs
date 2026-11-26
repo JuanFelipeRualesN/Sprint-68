@@ -29,7 +29,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanPraxisReflectionServiceFactory.CreateService(dbConn);
-                    var praxisReflectionTypes = await service.GetPraxisReflectionTypes();
+                    var praxisReflectionTypes = await service.GetPraxisReflectionTypeTranslations(responseSession.LangCode);
                     return Ok(praxisReflectionTypes);
                 }
             }
@@ -52,7 +52,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanPraxisReflectionServiceFactory.CreateService(dbConn);
-                    var teacherPlanPraxisReflectionByTeacherPlanId = await service.GetTeacherPlanPraxisReflectionsByTeacherPlanId(teacherPlanId);
+                    var teacherPlanPraxisReflectionByTeacherPlanId = await service.GetTeacherPlanPraxisReflectionsByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanPraxisReflectionByTeacherPlanId);
                 }
             }

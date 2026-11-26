@@ -34,7 +34,7 @@ namespace SubscriptionsAPI.CustomClasses
             }
 
             var expectedKey =
-                _config["AppSettings:doc_key"] ??
+                AppConfiguration.Configuration["AppSettings:doc_key"] ??
                 _config["Swagger:DocKey"];
 
             if (string.IsNullOrWhiteSpace(expectedKey))

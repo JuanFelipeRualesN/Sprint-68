@@ -13,12 +13,6 @@ namespace UsersAPI.Controllers
     [Route("usersapi/status")]
     public class StatusAccountsController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        public StatusAccountsController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         /// <summary>
         /// Return the possible status for an account.
         /// </summary>
@@ -34,9 +28,10 @@ namespace UsersAPI.Controllers
                     return Unauthorized();
                 }
                 var userDetailsManager = new UserDetailsManager(
-                    _configuration.GetConnectionString("GenialSkillsUsersAPIDBConnectionReader"),
+                    AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"],
                     sessionResponseModel.LangCode);
-                var result = userDetailsManager.GetStatus(new List<UsersAPI.Domain.Models.Accounts.StatusAccountModel>());
+                var result = userDetailsManager.GetStatus(
+                    new List<UsersAPI.Domain.Models.Accounts.StatusAccountModel>());
                 return Ok(result);
             }
             catch (Exception)

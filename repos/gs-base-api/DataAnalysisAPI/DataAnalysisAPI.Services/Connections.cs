@@ -1,17 +1,19 @@
-﻿using System;
+﻿using DataAnalysisAPI;
+using DataAnalysisAPI.DataAnalysisAPI.Domain.Models.DTOs;
+using DataAnalysisAPI.DataAnalysisAPI.Domain.Models.Responses;
+using DataAnalysisAPI.DataAnalysisAPI.Services.Utils;
+using Microsoft.AspNetCore.Http;
+using NPOI.HSSF.UserModel; // for .xls files (Excel 97-2003)
+using NPOI.SS.UserModel;
+using NPOI.SS.Util;
+using NPOI.XSSF.UserModel; // for .xlsx files (Excel 2007+)
+using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using DataAnalysisAPI.DataAnalysisAPI.Services.Utils;
-using DataAnalysisAPI.DataAnalysisAPI.Domain.Models.Responses;
-using DataAnalysisAPI.DataAnalysisAPI.Domain.Models.DTOs;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel; // for .xlsx files (Excel 2007+)
-using NPOI.HSSF.UserModel; // for .xls files (Excel 97-2003)
 using System.Data;
-using NPOI.SS.Util;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
-using DataAnalysisAPI;
 
 
 namespace DataAnalysisAPI.DataAnalysisAPI.Services
@@ -32,23 +34,24 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="schoolIds">Optional: The id of the schools to filter.</param>
         /// <param name="userIds">Optional: The users' ids to filter.</param>
         /// <param name="oreId">Optional: (Required if ORE user): The ore to filter.</param>
+        /// <param name="status">Optional: The users' status to filter.</param>
         /// <param name="fromPage">Optional: From Page.</param>
         /// <param name="limiter">Optional: How many items per page.</param>
         /// <returns>Returns a response model with users connected etails. </returns>
         public static ResponseModel<UserSchoolModel> GetUsersConnections(int userIdRequester, bool isDirector, bool isStaff,
             DateTime? dateFrom, DateTime? dateTo, List<int> schoolIds = null,
-            List<int> userIds = null, int? oreId = null, int? fromPage = null, int? limiter = null)
+            List<int> userIds = null, int? oreId = null, string status = null, int? fromPage = null, int? limiter = null)
         {
             var users = PrepareUsersConnections(userIdRequester, isDirector, isStaff,
             dateFrom, dateTo, schoolIds,
-            userIds, oreId);
+            userIds, oreId, status);
 
             int total = users.Count;
 
             // Skip by pagination 
             if (total > 0)
             {
-                users = users.Skip(fromPage.Value * limiter.Value).Take(limiter.Value).ToList();
+                users = users.Skip(fromPage.Value).Take(limiter.Value).ToList();
             }
 
             return new ResponseModel<UserSchoolModel>()
@@ -69,32 +72,29 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="schoolIds">Optional: The schools ids. (But required ir ORE).</param>
         /// <param name="userIds">Optional: The user ids. (But required if teacher)</param>
         /// <param name="oreId">Optional: The id of the ORE. (Required if Ore admin).</param>
+        /// <param name="status">Optional: The users' status to filter.</param>
         /// <param name="languageCode">The language code to get the message.</param>
         /// <returns>Returns the file response model with the URL path.</returns>
         public static async Task<FileResponseModel> GetUsersConnectionsDocument(int userIdRequester, bool isDirector, bool isStaff,
-            DateTime? dateFrom, DateTime? dateTo, List<int> schoolIds = null,
-            List<int> userIds = null, int? oreId = null, string languageCode = "es")
+    DateTime? dateFrom, DateTime? dateTo, List<int> schoolIds = null,
+    List<int> userIds = null, int? oreId = null, string status = null, string languageCode = "es")
         {
-            var usersConnections = PrepareUsersConnections(userIdRequester, isDirector, isStaff,
-               dateFrom, dateTo, schoolIds,
-               userIds, oreId);
-
             // Get all the users general
             // If ore is not null, it should return the schools of the ore.
             List<UserSchoolModel> usersSchoolGeneral = new List<UserSchoolModel>();
             if (oreId != null && isStaff)
             {
                 schoolIds = AutoFilters.GetOreSchoolIds(oreId.Value, schoolIds);
-                if(schoolIds != null && schoolIds.Count > 0)
+                if (schoolIds != null && schoolIds.Count > 0)
                 {
                     usersSchoolGeneral = Infrastructure.Dapper.Users.GetUsers(null, null, schoolIds, userIds);
                 }
             }
-            else if(isStaff && oreId == null)
+            else if (isStaff && oreId == null)
             {
                 usersSchoolGeneral = Infrastructure.Dapper.Users.GetUsers(null, null, schoolIds, userIds);
             }
-    
+
             // If director
             if (isDirector)
             {
@@ -115,36 +115,112 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
                 }
             }
 
-            if (usersSchoolGeneral.Count > 50000)
+            if (usersSchoolGeneral.Count > 200000)
             {
-                // Send message according to language. 
+                // Send message according to language.
                 return new FileResponseModel() { Message = AppConfiguration.Configuration["AppSettings:message_data_too_large_" + languageCode] };
             }
 
-            List<int> distinctUserIds = usersConnections.Select(x => x.UserId).Distinct().ToList();
-            List<UserSchoolModel> usersNotConnected = new List<UserSchoolModel>();
-            if (usersSchoolGeneral.Count > 0)
+            // Resolve allowed user IDs from the already school-filtered usersSchoolGeneral
+            var allowedUserIds = usersSchoolGeneral.Select(u => u.UserId).Distinct().ToList();
+
+            // PrepareUsersConnections is now called AFTER schoolIds/userIds are resolved,
+            // and scoped to only users present in usersSchoolGeneral
+            var usersConnections = PrepareUsersConnections(userIdRequester, isDirector, isStaff,
+                dateFrom, dateTo, schoolIds,
+                allowedUserIds, oreId, status);
+
+            // Extra safety filter in case PrepareUsersConnections ignores the userIds parameter internally
+            var allowedUserIdsSet = new HashSet<int>(allowedUserIds);
+            usersConnections = usersConnections
+                .Where(c => allowedUserIdsSet.Contains(c.UserId))
+                .ToList();
+
+            var connectedUserIdsSet = new HashSet<int>(usersConnections.Select(x => x.UserId));
+
+            List<UserSchoolModel> usersNotConnected;
+
+            var totalUsers = 0;
+            var totalConnected = 0;
+            var totalNotConnected = 0;
+            var totalPercentageOfConnectivity = 0f;
+
+            if (status != null && status.Equals("active", StringComparison.OrdinalIgnoreCase))
             {
-                usersNotConnected = usersSchoolGeneral.Where(user => !distinctUserIds.Any(userConnected => user.UserId == userConnected)).ToList();
+                List<UserSchoolModel> distinctActiveUsers = usersSchoolGeneral
+                    .Where(user => user.SubscriptionStatus != null && user.SubscriptionStatus.Equals("active", StringComparison.OrdinalIgnoreCase) && user.CancellationDate >= DateTime.Now)
+                    .GroupBy(user => user.UserId)
+                    .Select(g => g.First())
+                    .ToList();
+
+                List<UserSchoolModel> distinctConnectedActiveUsers = distinctActiveUsers
+                    .Where(user => connectedUserIdsSet.Contains(user.UserId))
+                    .ToList();
+
+                usersNotConnected = distinctActiveUsers
+                    .Where(user => !connectedUserIdsSet.Contains(user.UserId))
+                    .ToList();
+
+                totalUsers = distinctActiveUsers.Count;
+                totalConnected = distinctConnectedActiveUsers.Count;
+                totalNotConnected = usersNotConnected.Count;
+                totalPercentageOfConnectivity = 0f;
+            }
+            else if (status != null && status.Equals("inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                List<UserSchoolModel> distinctInactiveUsers = usersSchoolGeneral
+                    .Where(user => user.SubscriptionStatus != null && !user.SubscriptionStatus.Equals("active", StringComparison.OrdinalIgnoreCase))
+                    .GroupBy(user => user.UserId)
+                    .Select(g => g.First())
+                    .ToList();
+
+                List<UserSchoolModel> distinctConnectedInactiveUsers = distinctInactiveUsers
+                    .Where(user => connectedUserIdsSet.Contains(user.UserId))
+                    .ToList();
+
+                usersNotConnected = distinctInactiveUsers
+                    .Where(user => !connectedUserIdsSet.Contains(user.UserId))
+                    .ToList();
+
+                totalUsers = distinctInactiveUsers.Count;
+                totalConnected = distinctConnectedInactiveUsers.Count;
+                totalNotConnected = usersNotConnected.Count;
+                totalPercentageOfConnectivity = 0f;
+            }
+            else
+            {
+                List<UserSchoolModel> distinctUsers = usersSchoolGeneral
+                    .Where(user => user.SubscriptionStatus != null)
+                    .GroupBy(user => user.UserId)
+                    .Select(g => g.First())
+                    .ToList();
+
+                List<UserSchoolModel> distinctConnectedUsers = distinctUsers
+                    .Where(user => connectedUserIdsSet.Contains(user.UserId))
+                    .ToList();
+
+                usersNotConnected = distinctUsers
+                    .Where(user => !connectedUserIdsSet.Contains(user.UserId))
+                    .ToList();
+
+                totalUsers = distinctUsers.Count;
+                totalConnected = distinctConnectedUsers.Count;
+                totalNotConnected = usersNotConnected.Count;
+                totalPercentageOfConnectivity = 0f;
             }
 
-            var totalUsers = usersSchoolGeneral.Count;
-            var totalConnected = distinctUserIds.Count;
-            var totalNotConnected = usersNotConnected.Count;
-            var totalPercentageOfConnectivity = 0f;
             try
             {
                 totalPercentageOfConnectivity = (float.Parse(totalConnected.ToString()) / float.Parse(totalUsers.ToString()) * 100);
             }
             catch (Exception)
             {
-
             }
 
             return new FileResponseModel()
             {
                 File = await CreateConnectionsDocument(totalConnected, totalUsers, totalPercentageOfConnectivity, dateFrom, dateTo,
-                usersConnections, usersNotConnected)
+                    usersConnections, usersNotConnected, status)
             };
         }
 
@@ -160,7 +236,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="usersNotConnected">A list of users (full details) that have not been connected. </param>
         /// <returns></returns>
         private static async Task<string> CreateConnectionsDocument(float totalConnected, float totalUsers, float totalPercent, 
-            DateTime? dateFrom, DateTime? dateTo, List<UserSchoolModel> usersConnected, List<UserSchoolModel> usersNotConnected)
+            DateTime? dateFrom, DateTime? dateTo, List<UserSchoolModel> usersConnected, List<UserSchoolModel> usersNotConnected, string status = "ALL")
         {
             // Prepare the document.
             // Create a worksheet for user data
@@ -188,7 +264,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
 
             // Create headers for user data
             IRow totalDataRowHeader = totalsSheet.CreateRow(0);
-            string[] headerTotals = { "Total Connected", "Total Users", "Total Percent", "Date From", "Date To" };
+            string[] headerTotals = { $"Total Connected ({status})", $"Total Users ({status})", "Total Percent", "Date From", "Date To" };
             for (int i = 0; i < headerTotals.Length; i++)
             {
                 totalDataRowHeader.CreateCell(i).SetCellValue(headerTotals[i]);
@@ -201,13 +277,13 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             totalDataRow.CreateCell(2).SetCellValue(totalPercent);
             totalDataRow.CreateCell(3).SetCellValue(dateFrom.Value.ToString());
             totalDataRow.CreateCell(4).SetCellValue(dateTo.Value.ToString());
-
+            
             // Create the users connected information 
             ISheet usersConnectedSheet = workbook.CreateSheet("Connections");
             IRow userConnectedHeaderDataRow = usersConnectedSheet.CreateRow(0);
             string[] headerUsersConnections = { "User Id", "Username", "Email", "First Name", "Last Name", "Role",
             "School Id", "SIE (User record)", "Connection date (UTC)", "School name", "School type", "City",
-            "Ore (Region)", "State ISO Code", "Country", "School Identifier"};
+            "Ore (Region)", "State ISO Code", "Country", "School Identifier", "Subscription Status"};
             for (int i = 0; i < headerUsersConnections.Length; i++)
             {
                 userConnectedHeaderDataRow.CreateCell(i).SetCellValue(headerUsersConnections[i]);
@@ -236,6 +312,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
                     userDataRow.CreateCell(13).SetCellValue(usersConnected[dataRowNo].StateIsoCode);
                     userDataRow.CreateCell(14).SetCellValue(usersConnected[dataRowNo].Country);
                     userDataRow.CreateCell(15).SetCellValue(usersConnected[dataRowNo].SchoolIdentifier);
+                    userDataRow.CreateCell(16).SetCellValue(usersConnected[dataRowNo].SubscriptionStatus);
                     if (dataRowNo % 2 == 0)
                     {
                         userDataRow.RowStyle = rowStyleDetails;
@@ -249,11 +326,14 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             }
 
             // Create the users non connected information 
-            ISheet usersNotConnectedSheet = workbook.CreateSheet("Not connected");
+            ISheet usersNotConnectedSheet = workbook.CreateSheet($"Not connected ({status})");
             IRow userNotConnectedHeaderDataRow = usersNotConnectedSheet.CreateRow(0);
-            for (int i = 0; i < headerUsersConnections.Length; i++)
+            string[] headerNotConnectedConnections = { "User Id", "Username", "Email", "First Name", "Last Name", "Role",
+            "School Id", "SIE (User record)", "Connection date (UTC)", "School name", "School type", "City",
+            "Ore (Region)", "State ISO Code", "Country", "School Identifier"};
+            for (int i = 0; i < headerNotConnectedConnections.Length; i++)
             {
-                userNotConnectedHeaderDataRow.CreateCell(i).SetCellValue(headerUsersConnections[i]);
+                userNotConnectedHeaderDataRow.CreateCell(i).SetCellValue(headerNotConnectedConnections[i]);
                 userNotConnectedHeaderDataRow.Cells[i].CellStyle = headerStyleCustom;
             }
 
@@ -285,7 +365,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
                     }
                     dataRowNo++;
                 
-                    var tableRangeDetails = new CellRangeAddress(0, dataRowNo - 1, 0, headerUsersConnections.Length - 1);
+                    var tableRangeDetails = new CellRangeAddress(0, dataRowNo - 1, 0, headerNotConnectedConnections.Length - 1);
                     usersNotConnectedSheet.SetAutoFilter(tableRangeDetails);
                 }
             }
@@ -306,24 +386,33 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
         /// <param name="schoolIds">Optional: The id of the schools to filter.</param>
         /// <param name="userIds">Optional: The users' ids to filter.</param>
         /// <param name="oreId">Optional: (Required if ORE user): The ore to filter.</param>
+        /// <param name="status">Optional: The users' status to filter.</param>
         /// <param name="fromPage">Optional: From Page.</param>
         /// <param name="limiter">Optional: How many items per page.</param>
         /// <returns>Returns a list of user schools (the user details, connection details, and school details).</returns>
         private static List<UserSchoolModel> PrepareUsersConnections(
             int userIdRequester, bool isDirector, bool isStaff,
             DateTime? dateFrom, DateTime? dateTo, List<int> schoolIds = null,
-            List<int> userIds = null, int? oreId = null, int? fromPage = null, int? limiter = null)
+            List<int> userIds = null, int? oreId = null, string status = null, int? fromPage = null, int? limiter = null)
         {
             // If Ore is not null, call the schools first, so filter by schools. 
             List<int> schoolIdsFinale = new List<int>();
 
-            // If ore is not null, it should return the schools of the ore. 
-            if (oreId != null)
+            if (isStaff)
             {
-                schoolIdsFinale = AutoFilters.GetOreSchoolIds(oreId.Value, schoolIds);
-                if(schoolIdsFinale == null || schoolIdsFinale.Count == 0)
+                // If ore is not null, it should return the schools of the ore. 
+                if (oreId != null)
                 {
-                    return new List<UserSchoolModel>();
+                    schoolIdsFinale = AutoFilters.GetOreSchoolIds(oreId.Value, schoolIds);
+                    if (schoolIdsFinale == null || schoolIdsFinale.Count == 0)
+                    {
+                        return new List<UserSchoolModel>();
+                    }
+                }
+
+                if(schoolIds != null)
+                {
+                    schoolIdsFinale.AddRange(schoolIds);
                 }
             }
 
@@ -349,7 +438,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
 
             List<UserSchoolModel> connectedDatesData = Infrastructure.Dapper.Connections.GetUsersConnections(
                 dateFrom, dateTo, schoolIdsFinale != null && schoolIdsFinale.Count() > 0 ? schoolIdsFinale : null,
-                userIds);
+                userIds, status);
 
             // Sort by datetime 
             connectedDatesData = connectedDatesData.OrderByDescending(x => x.ConnectedDate).ToList();
@@ -357,7 +446,7 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Services
             // Limit 
             if(fromPage != null && limiter != null)
             {
-                connectedDatesData = connectedDatesData.Skip(fromPage.Value * limiter.Value).Take(limiter.Value).ToList();
+                connectedDatesData = connectedDatesData.Skip(fromPage.Value).Take(limiter.Value).ToList();
             }
 
             return connectedDatesData;

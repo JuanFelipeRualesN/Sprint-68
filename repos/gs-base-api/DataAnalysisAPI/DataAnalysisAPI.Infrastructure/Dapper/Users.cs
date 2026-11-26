@@ -22,19 +22,21 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Infrastructure.Dapper
         /// <param name="dateTo">Optional: Date to connected.</param>
         /// <param name="schoolIds">Optional: The schools to filter.</param>
         /// <param name="userIds">Optional: The user ids to filter.</param>
+        /// <param name="status">Optional: The user status to filter.</param>
         /// <returns>Returns the list of connections.</returns>
         public static List<UserSchoolModel> GetUsers(string sie = null, List<int> roleIds = null, List<int> schoolIds = null,
-            List<int> userIds = null)
+            List<int> userIds = null, string status = null)
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             DynamicParameters parameters = new DynamicParameters();
 
-            string query = @"SELECT us.user_id, us.username, 
-            us.email, us.first_name, us.last_name, us.role_id, us.role, us.school_id, us.sie,
-            `sh`.`school_name`, `sh`.`school_type`, `sh`.`city`, `sh`.`ore`, `sh`.`ore_id`, `sh`.`state_iso_code`,
-            `sh`.`country`, `sh`.`country_iso`, `sh`.`school_identifier`
-            FROM `gs_data_analysis`.`user` us
-            LEFT JOIN `gs_data_analysis`.`school` sh ON sh.school_id = us.school_id ";
+            string query = @"SELECT DISTINCT us.user_id, us.username, 
+                us.email, us.first_name, us.last_name, us.role_id, us.role, us.school_id, us.sie,
+                `sh`.`school_name`, `sh`.`school_type`, `sh`.`city`, `sh`.`ore`, `sh`.`ore_id`, `sh`.`state_iso_code`,
+                `sh`.`country`, `sh`.`country_iso`, `sh`.`school_identifier`, sph.status as subscription_status, sph.subscription_id, sph.cancellation_date, sph.plan_name
+                FROM `gs_data_analysis`.`user` us
+                LEFT JOIN `gs_data_analysis`.`school` sh ON sh.school_id = us.school_id
+                LEFT JOIN `gs_data_analysis`.`subscription_profile_history` sph ON us.user_id = sph.user_id ";
 
             bool whereUsed = false;
             if (sie != null)
@@ -126,6 +128,30 @@ namespace DataAnalysisAPI.DataAnalysisAPI.Infrastructure.Dapper
                 }
                 query += ") ";
             }
+
+            if (status != null)
+            {
+                status = status.ToLower();
+
+                string statusLogic = @"(
+                                (@status = 'active' AND sph.status = 'active' AND sph.cancellation_date  >= NOW())
+                                OR
+                                (@status = 'inactive' AND ((sph.status = 'active' AND sph.cancellation_date  < NOW()) OR (sph.status <> 'active' OR sph.status IS NULL)))
+                           )";
+
+                if (!whereUsed)
+                {
+                    query += " WHERE " + statusLogic;
+                    whereUsed = true;
+                }
+                else
+                {
+                    query += " AND " + statusLogic;
+                }
+
+                parameters.Add("@status", status);
+            }
+
 
             IEnumerable<UserSchoolModel> items = null;
             MySqlConnection connection = Configurations.GetMySqlConnection();

@@ -1,11 +1,11 @@
-﻿using PdfSharp.Pdf;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using GSPlanning.Domain;
 using TeachersAPI.Domain.Models.Generals.Responses;
 using TeachersAPI.Domain.Models.Lessons.Response;
 using TeachersAPI.Domain.Models.Teachers.Preview;
+using GSPlanning.Models;
 
 namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
 {
@@ -26,6 +26,10 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
         private List<TeacherPlanOtherSubjectIntegration> otherSubjectIntegrations;
         private List<TeacherPlanPraxisReflection> praxisReflections;
         private List<TeacherPlanStrategy> strategies;
+        private List<TeacherPlanDifferentiationStrategy> differentiationStrategies;
+        private List<TeacherPlanObservation> observations;
+        private List<TeacherPlanCommonExperience> commonExperiences;
+        private List<TeacherPlanActiveResponse> activeResponses;
 
         /// <summary>
         /// 
@@ -167,12 +171,88 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             return this;
         }
 
+        public TeacherPlanningPreviewPdfDataBuilder AddDifferentiationStrategies(List<TeacherPlanDifferentiationStrategy> differentiationStrategies)
+        {
+            this.differentiationStrategies = differentiationStrategies;
+            return this;
+        }
+
+        public TeacherPlanningPreviewPdfDataBuilder AddObservations(List<TeacherPlanObservation> observations)
+        {
+            this.observations = observations;
+            return this;
+        }
+
+        public TeacherPlanningPreviewPdfDataBuilder AddCommonExperiences(List<TeacherPlanCommonExperience> commonExperiences)
+        {
+            this.commonExperiences = commonExperiences;
+            return this;
+        }
+
+
+        public TeacherPlanningPreviewPdfDataBuilder AddActiveResponses(List<TeacherPlanActiveResponse> activeResponses)
+        {
+            this.activeResponses = activeResponses;
+            return this;
+        }
+
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public TeacherPlanningPreviewPdfData Build()
+        public TeacherPlanningPreviewPdfData Build(string langCode ="es")
         {
+            #region Build Labels
+
+
+            var buildLabels = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+            {
+
+                ["es"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["LessonContent"] = "Contenido genial",
+                    ["FreeContent"] = "Contenido libre",
+                    ["Assignments"] = "Asignaciones",
+                    ["Subjects"] = "Integración con otras materias",
+                    ["Projects"] = "Iniciativa o proyecto innovador",
+                    ["Evaluations"] = "Evaluación y avalúos",
+                    ["Accommodations"] = "Acomodos razonables",
+                    ["Materials"] = "Materiales",
+                    ["Reflections"] = "Reflexión de praxis",
+                    ["DifferentiationStrategy"] = "Estrategias de instrucción diferenciada",
+                    ["Observations"] = "Observaciones",
+                    ["CommonExperience"] = "Plan de mejoramiento experiencia común (2–3 min)",
+                    ["ActiveStudentResponse"] = "Plan de mejoramiento respuesta activa del estudiante",
+                    ["GoalAchieved"] = "Se logró el objetivo",
+                    ["GoalNotAchieved"] = "No se logró el objetivo"
+                },
+                ["en"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["LessonContent"] = "Genial content",
+                    ["FreeContent"] = "Open content",
+                    ["Assignments"] = "Assignments",
+                    ["Subjects"] = "Integration with other subjects",
+                    ["Projects"] = "Innovative initiative or project",
+                    ["Evaluations"] = "Evaluations (Assessments)",
+                    ["Accommodations"] = "Reasonable accommodations",
+                    ["Materials"] = "Materials",
+                    ["Reflections"] = "Praxis reflection",
+                    ["DifferentiationStrategy"] = "Differentiated instruction strategies",
+                    ["Observations"] = "Observations",
+                    ["CommonExperience"] = "Improvement plan common experience (2–3 min)",
+                    ["ActiveStudentResponse"] = "Improvement plan student active response",
+                    ["GoalAchieved"] = "Goal achieved",
+                    ["GoalNotAchieved"] = "Goal not achieved"
+                }
+            };
+
+            #endregion
+
+            if (!buildLabels.TryGetValue(langCode ?? "es", out var labels))
+                labels = buildLabels["es"];
+
+            string T(string key) => labels.TryGetValue(key, out var v) ? v : key;
+
             DateTime openDate = DateTime.Parse(teacherPlanningDetail.TeacherPlanModel.OpenDate);
             DateTime closeDate = DateTime.Parse(teacherPlanningDetail.TeacherPlanModel.CloseDate);
             var pdfData = new TeacherPlanningPreviewPdfData(openDate, closeDate);
@@ -198,7 +278,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
                 {
                     var implementationDate = DateTime.Parse(date.ImplementationDate);
 
-                    pdfData.AddDataLessonToDay(implementationDate, new DataInfo { Title = "Contenido Genial", Description = lesson.Title, Type = "Contenido Genial" });
+                    pdfData.AddDataLessonToDay(implementationDate, new DataInfo { Title = T("LessonContent"), Description = lesson.Title, Type = T("LessonContent") });
 
                     if (!uniqueStandardsByDay.ContainsKey(implementationDate))
                         uniqueStandardsByDay[implementationDate] = new HashSet<(string, string)>();
@@ -275,7 +355,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             foreach (dynamic assignment in teacherPlanningDetail.QuizzesAttachedModelList)
             {
                 var dueDate = assignment.DueDate.ToString().Split(' ')[0].ToString();
-                pdfData.AddDataAssignmentsToDay(DateTime.Parse(dueDate), new DataInfo { Title = "Asignaciones", Description = assignment.Title });
+                pdfData.AddDataAssignmentsToDay(DateTime.Parse(dueDate), new DataInfo { Title = T("Assignments"), Description = assignment.Title });
             }
 
             foreach (var lessons in teacherPlanLessonFullDetailModels)
@@ -302,7 +382,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             {
                 foreach (var implementationDate in otherSubjectIntegration.TeacherPlanOtherSubjectIntegrationDates)
                 {
-                    pdfData.AddDataOtherSubjectIntegrationsToDay(implementationDate.ImplementationDate, new DataInfo {Description = otherSubjectIntegration.Description, Type = DataInfo.CustomLessonType});
+                    pdfData.AddDataOtherSubjectIntegrationsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Subjects"), Description = otherSubjectIntegration.Description, Type = DataInfo.CustomLessonType});
                 }
             }
             
@@ -310,7 +390,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             {
                 foreach (var implementationDate in initiativeProjectInnovation.TeacherPlanInitiativeProjectInnovationDates)
                 {
-                    pdfData.AddDataInitiativeProjectInnovationsToDay(implementationDate.ImplementationDate, new DataInfo {Description = initiativeProjectInnovation.Description, Type = DataInfo.CustomLessonType});
+                    pdfData.AddDataInitiativeProjectInnovationsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Projects"), Description = initiativeProjectInnovation.Description, Type = DataInfo.CustomLessonType});
                 }
             }
             
@@ -318,7 +398,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             {
                 foreach (var implementationDate in evaluation.TeacherPlanEvaluationsDates)
                 {
-                    pdfData.AddDataEvaluationsToDay(implementationDate.ImplementationDate, new DataInfo { Description = evaluation.Description});
+                    pdfData.AddDataEvaluationsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Evaluations"), Description = evaluation.GetDescriptionByLang(langCode)});
                 }
             }
 
@@ -326,7 +406,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             {
                 foreach (var implementationDate in accommodation.TeacherPlanAccommodationDates)
                 {
-                    pdfData.AddDataAccommodationsToDay(implementationDate.ImplementationDate, new DataInfo { Description = accommodation.Description, Type = DataInfo.CustomLessonType});
+                    pdfData.AddDataAccommodationsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Accommodations"), Description = accommodation.Description, Type = DataInfo.CustomLessonType});
                 }
             }
             
@@ -334,7 +414,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
             {
                 foreach (var implementationDate in material.TeacherPlanMaterialDates)
                 {
-                    pdfData.AddDataMaterialsToDay(implementationDate.ImplementationDate, new DataInfo { Description = material.Description, Type = DataInfo.CustomLessonType});
+                    pdfData.AddDataMaterialsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Materials"), Description = material.Description, Type = DataInfo.CustomLessonType});
                 }
             }
 
@@ -353,8 +433,8 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
                     string description;
 
                     string completedMessage = praxisReflection.IsCompleted == 1
-                        ? "Se logró el objetivo"
-                        : "No se logró el objetivo";
+                        ? T("GoalAchieved")
+                        : T("GoalNotAchieved");
 
                     string details = null;
 
@@ -383,7 +463,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
                     description = !string.IsNullOrEmpty(details)
                         ? $"{completedMessage}: {details}" : completedMessage;
 
-                    pdfData.AddDataPraxisReflectionsToDay(implementationDate.ImplementationDate, new DataInfo { Description = description, Type = DataInfo.CustomLessonType});
+                    pdfData.AddDataPraxisReflectionsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Reflections"), Description = description, Type = DataInfo.CustomLessonType});
                 }
             }
 
@@ -396,7 +476,7 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
 
                     pdfData.AddDataLessonToDay(implementationDate.ImplementationDate, new DataInfo
                     {
-                        Title = "Contenido Libre",
+                        Title = T("FreeContent"),
                         Description = lessonTitle,
                         Type = DataInfo.CustomLessonType
                     });
@@ -530,6 +610,41 @@ namespace TeachersAPI.TeachersAPI.Services.PlanningPreview
                     }
                 }
             }
+
+            foreach (var differentiationStrategy in differentiationStrategies)
+            {
+                foreach (var implementationDate in differentiationStrategy.TeacherPlanDifferentiationStrategyDates)
+                {
+                    pdfData.AddDataDifferentiationStrategiesToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("DifferentiationStrategy"), Description = differentiationStrategy.Description });
+                }
+
+            }
+
+            foreach (var observation in observations)
+            {
+                foreach (var implementationDate in observation.TeacherPlanObservationDates)
+                {
+                    pdfData.AddDataObservationsToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("Observations"), Description = observation.Detail });
+                }
+            }
+
+            foreach (var commonExperience in commonExperiences)
+            {
+                foreach (var implementationDate in commonExperience.TeacherPlanCommonExperienceDates)
+                {
+                    pdfData.AddDataCommonExperiencesToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("CommonExperience"), Description = commonExperience.Detail });
+                }
+            }
+
+            foreach (var activeResponse in activeResponses)
+            {
+                foreach (var implementationDate in activeResponse.TeacherPlanActiveResponseDates)
+                {
+                    pdfData.AddDataActiveResponsesToDay(implementationDate.ImplementationDate, new DataInfo { Title = T("ActiveStudentResponse"), Description = activeResponse.Description });
+                }
+            }
+
+
             return pdfData;
         }
     }

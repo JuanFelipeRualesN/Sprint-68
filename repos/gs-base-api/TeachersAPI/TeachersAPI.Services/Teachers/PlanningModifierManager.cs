@@ -1,22 +1,23 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Configuration;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+using TeachersAPI;
+using TeachersAPI.CustomClasses;
+using TeachersAPI.Domain.Models.FeignAPI;
+using TeachersAPI.Domain.Models.Generals.Responses.APIs;
+using TeachersAPI.Domain.Models.Lessons;
 using TeachersAPI.Domain.Models.Teachers;
+using TeachersAPI.TeachersAPI.Infrastructure.DapperHandler;
 using TeachersAPI.TeachersAPI.Infrastructure.Repositories.Teachers;
 using TeachersAPI.TeachersAPI.Services.Generals;
-using TeachersAPI.TeachersAPI.Infrastructure.DapperHandler;
-using TeachersAPI.Utils;
-using TeachersAPI.Domain.Models.Generals.Responses.APIs;
-using System.Threading.Tasks;
-using TeachersAPI.CustomClasses;
-using System.Net.Http;
-using System.Diagnostics;
-using TeachersAPI.Domain.Models.Lessons;
 using TeachersAPI.TeachersAPI.Services.Lessons;
-using TeachersAPI.Domain.Models.FeignAPI;
-using Microsoft.AspNetCore.Http;
-using TeachersAPI;
+using TeachersAPI.Utils;
 
 
 namespace TeachersAPI.TeachersAPI.Services.Teachers
@@ -43,6 +44,67 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         }
 
         /// <summary>
+        /// To archive the planning.
+        /// </summary>
+        /// <param name="planningId">The planning id to archive.</param>
+        /// <param name="responseSession">The user in session.</param>
+        /// <returns>Return the plan details of the plan archive.</returns>
+        public async Task<TeacherPlanModel> ArchivePlanning(string planningId, ValidationResponseModel responseSession)
+        {
+            // First, delete the groups that have the planning. 
+            // Call the current groups of the plan.
+            var currentGroups = new TeacherPlanGroupDAO().Read(_connectionStringRead,
+                new TeacherPlanGroupModel() { TeacherPlanId = planningId }, false, false);
+            if (currentGroups.Count > 0)
+            {
+
+                var responseDB = new TeacherPlanGroupDAO().Delete(_connectionString, new TeacherPlanGroupModel()
+                {
+                    TeacherPlanId = planningId
+                });
+                // Selects the first element from each group
+                var groupsDistinct = currentGroups.GroupBy(g => g.GroupId).Select(x => x.First()).ToList();
+
+                if (groupsDistinct.Count > 0)
+                {
+                    foreach (var group in groupsDistinct)
+                    {
+                        try
+                        {
+                            // Remove event in Microsoft Teams for all users.
+                            await GraphAPI.DeleteEventAsync(responseSession.Email, planningId, group.GroupId);
+                        }
+                        catch (Exception)
+                        {
+                            // Ignore. This is non-critical.
+                        }
+                    }
+                }
+            }
+
+            // Then, archive the plan.
+            var teacherPlanToReturn =
+              new TeacherPlanDAO().Update(_connectionString, new TeacherPlanModel()
+              {
+                  Available = "0",
+                  ModifiedBy = responseSession.UserId,
+              }, new TeacherPlanModel()
+              {
+                  Id = planningId
+              });
+
+            if(teacherPlanToReturn.Count > 0)
+            {
+                teacherPlanToReturn[0].Valid = true;
+                return teacherPlanToReturn[0];
+            }
+            else
+            {
+                return new TeacherPlanModel();
+            }
+        }
+
+        /// <summary>
         /// To modify a planning. 
         /// </summary>
         /// <param name="teacherPlan">Teacher plan to modify.</param>
@@ -64,6 +126,23 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             var planingReaderManager = new PlanningReaderManager(AppConfiguration.Configuration["ConnectionStrings:TeacherWebAPIConnectionStringReader"], responseSession.LangCode);
             var planningDetail = planingReaderManager.GetTeacherPlanFullDetails(teacherPlan.Id, responseSession.UserId, RequestHandler.GetToken(context));
 
+            if(teacherPlan.OpenDate != null)
+            {
+                teacherPlan.OpenDate = DatesFormatter.ConvertFromCSharpDateTimeToMySql(teacherPlan.OpenDate);
+            }
+            if(teacherPlan.CloseDate != null)
+            {
+                teacherPlan.CloseDate = DatesFormatter.ConvertFromCSharpDateTimeToMySql(teacherPlan.CloseDate);
+            }
+            if(teacherPlanToValidateIfChangesAllowed.OpenDate != null)
+            {
+                teacherPlanToValidateIfChangesAllowed.OpenDate = DatesFormatter.ConvertFromCSharpDateTimeToMySql(teacherPlanToValidateIfChangesAllowed.OpenDate);
+            }
+            if (teacherPlanToValidateIfChangesAllowed.CloseDate != null)
+            {
+                teacherPlanToValidateIfChangesAllowed.CloseDate = DatesFormatter.ConvertFromCSharpDateTimeToMySql(teacherPlanToValidateIfChangesAllowed.CloseDate);
+            }
+
             var teacherPlanToReturn =
             new TeacherPlanDAO().Update(_connectionString, new TeacherPlanModel()
             {
@@ -82,6 +161,11 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             {
                 Id = teacherPlan.Id,
             })[0];
+
+            if (!teacherPlanToReturn.Valid)
+            {
+                return teacherPlanToReturn;
+            }
 
             // If the group property exists, check the groups of the plan. 
             if (teacherPlan.Groups != null)
@@ -161,6 +245,13 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             }
             catch (Exception ex)
             {
+                teacherPlanToReturn = new TeacherPlanModel()
+                {
+                    Messages = new List<string>()
+                    {
+                        ex.ToString()
+                    }
+                };
                 Debug.WriteLine($"An exception has occurred in the graph process, detail: {ex.Message}");
             }
 
@@ -237,7 +328,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             };
 
             // Check if name is valid 
-            ResponseModel response =
+            var response =
                 CustomClasses.Validator.ValidateName(teacherPlan.Name);
 
             teacherPlan = CleanTeacherPlanModel(teacherPlan);
@@ -359,7 +450,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                 if (teacherPlanLessonQuizList != null && teacherPlanLessonQuizList.Count > 0)
                 {
                     // Validate details of the teacher plan lesson quizzess
-                    ResponseModel validateLessonQuizzessResponse =
+                    var validateLessonQuizzessResponse =
                     ValidateTeacherPlanLessonQuizzess(teacherPlanLessonQuizList,
                         DateTime.Parse(teacherPlanLessonModel.DueDate), false);
                     if (!validateLessonQuizzessResponse.Valid)
@@ -562,7 +653,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                         teacherPlanLessonModel.Id);
 
                     // Validate details of the teacher plan lesson quizzess
-                    ResponseModel validateLessonQuizzessResponse =
+                    var validateLessonQuizzessResponse =
                         ValidateTeacherPlanLessonQuizzess(teacherPlanLessonQuizModels,
                             DateTime.Parse(teacherPlanLessonModel.DueDate), true);
                     if (!validateLessonQuizzessResponse.Valid)
@@ -1257,14 +1348,14 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         /// <returns>Returns a HTTP Response message with transaction details.</returns>
         public ResponseModel DeleteQuizFromPlanning(TeacherPlanQuizModel teacherPlanQuizModel)
         {
-            ResponseModel responseModel = new ResponseModel()
+            var responseModel = new ResponseModel()
             {
                 Valid = true,
                 Messages = new List<string>(),
             };
 
             // Evaluate if plan can be modified 
-            TeacherPlanModel teacherPlanToValidateIfChangesAllowed = ValidateIfTeacherPlanAllowChanges(teacherPlanQuizModel.PlanId);
+            var teacherPlanToValidateIfChangesAllowed = ValidateIfTeacherPlanAllowChanges(teacherPlanQuizModel.PlanId);
             if (!teacherPlanToValidateIfChangesAllowed.Valid)
             {
                 return new ResponseModel()
@@ -1309,7 +1400,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         /// <returns>Returns a HTTP Response message with transaction details.</returns>
         public ResponseModel DeleteLessonFromPlanning(TeacherPlanLessonModel teacherPlanLessonModel)
         {
-            ResponseModel responseModel = new ResponseModel()
+            var responseModel = new ResponseModel()
             {
                 Valid = true,
                 Messages = new List<string>(),
@@ -1327,7 +1418,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             }
             // End of evaluation
 
-            MessageManager messageManager = new MessageManager(_connectionStringRead,
+            var messageManager = new MessageManager(_connectionStringRead,
             _langCode);
             if (string.IsNullOrWhiteSpace(teacherPlanLessonModel.Id))
             {
@@ -1359,10 +1450,10 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         /// <returns>Returns the teacher plan group model with transaction details.</returns>
         public TeacherPlanGroupModel AttachGroupToPlanning(List<TeacherPlanGroupModel> teacherPlanGroupModels, string userSessionId)
         {
-            MessageManager messageManager = new MessageManager(_connectionStringRead, _langCode);
+            var messageManager = new MessageManager(_connectionStringRead, _langCode);
 
             // If group id or teacher plan id is null or empty, send error.
-            List<TeacherPlanGroupModel> teacherPlanGroupModelCheckIfExists = new List<TeacherPlanGroupModel>();
+            var teacherPlanGroupModelCheckIfExists = new List<TeacherPlanGroupModel>();
             foreach (TeacherPlanGroupModel teacherPlanGroupModel in teacherPlanGroupModels)
             {
                 teacherPlanGroupModel.ModifiedBy = userSessionId;
@@ -1386,10 +1477,10 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             }
 
             // Check the ones that exists
-            TeacherPlanGroupDAO teacherPlanGroupDAO = new TeacherPlanGroupDAO();
+            var teacherPlanGroupDAO = new TeacherPlanGroupDAO();
             if (teacherPlanGroupModelCheckIfExists.Count > 0)
             {
-                List<TeacherPlanGroupModel> teacherPlanGroupModelCheckIfExistsCheck = teacherPlanGroupDAO.Read(_connectionStringRead, teacherPlanGroupModelCheckIfExists);
+                var teacherPlanGroupModelCheckIfExistsCheck = teacherPlanGroupDAO.Read(_connectionStringRead, teacherPlanGroupModelCheckIfExists);
                 if (teacherPlanGroupModelCheckIfExistsCheck != null && teacherPlanGroupModelCheckIfExistsCheck.Count > 0)
                 {
                     foreach (TeacherPlanGroupModel teacherPlanGroupExist in teacherPlanGroupModelCheckIfExistsCheck)
@@ -1432,9 +1523,9 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         /// <returns>Returns the teacher plan group model with transaction details.</returns>
         public TeacherPlanGroupModel DeleteGroupFromPlanning(TeacherPlanGroupModel teacherPlanGroupModel)
         {
-            MessageManager messageManager = new MessageManager(_connectionStringRead, _langCode);
+            var messageManager = new MessageManager(_connectionStringRead, _langCode);
             // Create teacher plan
-            TeacherPlanGroupModel teacherPlanGroup = new TeacherPlanGroupDAO().Delete(_connectionString, teacherPlanGroupModel)[0];
+            var teacherPlanGroup = new TeacherPlanGroupDAO().Delete(_connectionString, teacherPlanGroupModel)[0];
             teacherPlanGroup.Valid = true;
             teacherPlanGroup.Messages = new List<string>()
             {
@@ -1903,11 +1994,11 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                         if (DateTime.Parse(teacherPlanLessonQuiz.DueDate) != DateTime.Parse(teacherPlanLessonQuizModelToCompareDate.DueDate))
                         {
 
-                            if (CustomClasses.DateTimeZoneManager.ConvertTimeZoneAndDateToUniversalDateTime(DateTime.Parse(teacherPlanLessonQuiz.DueDate), teacherPlanLessonQuiz.DueDateTimezone) < CustomClasses.DateTimeZoneManager.ConvertToUniversalDateTime(DateTime.Now))
+                            if (CustomClasses.DateTimeZoneManager.ConvertTimeZoneAndDateToUniversalDateTime(DateTime.Parse(teacherPlanLessonQuiz.DueDate), teacherPlanLessonQuiz.DueDateTimezone).AddMinutes(1) <= CustomClasses.DateTimeZoneManager.ConvertToUniversalDateTime(DateTime.Now))
                             {
                                 responseModel.Valid = false;
                                 responseModel.Messages = new List<string>() {
-                                    new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_due_date_invalid"])
+                                    new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_quiz_due_date_past"])
                                 };
                                 return responseModel;
                             }
@@ -1917,11 +2008,11 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                 else
                 {
 
-                    if (CustomClasses.DateTimeZoneManager.ConvertTimeZoneAndDateToUniversalDateTime(DateTime.Parse(teacherPlanLessonQuiz.DueDate), teacherPlanLessonQuiz.DueDateTimezone) < CustomClasses.DateTimeZoneManager.ConvertToUniversalDateTime(DateTime.Now))
+                    if (CustomClasses.DateTimeZoneManager.ConvertTimeZoneAndDateToUniversalDateTime(DateTime.Parse(teacherPlanLessonQuiz.DueDate), teacherPlanLessonQuiz.DueDateTimezone).AddMinutes(1) <= CustomClasses.DateTimeZoneManager.ConvertToUniversalDateTime(DateTime.Now))
                     {
                         responseModel.Valid = false;
                         responseModel.Messages = new List<string>() {
-                                    new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_due_date_invalid"])
+                                    new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_quiz_due_date_past"])
                                 };
                         return responseModel;
                     }
@@ -1941,7 +2032,7 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
             List<TeacherPlanLessonQuizModel> teacherPlanLessonQuizzess, DateTime teacherPlanLessonAvailableDate,
             bool isEdit)
         {
-            ResponseModel responseModel = new ResponseModel()
+            var responseModel = new ResponseModel()
             {
                 Valid = true,
                 Messages = new List<string>()
@@ -2011,10 +2102,15 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
 
                 try
                 {
+                    DateTime quizDueDate = DateTime.Parse(teacherPlanLessonQuiz.DueDate).Date;
+
                     TimeZoneInfo sourceTimeZone =
                         TimeZoneInfo.FindSystemTimeZoneById(teacherPlanLessonQuiz.DueDateTimezone);
-                    if (teacherPlanLessonAvailableDate >
-                        TimeZoneInfo.ConvertTimeToUtc(DateTime.Parse(teacherPlanLessonQuiz.DueDate), sourceTimeZone))
+
+                    DateTime quizDueDateNormalized = TimeZoneInfo.ConvertTimeToUtc(quizDueDate, sourceTimeZone);
+                    DateTime planLessonAvailableDateNormalized = teacherPlanLessonAvailableDate.Date;
+
+                    if (planLessonAvailableDateNormalized.Date > quizDueDateNormalized.Date)
                     {
                         responseModel.Valid = false;
                         responseModel.Messages.Add(
@@ -2051,14 +2147,14 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                         {
                             if (CustomClasses.DateTimeZoneManager.ConvertTimeZoneAndDateToUniversalDateTime(
                                     DateTime.Parse(teacherPlanLessonQuiz.DueDate),
-                                    teacherPlanLessonQuiz.DueDateTimezone) <
+                                    teacherPlanLessonQuiz.DueDateTimezone).AddMinutes(1) <=
                                 CustomClasses.DateTimeZoneManager.ConvertToUniversalDateTime(DateTime.Now))
                             {
                                 responseModel.Valid = false;
                                 responseModel.Messages = new List<string>()
                                 {
                                     new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(
-                                        AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_due_date_invalid"])
+                                        AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_quiz_due_date_past"])
                                 };
                                 return responseModel;
                             }
@@ -2068,14 +2164,14 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                 else
                 {
                     if (CustomClasses.DateTimeZoneManager.ConvertTimeZoneAndDateToUniversalDateTime(
-                            DateTime.Parse(teacherPlanLessonQuiz.DueDate), teacherPlanLessonQuiz.DueDateTimezone) <
+                            DateTime.Parse(teacherPlanLessonQuiz.DueDate), teacherPlanLessonQuiz.DueDateTimezone).AddMinutes(1) <=
                         CustomClasses.DateTimeZoneManager.ConvertToUniversalDateTime(DateTime.Now))
                     {
                         responseModel.Valid = false;
                         responseModel.Messages = new List<string>()
                         {
                             new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(
-                                AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_due_date_invalid"])
+                                AppConfiguration.Configuration["AppSettings:tm_message_plan_lesson_quiz_due_date_past"])
                         };
                         return responseModel;
                     }
@@ -2132,6 +2228,14 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
                 {
                     teacherPlan.OpenDate = null;
                 }
+            }
+
+            if(teacherPlan.Groups != null && teacherPlan.Groups.Count > 0)
+            {
+                // Delete the duplication
+                teacherPlan.Groups = teacherPlan.Groups
+               .DistinctBy(g => g.GroupId)
+               .ToList();
             }
 
             return teacherPlan;
@@ -2214,9 +2318,9 @@ namespace TeachersAPI.TeachersAPI.Services.Teachers
         /// <returns>A valid response if lesson is in an available course</returns>
         public async Task<ResponseModel> IsLessonInTeacherCourses(string lessonId, SubscriptionResponseModel availableCourses)
         {
-            MessageManager messageManager = new MessageManager(_connectionStringRead, _langCode);
+            var messageManager = new MessageManager(_connectionStringRead, _langCode);
 
-            ResponseModel responseModel = new ResponseModel
+            var responseModel = new ResponseModel
             {
                 Valid = false,
                 Messages = new List<string>()

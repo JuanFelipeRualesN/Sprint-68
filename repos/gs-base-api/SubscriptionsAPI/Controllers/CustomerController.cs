@@ -11,7 +11,7 @@ namespace SubscriptionsAPI.Controllers
     /// Handles customer details. This is intended to be used for commercial purposes. However, to not break the flow 
     /// between commercial and non-commercial, we decided to create a dummy customer id. 
     /// </summary>
-   [ApiController]
+    [ApiController]
     [Route("subscriptionsapi/customers/stripe")]
     public class CustomerController : ControllerBase
     {
@@ -39,7 +39,7 @@ namespace SubscriptionsAPI.Controllers
                  AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"],
                  RequestHandler.GetLanguage(HttpContext))
                 .CreateCustomer(customerRequest.Email, customerRequest.UserId,
-                AppConfiguration.Configuration["AppSettings:subs_stripe_key"], stripeRequired);
+                AppConfiguration.Configuration["AppSettings:SubsStripeKey"], stripeRequired);
 
             return Ok(customerModel.PlatformId);
         }
@@ -81,7 +81,7 @@ namespace SubscriptionsAPI.Controllers
                 customerRequest.UserId,
                 customerRequest.Email,
                 customerRequest.StripeToken,
-                AppConfiguration.Configuration["AppSettings:subs_stripe_key"],
+                AppConfiguration.Configuration["AppSettings:SubsStripeKey"],
                 responseSession.UserId);
 
             if (!response.TransactionValid)

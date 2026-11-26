@@ -35,13 +35,21 @@ namespace AddressAPI.AddressAPI.Services
         /// <summary>
         /// Returns a list of state details according to the ISO Code Alpha 3 (Iso Code 2 in the DB). This was created to evaluate the state ISOs.
         /// </summary>
-        /// <param name="countryIsoAlpha3">The ISO Code Alpha 3. Example: USA, PRI.</param>
+        /// <param name="countryIsoAlpha">The ISO Code Alpha 3. Example: USA, PRI.</param>
         /// <param name="onlyAvailables">true to call only the available states, else, false.</param>
         /// <returns>Returns a list of the country's states.</returns>
-        public List<StatesRegionsProvidenceModel> GetStatesByCountryIso2(string countryIsoAlpha3, bool onlyAvailables)
+        public List<StatesRegionsProvidenceModel> GetStatesByCountryIso2(string countryIsoAlpha, bool onlyAvailables)
         {
-            // First we get the ISO Alpha 1 (Iso Code 1) by the Iso Code 2
-            string isoCode = GetIso1FromIso2Country(countryIsoAlpha3);
+            if(String.IsNullOrWhiteSpace(countryIsoAlpha))
+            {
+                return new List<StatesRegionsProvidenceModel>();
+            }
+
+            string isoCode = countryIsoAlpha;
+            if (countryIsoAlpha.Length > 2)
+            {
+                isoCode = GetIso1FromIso2Country(countryIsoAlpha);
+            }
 
             var statesRegionsProvidenceModel = new StatesRegionsProvidenceModel
             {

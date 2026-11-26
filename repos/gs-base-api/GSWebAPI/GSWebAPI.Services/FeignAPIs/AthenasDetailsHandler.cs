@@ -43,7 +43,7 @@ namespace GSWebAPI.GSWebAPI.Services.FeignAPIs
                 client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_service_url"]);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                 client.DefaultRequestHeaders.Add("Token", token);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_quiz"];
@@ -90,7 +90,7 @@ namespace GSWebAPI.GSWebAPI.Services.FeignAPIs
                 clientLessonQuizzes.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_service_url"]);
                 clientLessonQuizzes.DefaultRequestHeaders.Accept.Clear();
                 clientLessonQuizzes.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                clientLessonQuizzes.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                clientLessonQuizzes.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_get_lesson_quizzes"];
                 url = url.Replace("{0}", lessonId);
@@ -128,7 +128,7 @@ namespace GSWebAPI.GSWebAPI.Services.FeignAPIs
                 clientLessonQuizzes.DefaultRequestHeaders.Add("Token", token);
                 clientLessonQuizzes.DefaultRequestHeaders.Accept.Clear();
                 clientLessonQuizzes.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                clientLessonQuizzes.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                clientLessonQuizzes.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                 string url = AppConfiguration.Configuration["AppSettings:athenas_api_quiz_read_random"];
                 url = url.Replace("{$subjectCode}", subjectCode);
@@ -171,7 +171,7 @@ namespace GSWebAPI.GSWebAPI.Services.FeignAPIs
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_service_url"]);
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -232,7 +232,7 @@ namespace GSWebAPI.GSWebAPI.Services.FeignAPIs
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     client.DefaultRequestHeaders.Add("Accept-Language", langCode);
-                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                    client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
 
                     var response = client.GetAsync(AppConfiguration.Configuration["AppSettings:athenas_web_api_get_subjects"]).Result;
                     if (response.IsSuccessStatusCode)
@@ -291,7 +291,7 @@ namespace GSWebAPI.GSWebAPI.Services.FeignAPIs
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(AppConfiguration.Configuration["AppSettings:athenas_service_url"]);
-                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:athenas_web_service_api_access_key"]);
+                client.DefaultRequestHeaders.Add("X-API-KEY", AppConfiguration.Configuration["AppSettings:AthenasWebServiceApiAccessKey"]);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 

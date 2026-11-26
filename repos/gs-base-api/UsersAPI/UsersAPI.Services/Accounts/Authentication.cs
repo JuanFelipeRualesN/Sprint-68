@@ -515,7 +515,7 @@ namespace UsersAPI.UsersAPI.Services.Accounts
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             var token = new TokenManager(
-                secretKey: AppConfiguration.Configuration["AppSettings:secret_key"],
+                secretKey: AppConfiguration.Configuration["AppSettings:SecretKey"],
                 issuer: AppConfiguration.Configuration["AppSettings:issuer"],
                 durationValidInHours: int.Parse(AppConfiguration.Configuration["AppSettings:token_duration_in_hours"])).
                 GenerateToken(userId);

@@ -2326,7 +2326,16 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.Repositories.Teachers
                             catch (MySqlException e)
                             {
                                 string MessageString = " The following error occurred while updating data:" + e.ErrorCode + " - " + e.Message;
-                                response = new List<TeacherPlanGroupModel>();
+                                response = new List<TeacherPlanGroupModel>()
+                                {
+                                    new TeacherPlanGroupModel()
+                                    {
+                                        Messages = new List<string>()
+                                        {
+                                            MessageString
+                                        }
+                                    }
+                                };
                             }
                         }
                         trans.Commit();
@@ -2335,14 +2344,32 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.Repositories.Teachers
                     {
                         string MessageString = "Thee following error ocurred while updating the data: " + e.ErrorCode + " - " + e.Message;
                         trans.Rollback();
-                        response = new List<TeacherPlanGroupModel>();
+                        response = new List<TeacherPlanGroupModel>()
+                                {
+                                    new TeacherPlanGroupModel()
+                                    {
+                                        Messages = new List<string>()
+                                        {
+                                            MessageString
+                                        }
+                                    }
+                                };
                     }
                 }
             }
             catch (MySqlException e)
             {
                 string MessageString = "The following error ocurred while updating the data: " + e.ErrorCode + " - " + e.Message;
-                response = new List<TeacherPlanGroupModel>();
+                response = new List<TeacherPlanGroupModel>()
+                                {
+                                    new TeacherPlanGroupModel()
+                                    {
+                                        Messages = new List<string>()
+                                        {
+                                            MessageString
+                                        }
+                                    }
+                                };
             }
             finally
             {

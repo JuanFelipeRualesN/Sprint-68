@@ -572,7 +572,7 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
 
             foreach (UserQuizFileModel userQuizFileModel in userQuizFileModels)
             {
-                userQuizFileModel.FileUrl = AwsAssets.GetSignedUrlFronCloudFront(userQuizFileModel.FileUrl);
+                userQuizFileModel.FileUrl = AzureAssets.GetFileFromAzureStorage(userQuizFileModel.FileUrl);
             }
 
             UserResponseDAO userResponseDAO = new UserResponseDAO();
@@ -659,6 +659,43 @@ namespace TeachersAPI.TeachersAPI.Services.UserQuizzes
             };
 
             return userQuizResultToReturn;
+        }
+
+        /// <summary>
+        /// Adds the teacher's feedback to a quiz that was already auto-corrected (non-open types).
+        /// The score (TotalPercent) is not recalculated because it was computed at submission time,
+        /// so no assigned values or total are needed here.
+        /// </summary>
+        /// <param name="userQuizId">The user quiz result id.</param>
+        /// <param name="userSessionId">The id of the user that is making the request.</param>
+        /// <param name="feedback">A feedback made by the teacher if any.</param>
+        /// <returns>Returns a response model with details.</returns>
+        public UserQuizResultModel AddFeedbackForAutomaticQuiz(string userQuizId, string userSessionId, string feedback = null)
+        {
+            // Only persist the feedback (and confirm the corrected status). The score stays as
+            // the value calculated by the automatic correction at submission time.
+            new UserQuizResultDAO().Update(_connectionString, new UserQuizResultModel()
+            {
+                ModifiedBy = userSessionId,
+                Status = "C",
+                Feedback = feedback
+            },
+            new UserQuizResultModel()
+            {
+                Id = userQuizId,
+            });
+
+            // Read the updated user quiz
+            UserQuizResultModel userQuizResultToReturn = new UserQuizResultDAO().Read(_connectionStringRead, new UserQuizResultModel() { Id = userQuizId }, true, true)[0];
+
+            userQuizResultToReturn.Valid = true;
+            userQuizResultToReturn.Messages = new List<string>()
+            {
+                new MessageManager(_connectionStringRead, _langCode).GetMessageDetails(AppConfiguration.Configuration["AppSettings:ls_message_code_success"])
+            };
+
+            return userQuizResultToReturn;
+
         }
 
         /// <summary>

@@ -1,0 +1,35 @@
+name: Base API Msj Pipeline
+
+trigger:
+  branches:
+    include:
+      - dev
+      - uat
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+  # name: 'MSJ-Agents'
+  # demands:
+  #   - Agent.Name -equals ubuntu-dev-agent
+
+extends:
+  template: azure-pipelines-template.yml
+  parameters:
+    ${{ if eq(variables['Build.SourceBranchName'], 'dev') }}:
+      azureAppService: 'app-apis-msj-dev-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'msj-dev'
+    
+    ${{ if eq(variables['Build.SourceBranchName'], 'uat') }}:
+      azureAppService: 'app-apis-msj-uat-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'msj-uat'
+
+    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+      azureAppService: 'app-apis-msj-prod-eastus-001'
+      azureSubscription: 'Require Testing Subscription'
+      buildConfiguration: 'Release'
+      projectEnvironment: 'msj'

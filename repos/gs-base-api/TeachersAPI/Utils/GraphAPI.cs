@@ -118,7 +118,7 @@ namespace TeachersAPI.Utils
         {
             string TenantId = AppConfiguration.Configuration["AppSettings:azure_tenant_id"];
             string ClientId = AppConfiguration.Configuration["AppSettings:azure_client_id"];
-            string ClientSecret = AppConfiguration.Configuration["AppSettings:azure_client_secret"];
+            string ClientSecret = AppConfiguration.Configuration["AppSettings:AzureClientSecret"];
 
             var client = new HttpClient();
             var tokenEndpoint = $"https://login.microsoftonline.com/{TenantId}/oauth2/v2.0/token";

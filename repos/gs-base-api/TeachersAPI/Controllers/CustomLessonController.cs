@@ -32,7 +32,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanCustomLessonServiceFactory.CreateService(dbConn);
-                    var educationalCriterias = await service.GetEducationCriteria();
+                    var educationalCriterias = await service.GetEducationCriteriaTranslations(responseSession.LangCode);
                     return Ok(educationalCriterias);
                 }
             }
@@ -103,7 +103,7 @@ namespace TeachersAPI.Controllers
                 using (var dbConn = CreateMySqlConnection())
                 {
                     var service = TeacherPlanCustomLessonServiceFactory.CreateService(dbConn);
-                    var teacherPlanCustomLessonByTeacherPlanId = await service.GetTeacherPlanCustomLessonsByTeacherPlanId(teacherPlanId);
+                    var teacherPlanCustomLessonByTeacherPlanId = await service.GetTeacherPlanCustomLessonsByTeacherPlanId(teacherPlanId, responseSession.LangCode);
                     return Ok(teacherPlanCustomLessonByTeacherPlanId);
                 }
             }

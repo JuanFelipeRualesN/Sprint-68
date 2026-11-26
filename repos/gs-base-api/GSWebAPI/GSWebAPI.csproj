@@ -9,19 +9,36 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.CloudFront" Version="4.0.4.1" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.6.13" />
+    <!-- Same Foundry packages and versions as AIServicesAPI (the custom plan assistant uses the GenerateController agent).
+         OpenAI is pinned to the version Azure.AI.Extensions.OpenAI 2.0.0 is compiled against; bump them together. -->
+    <PackageReference Include="Azure.AI.Extensions.OpenAI" Version="2.0.0" />
+    <PackageReference Include="Azure.AI.Projects" Version="2.0.1" />
+    <PackageReference Include="OpenAI" Version="[2.9.1]" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
-    <PackageReference Include="com.theartofdev.edmodo.cropper" Version="2.7.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
     <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="HtmlRenderer.PdfSharp" Version="1.5.0.6" />
+    <PackageReference Include="Haukcode.WkHtmlToPdfDotNet" Version="1.5.95" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.3.0" />
+    <!-- EF Core 9 / Pomelo 9 to match the versions already used by ReadingAPI and AIServicesAPI in the same host. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
-    <PackageReference Include="PDFsharp" Version="6.2.1" />
-    <PackageReference Include="PdfSharpCore" Version="1.3.67" />
     <PackageReference Include="StackExchange.Redis" Version="2.9.11" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="GSWebAPI.Services\CustomPlans\Assistant\CustomPlanAssistantTexts.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CacheHandlerLibrary\CacheHandlerLibrary.csproj" />
+    <ProjectReference Include="..\PdfConverterProvider\PdfConverterProvider.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Dapper;
+using MySqlConnector;
+using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Threading.Tasks;
 using UsersAPI.UsersAPI.Domain.Models.Relations;
 using UsersAPI.UsersAPI.Infrastructure.Repositories.Relations;
 using UsersAPI.UsersAPI.Services.Accounts;
@@ -313,9 +317,11 @@ namespace UsersAPI.UsersAPI.Services.Relations
 
             bool isUserAClient = userRoles.Find(x => x.RoleId == AppConfiguration.Configuration["AppSettings:ur_role_client"] && userIdA == x.UserId) != null;
 
-            if (!isUserAClient && isUserIdAAlpha)
+            // If the client has control over the selected user, use the "urel_associated_accounts" table.
+            // Otherwise, for all other roles (teachers, students, etc.) or when the client lacks control, 
+            // use the "urel_profile_connections" table.
+            if (isUserAClient && isUserIdAAlpha)
             {
-
                 // Check if connected already as associated account
                 var associatedAccoutsExisting = new AssociatedAccountDAO().Read(this._connectionStringRead, new AssociatedAccountModel()
                 {
@@ -599,6 +605,44 @@ namespace UsersAPI.UsersAPI.Services.Relations
                     },
                 };
             }
+        }
+
+        /// <summary>
+        /// Gets the total number of distinct students who attend the same
+        /// school as the given teacher.
+        /// </summary>
+        /// <param name="teacherUserId">The teacher's user id.</param>
+        /// <returns>The total number of students.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="teacherUserId"/> is null or empty.</exception>
+        public async Task<int> GetTeacherStudentsCountAsync(string teacherUserId)
+        {
+            if (string.IsNullOrWhiteSpace(teacherUserId))
+            {
+                throw new ArgumentException("Teacher user id must be provided.", nameof(teacherUserId));
+            }
+
+            const string query = @"
+                SELECT COUNT(DISTINCT pc.user_id_b)
+                FROM urel_profile_connections pc
+                INNER JOIN upd_user_schools ustudent
+                    ON ustudent.user_id = pc.user_id_b
+                INNER JOIN upd_user_schools usteacher
+                    ON usteacher.user_id = pc.user_id_a
+                INNER JOIN ur_user_roles ur
+                    ON ur.user_id = ustudent.user_id AND ur.role_id = 3
+                WHERE pc.user_a_alpha = 1
+                  AND ustudent.school_id = usteacher.school_id
+                  AND pc.user_id_a = @teacherUserId;";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@teacherUserId", teacherUserId);
+
+            await using var connection = new MySqlConnection(this._connectionStringRead);
+            await connection.OpenAsync();
+
+            // Let it throw on failure — the caller needs to know the query failed
+            // rather than silently getting 0.
+            return await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
         }
     }
 }

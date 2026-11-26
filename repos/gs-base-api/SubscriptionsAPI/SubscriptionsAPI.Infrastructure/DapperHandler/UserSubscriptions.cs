@@ -15,6 +15,47 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Infrastructure.DapperHandler
     public static class UserSubscriptions
     {
         /// <summary>
+        /// The courses (subject code, subject name and level) of a list of plan products, in one query:
+        /// subst_product_item_products (product_id → item_id) → subst_item_products (available items) →
+        /// gwp_subscription_products (its product_id holds the item id).
+        /// </summary>
+        /// <param name="planProductIds">subst_plans.product_id of the plans (duplicates and blanks are ignored).</param>
+        /// <returns>One row per product and course; empty when there are no ids or the query fails.</returns>
+        public static List<ProductCourseModel> ReadCoursesByPlanProductIds(IEnumerable<string> planProductIds)
+        {
+            var ids = (planProductIds ?? Enumerable.Empty<string>()).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new List<ProductCourseModel>();
+            }
+
+            // Dapper expands IN @ProductIds into one parameter per id.
+            const string query = @"SELECT DISTINCT
+                    pip.product_id AS PlanProductId,
+                    ip.id AS ItemId,
+                    ip.name AS ItemName,
+                    sup.subject AS Subject,
+                    sup.subject_name AS SubjectName,
+                    sup.level AS Level
+                FROM gs_subscription_api_db_prod.subst_product_item_products pip
+                INNER JOIN gs_subscription_api_db_prod.subst_item_products ip ON ip.id = pip.item_id
+                INNER JOIN gs_subscription_api_db_prod.gwp_subscription_products sup ON sup.product_id = ip.id
+                WHERE pip.product_id IN @ProductIds AND ip.available = 1
+                ORDER BY pip.product_id, sup.subject_name, sup.level";
+
+            try
+            {
+                using var connection = new MySqlConnection(AppConfiguration.Configuration["ConnectionStrings:SubscriptionsStripeDBConnectionReader"]);
+                return connection.Query<ProductCourseModel>(query, new { ProductIds = ids }).ToList();
+            }
+            catch (MySqlException)
+            {
+                // Same behavior as the other reads here: the caller gets no courses instead of an error.
+                return new List<ProductCourseModel>();
+            }
+        }
+
+        /// <summary>
         /// Read the profile subscription types.
         /// </summary>
         /// <param name="profileId">The profile's ids.</param>
@@ -37,7 +78,9 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Infrastructure.DapperHandler
                 INNER JOIN gs_subscription_api_db_prod.subst_item_products ip ON ip.id = proi.item_id
                 INNER JOIN gs_subscription_api_db_prod.gwp_subscription_products sup ON sup.product_id = ip.id
                 LEFT JOIN gs_subscription_api_db_prod.gwp_exam_try_maxs tr ON tr.subscription_id = subs.id
-                WHERE profile_id = @userId  AND subs.status = 'active' and STR_TO_DATE(current_period_end, '%m/%d/%Y %r') >= @date AND ip.available = 1";
+                WHERE profile_id = @userId  AND (subs.status = 'active' OR subs.status = 'past_due' 
+                OR subs.status = 'trialing')
+                AND STR_TO_DATE(current_period_end, '%m/%d/%Y %r') >= @date AND ip.available = 1";
 
             IEnumerable<SubscriptionProfileTryResponseModel> items = null;
             MySqlConnection connection = new MySqlConnection
@@ -95,7 +138,8 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Infrastructure.DapperHandler
                     INNER JOIN gs_subscription_api_db_prod.subst_product_item_products proi ON proi.product_id = pla.product_id 
                     INNER JOIN gs_subscription_api_db_prod.subst_item_products ip ON ip.id = proi.item_id
                     INNER JOIN gs_subscription_api_db_prod.gwp_subscription_products sup ON sup.product_id = ip.id
-                    WHERE profile_id = @UserId  AND (subs.status = 'active' OR subs.status = 'trialing') AND ip.available = 1";
+                    WHERE profile_id = @UserId  AND (subs.status = 'active' OR subs.status = 'trialing' OR subs.status = 'past_due') 
+                    AND ip.available = 1";
 
             var parameters = new { UserId = userId };
 
@@ -161,7 +205,8 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Infrastructure.DapperHandler
 
             if (onlyActives)
             {
-                query += " AND subs.status = 'active' AND STR_TO_DATE(current_period_end, '%m/%d/%Y')  >= NOW()";
+                query += " AND (subs.status = 'active' OR subs.status = 'trialing' OR subs.status = 'past_due') " +
+                    " AND STR_TO_DATE(current_period_end, '%m/%d/%Y')  >= NOW()";
             }
             query += ";";
 
@@ -220,7 +265,8 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Infrastructure.DapperHandler
 
             if (onlyActives)
             {
-                query += " AND subst_subscriptions.status = 'active' AND STR_TO_DATE(current_period_end, '%m/%d/%Y')  >= NOW()";
+                query += " AND (subst_subscriptions.status = 'active' OR subst_subscriptions.status = 'trialing' OR subst_subscriptions.status = 'past_due') " +
+                    " AND STR_TO_DATE(current_period_end, '%m/%d/%Y')  >= NOW()";
             }
             query += ";";
 

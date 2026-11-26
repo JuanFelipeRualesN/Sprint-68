@@ -11,16 +11,14 @@ namespace SchoolsAPI.Controllers
     /// To handle the terms that an academic year is divided. For example, a trimester system is divided in three sessions.
     /// </summary>
     [ApiController]
-    [Route("schoolsapi")]
+    [Route("schoolsapi/terms")]
     public class TermsController : ControllerBase
     {
         /// <summary>
         /// To read the terms as semester, trimester, etc, and the details about them.
         /// </summary>
         /// <returns>Returns the list of terms with an HTTP Response code 200 if valid permissions.</returns>
-        [HttpGet("/terms")]
-        [ProducesResponseType(typeof(List<TermModel>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+        [HttpGet]
         public async Task<IActionResult> GetTerms()
         {
             var responseSession = await GetUserDetails.GetUserIdRequestOnOtherAPI(

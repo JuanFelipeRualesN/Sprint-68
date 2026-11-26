@@ -5055,12 +5055,23 @@ namespace TeachersAPI.TeachersAPI.Infrastructure.Repositories.Teachers
                 }
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
+                teacherPlan.Valid = true;
                 response.Add(teacherPlan);
             }
             catch (MySqlException e)
             {
                 string MessageString = " The following error occurred while updating data:" + e.ErrorCode + " - " + e.Message;
-                response = new List<TeacherPlanModel>();
+                response = new List<TeacherPlanModel>()
+                {
+                    new TeacherPlanModel()
+                    {
+                        Valid = false,
+                        Messages = new List<string>()
+                        {
+                            e.Message
+                        }
+                    }
+                };
             }
             finally
             {

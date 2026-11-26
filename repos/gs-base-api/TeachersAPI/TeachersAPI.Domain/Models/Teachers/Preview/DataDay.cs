@@ -31,6 +31,10 @@ namespace TeachersAPI.Domain.Models.Teachers.Preview
             DataOtherSubjectIntegrations = new List<DataInfo>();
             DataPraxisReflections = new List<DataInfo>();
             DataCustomStrategies = new List<DataInfo>();
+            DataDifferentiationStrategies = new List<DataInfo>();
+            DataObservations = new List<DataInfo>();
+            DataCommonExperiences = new List<DataInfo>();
+            DataActiveResponses = new List<DataInfo>();
         }
         /// <summary>
         /// 
@@ -119,7 +123,15 @@ namespace TeachersAPI.Domain.Models.Teachers.Preview
         /// 
         /// </summary>
         public List<DataInfo> DataCustomStrategies { get; set; }
-        
+
+        public List<DataInfo> DataDifferentiationStrategies { get; set; }
+
+        public List<DataInfo> DataObservations { get; set; }
+
+        public List<DataInfo> DataCommonExperiences { get; set; }
+
+        public List<DataInfo> DataActiveResponses { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -149,6 +161,10 @@ namespace TeachersAPI.Domain.Models.Teachers.Preview
                     case "DataOtherSubjectIntegrations": return DataOtherSubjectIntegrations;
                     case "DataPraxisReflections": return DataPraxisReflections;
                     case "DataCustomStrategies": return DataCustomStrategies;
+                    case "DataDifferentiationStrategies": return DataDifferentiationStrategies;
+                    case "DataObservations": return DataObservations;
+                    case "DataCommonExperiences": return DataCommonExperiences;
+                    case "DataActiveResponses": return DataActiveResponses;
                     default: return null;
                 }
             }

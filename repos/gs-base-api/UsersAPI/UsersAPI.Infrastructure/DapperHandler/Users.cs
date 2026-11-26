@@ -1,4 +1,6 @@
-﻿using Dapper;
+﻿using System.Text.RegularExpressions;
+using UsersAPI.Utils;
+using Dapper;
 using MySqlConnector;
 using System;
 using System.Collections.Generic;
@@ -2080,6 +2082,35 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler
                 INNER JOIN `gs_users_db_prod`.`urel_associated_accounts` aa ON (aa.profile_user_account = ur.user_id AND aa.main_user_account = @userAlphaId) OR (aa.main_user_account = ur.user_id AND aa.profile_user_account = @userAlphaId)
                 WHERE allow_access = 1 AND ((aa.main_user_account = @userAlphaId OR aa.profile_user_account = @userAlphaId) OR (pro.user_id_a = @userAlphaId OR pro.user_id_b = @userAlphaId)) ";
             }
+            else if (account.IsStudentHomeschool)
+            {
+                query += @"SELECT
+                CASE
+                WHEN pro.user_id_a IS NOT NULL THEN pro.user_id_a
+                END as user_id_a,
+                CASE
+                WHEN pro.user_id_b IS NOT NULL THEN pro.user_id_b
+                END as user_id_b,
+                CASE
+                WHEN pro.user_a_alpha IS NOT NULL THEN pro.user_a_alpha
+                END as user_a_alpha
+                FROM
+                `gs_users_db_prod`.`ur_user_roles` ur
+                INNER JOIN `gs_users_db_prod`.`ul_user_account_statuses` ust ON ust.user_id = ur.user_id AND ust.id = (SELECT MAX(ust2.id) FROM `gs_users_db_prod`.`ul_user_account_statuses` ust2 WHERE ust2.user_id = ur.user_id)
+                INNER JOIN `gs_users_db_prod`.`ul_status_accounts` stt On stt.id = ust.status_id
+                INNER JOIN `gs_users_db_prod`.`urel_profile_connections` pro ON (pro.user_id_a = ur.user_id AND pro.user_id_b = @userAlphaId)  OR (pro.user_id_b = ur.user_id AND pro.user_id_a = @userAlphaId)
+                WHERE allow_access = 1 AND (pro.user_id_a = @userAlphaId OR pro.user_id_b = @userAlphaId)
+                UNION
+                SELECT
+                aa.main_user_account as user_id_a,
+                aa.profile_user_account as user_id_b,
+                1 as user_a_alpha
+                FROM
+                `gs_users_db_prod`.`urel_associated_accounts` aa
+                INNER JOIN `gs_users_db_prod`.`ul_user_account_statuses` ust ON ust.user_id = aa.main_user_account AND ust.id = (SELECT MAX(ust2.id) FROM `gs_users_db_prod`.`ul_user_account_statuses` ust2 WHERE ust2.user_id = aa.main_user_account)
+                INNER JOIN `gs_users_db_prod`.`ul_status_accounts` stt On stt.id = ust.status_id
+                WHERE allow_access = 1 AND aa.available = '1' AND aa.profile_user_account = @userAlphaId ";
+            }
             else
             {
                 // Teacher, student, parents, etc
@@ -2095,7 +2126,7 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler
                 END as user_a_alpha
                 FROM
                 `gs_users_db_prod`.`ur_user_roles` ur
-                INNER JOIN `gs_users_db_prod`.`ul_user_account_statuses` ust ON ust.user_id = ur.user_id AND ust.id = (SELECT MAX(ust2.id) FROM `gs_users_db_prod`.`ul_user_account_statuses` ust2 WHERE ust2.user_id = ur.user_id) 
+                INNER JOIN `gs_users_db_prod`.`ul_user_account_statuses` ust ON ust.user_id = ur.user_id AND ust.id = (SELECT MAX(ust2.id) FROM `gs_users_db_prod`.`ul_user_account_statuses` ust2 WHERE ust2.user_id = ur.user_id)
                 INNER JOIN `gs_users_db_prod`.`ul_status_accounts` stt On stt.id = ust.status_id
                 INNER JOIN `gs_users_db_prod`.`urel_profile_connections` pro ON (pro.user_id_a = ur.user_id AND pro.user_id_b = @userAlphaId)  OR (pro.user_id_b = ur.user_id AND pro.user_id_a = @userAlphaId)
                 WHERE allow_access = 1 AND (pro.user_id_a = @userAlphaId OR pro.user_id_b = @userAlphaId) ";
@@ -2240,6 +2271,41 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler
                 parameters.Add("@userAlphaId", userIdToCallDetails, System.Data.DbType.Int32,
                  System.Data.ParameterDirection.Input);
             }
+            else if (account.IsStudentHomeschool)
+            {
+                // Call the associated accounts and the profiles.
+                query = @"SELECT 
+                ac.id as `user_id`, 
+                ac.token,
+                ac.username, 
+                ac.created_at,
+                na.given_name, 
+                na.surname,
+                ue.email,
+                ty.name as `role`,
+                 1  as `user_has_control`,
+                  ac.token  AS 'user_school_record'
+                FROM `gs_users_db_prod`.`ul_user_accounts` ac 
+                INNER JOIN `gs_users_db_prod`.`upd_user_full_names` na ON na.user_id = ac.id 
+                LEFT JOIN `gs_users_db_prod`.`ul_user_emails` ue ON ue.user_id = ac.id
+                INNER JOIN `gs_users_db_prod`.`ur_user_roles` ro ON ro.user_id =  ac.id 
+                INNER JOIN `gs_users_db_prod`.`ur_role_types` ty ON ro.role_id = ty.id
+                INNER JOIN `gs_users_db_prod`.`ul_user_account_statuses` ust ON ust.user_id = ac.id
+                INNER JOIN `gs_users_db_prod`.`ul_status_accounts` stt On stt.id = ust.status_id
+                INNER JOIN `gs_users_db_prod`.`urel_associated_accounts` aa ON aa.profile_user_account = @userAlphaId AND aa.main_user_account = ac.id
+                LEFT JOIN `gs_users_db_prod`.`upd_user_schools` us ON us.user_id = ac.id ";
+
+                if (isForOtherUser)
+                {
+                    parameters.Add("@userAlphaId", userIdToCallDetails, System.Data.DbType.Int32,
+                        System.Data.ParameterDirection.Input);
+                }
+                else
+                {
+                    parameters.Add("@userAlphaId", account.UserAlphaId, System.Data.DbType.Int32,
+                        System.Data.ParameterDirection.Input);
+                }
+            }
             else if (account.IsStaff)
             {
                 // Call all the users.
@@ -2304,7 +2370,7 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler
             bool whereUsed = false;
 
             // If not a staff and not a principal, check the relations 
-            if (!account.IsStaff && !account.IsDirector)
+            if (!account.IsStaff && !account.IsDirector && !account.IsStudentHomeschool)
             {
                 query += @" WHERE ";
                 if (account
@@ -2435,7 +2501,7 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler
             }
 
             if (account != null && account.UserIds != null && account.UserIds.Count > 0 &&
-                (!account.IsStaff && !account.IsDirector))
+                (!account.IsStaff && !account.IsDirector && !account.IsStudentHomeschool))
             {
                 if (!whereUsed)
                 {
@@ -2520,5 +2586,567 @@ namespace UsersAPI.UsersAPI.Domain.Models.Generals.DapperHandler
 
             return Tuple.Create(query, parameters);
         }
-    }
+    
+        /// <summary>
+        /// To search the users for admin.
+        /// </summary>
+        /// <param name="accountFilter">The account to filter.</param>
+        /// <param name="paginationFilters">The pagination filters.</param>
+        /// <returns>Returns the user advance response model.</returns>
+        public static Models.UserAdvanceResponseModel SearchUsersForAdmin(Models.Filters.AccountAdvance accountFilter,
+            Models.Filters.Pagination paginationFilters)
+        {
+            var userAdvanceResponseModel = new Models.UserAdvanceResponseModel()
+            {
+                UserInfo = new List<Models.UserAdvance>(),
+            };
+
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+            DynamicParameters parameters = new DynamicParameters();
+            if (paginationFilters != null && paginationFilters.LimitRows == 0) // To avoid divide by zero
+                paginationFilters.LimitRows = 500;
+
+            // Prepare the query
+            Tuple<string, DynamicParameters> whereTuple = PrepareWhereUsersSearchAdmin(accountFilter);
+            Tuple<string, DynamicParameters> whereTupleSubQuery = PrepareWhereAndJoinsUsersSearchAdminForSubQuery(accountFilter);
+
+
+            string query = PrepareSelectForUsersManagedAdmin(accountFilter);
+            query = Regex.Replace(
+                query,
+                @"\bFROM\s+`gs_users_db_prod`\.`ul_user_accounts`\s+ac\b",
+                whereTupleSubQuery.Item1,
+                RegexOptions.IgnoreCase
+            );
+            query += " " + whereTuple.Item1 + " ORDER BY ac.id";
+
+            parameters.AddDynamicParams(whereTuple.Item2);
+
+            // Add subquery parameters that are not already present in the outer WHERE parameters
+            foreach (var paramName in whereTupleSubQuery.Item2.ParameterNames)
+            {
+                if (!parameters.ParameterNames.Contains(paramName))
+                {
+                    parameters.Add(paramName, whereTupleSubQuery.Item2.Get<object>(paramName));
+                }
+            }
+
+            IEnumerable<Models.UserAdvance> items = null;
+            MySqlConnection connection = new MySqlConnection
+            {
+                ConnectionString = AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"]
+            };
+            connection.Open();
+
+            var queryBuilder = PaginationQueryBuilder.BuildPagedQueryAsync(
+                query,
+                paginationFilters.FromPage,
+                paginationFilters.LimitRows);
+
+            try
+            {
+                items = connection.Query<Models.UserAdvance>(queryBuilder.Query, parameters);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+
+            if (items != null)
+            {
+                userAdvanceResponseModel = new Models.UserAdvanceResponseModel()
+                {
+                    UserInfo = items.ToList()
+                };
+            }
+
+            return userAdvanceResponseModel;
+        }
+
+        /// <summary>
+        /// To get total items
+        /// </summary>
+        /// <param name="accountFilter">A class with many properties to filter. See AccountAdvance for more details.</param>
+        /// <param name="paginationFilters">To apply pagination.</param>
+        /// <returns>Returns the user advance response model with page details and users information.</returns>
+        public static int TotalItemsSearchUsersForAdmin(Models.Filters.AccountAdvance accountFilter,
+            Models.Filters.Pagination paginationFilters)
+        {
+            var userAdvanceResponseModel = new Models.UserAdvanceResponseModel()
+            {
+                UserInfo = new List<Models.UserAdvance>(),
+            };
+
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+            DynamicParameters parameters = new DynamicParameters();
+            if (paginationFilters != null && paginationFilters.LimitRows == 0) // To avoid divide by zero
+                paginationFilters.LimitRows = 500;
+
+            // Prepare the query
+            Tuple<string, DynamicParameters> whereTupleSubQuery = PrepareWhereAndJoinsUsersSearchAdminForSubQuery(accountFilter, true);
+
+            string query = whereTupleSubQuery.Item1;
+            parameters.AddDynamicParams(whereTupleSubQuery.Item2);
+
+            string connectionString = AppConfiguration.Configuration["ConnectionStrings:GenialSkillsUsersAPIDBConnectionReader"];
+
+            MySqlConnection connection = new MySqlConnection
+            {
+                ConnectionString = connectionString
+            };
+            connection.Open();
+
+            var totalItems = PaginationQueryBuilder.BuildCountQuery(
+                query,
+                parameters,
+                connectionString
+                );
+
+            int totalPages = (int)Math.Ceiling(totalItems / (decimal)paginationFilters.LimitRows);
+
+            return totalPages;
+
+        }
+
+        /// <summary>
+        /// To prepare the select for the users that can be handle. (For Admin).
+        /// </summary>
+        /// <param name="account">A class with many properties to filter. See AccountAdvance for more details.</param>
+        /// <returns>Returns the query (string) generated.</returns>
+        private static string PrepareSelectForUsersManagedAdmin(Models.Filters.AccountAdvance account)
+        {
+            string query = @"
+            SELECT DISTINCT
+            ac.id as `user_id`,
+            ac.token,
+            ac.username,
+            ac.created_at,
+            umg.group_code,
+            na.given_name,
+            na.surname,
+            em.email,
+            adr.address_line_1,
+            adr.address_line_2,
+            adr.city,
+            adr.state_iso_code,
+            adr.country,
+            adr.country_iso_code_2,
+            adr.zip,
+            ore.ore_id,
+            pho.phone_number as `phone`,
+            ty.id as `role_id`,
+            ty.name as `role`,
+            1 as `user_has_control`,
+            stt.desc as 'status',
+            stt.id as `status_id`,
+            act.created_at AS 'last_session',
+            ac.token AS 'user_school_record'
+            FROM `gs_users_db_prod`.`ul_user_accounts` ac
+            INNER JOIN `gs_users_db_prod`.`upd_user_full_names` na ON na.user_id = ac.id
+            INNER JOIN `gs_users_db_prod`.`ur_user_roles` ro ON ro.user_id =  ac.id
+            INNER JOIN `gs_users_db_prod`.`ur_role_types` ty ON ro.role_id = ty.id
+            LEFT JOIN `gs_users_db_prod`.`ul_user_emails` em ON em.user_id = ac.id
+            LEFT JOIN `gs_users_db_prod`.`upd_user_ore` ore ON ore.user_id = ac.id
+            LEFT JOIN `gs_users_db_prod`.`upd_user_addresses` adr ON adr.user_id = ac.id  AND adr.main_address = 1 AND adr.enable = 1
+            LEFT JOIN `gs_users_db_prod`.`upd_user_phone_numbers` pho ON pho.user_id = ac.id
+            LEFT JOIN `gs_users_db_prod`.`user_main_groups` umg ON umg.user_id = ac.id
+            INNER JOIN `gs_users_db_prod`.`ul_user_account_statuses` ust ON ust.user_id = ac.id
+            INNER JOIN `gs_users_db_prod`.`ul_status_accounts` stt On stt.id = ust.status_id
+            LEFT JOIN `gs_users_db_prod`.`gus_activity_date_reports` act ON act.user_id = ac.id AND act.created_at = (SELECT MAX(act2.created_at) FROM `gs_users_db_prod`.`gus_activity_date_reports` act2 WHERE act2.user_id = ac.id)  ";
+            
+            return query;
+        }
+
+        /// <summary>
+        /// Where for search admin.
+        /// </summary>
+        /// <param name="accountFilter">The account details to filter.</param>
+        /// <returns>Returns the part of the query.</returns>
+         private static Tuple<string, DynamicParameters> PrepareWhereUsersSearchAdmin(
+            Models.Filters.AccountAdvance accountFilter)
+        {
+            DynamicParameters parameters = new DynamicParameters();
+            bool whereUsed = false;
+            string query = "";
+            
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.RoleId))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ty.id = @roleId ";
+                parameters.Add("@roleId", accountFilter.RoleId, System.Data.DbType.Int32,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.UserSchoolRecord))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.token LIKE @userSchoolRecord ";
+                parameters.Add("@userSchoolRecord", "%" + accountFilter.UserSchoolRecord + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            // SchoolIds filter removed from outer WHERE - the outer query does not have
+            // a JOIN with user_schools, so referencing us.school_id here caused an error for admin-ore when fetching users
+            // The subquery already filters by SchoolIds with the correct JOIN
+
+            if (accountFilter != null && accountFilter.UserIds != null && accountFilter.UserIds.Count > 0)
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.id IN (";
+                for (int i = 0; i < accountFilter.UserIds.Count; i++)
+                {
+                    query += string.Concat(" @userIdToFilter", i.ToString());
+                    parameters.Add("@userIdToFilter" + i.ToString(), accountFilter.UserIds[i],
+                        System.Data.DbType.String, System.Data.ParameterDirection.Input);
+                    if (i < accountFilter.UserIds.Count - 1)
+                    {
+                        query += ",";
+                    }
+                }
+
+                query += ") ";
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.Username))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += @" ac.username LIKE @username ";
+                parameters.Add("@username", "%" + accountFilter.Username + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.FirstName))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " na.given_name LIKE @givenName ";
+                parameters.Add("@givenName", "%" + accountFilter.FirstName + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.LastName))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " na.surname LIKE @surname ";
+                parameters.Add("@surname", "%" + accountFilter.LastName + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.Email))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " em.email LIKE @email ";
+                parameters.Add("@email", "%" + accountFilter.Email + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.CreatedFrom))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.created_at >= @dateCreatedAccountFrom  ";
+                parameters.Add("@dateCreatedAccountFrom",
+                    DateTime.Parse(accountFilter.CreatedFrom).ToString("yyyy-MM-dd HH:mm:ss"),
+                    System.Data.DbType.String, System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.CreatedTo))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.created_at <= @dateCreatedAccountTo  ";
+                parameters.Add("@dateCreatedAccountTo",
+                    DateTime.Parse(accountFilter.CreatedTo).ToString("yyyy-MM-dd HH:mm:ss"), System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            return Tuple.Create(query, parameters);
+        }
+
+        /// <summary>
+        /// Where for search admin.
+        /// </summary>
+        /// <param name="accountFilter">The account details to filter.</param>
+        /// <returns>Returns the part of the query.</returns>
+        private static Tuple<string, DynamicParameters> PrepareWhereAndJoinsUsersSearchAdminForSubQuery(
+           Models.Filters.AccountAdvance accountFilter, bool isForTotalItems = false)
+        {
+            DynamicParameters parameters = new DynamicParameters();
+            bool whereUsed = false;
+            string query = "";
+            string schoolRelation = string.Empty;
+
+            if (isForTotalItems)
+            {
+                schoolRelation = $@"
+                        SELECT DISTINCT ro.user_id
+                        FROM `gs_users_db_prod`.`ur_user_roles` ro
+                        INNER JOIN `gs_users_db_prod`.`ul_user_accounts` ac ON ac.id = ro.user_id ";
+
+            }
+            else
+            {
+                schoolRelation = $@"
+                    FROM (
+                        SELECT DISTINCT ro.user_id
+                        FROM `gs_users_db_prod`.`ur_user_roles` ro
+                        INNER JOIN `gs_users_db_prod`.`ul_user_accounts` ac ON ac.id = ro.user_id ";
+            }
+
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.RoleId))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                schoolRelation += "INNER JOIN `gs_users_db_prod`.`ur_role_types` ty ON ro.role_id = ty.id\n\r";
+                query += " ty.id = @roleId ";
+                parameters.Add("@roleId", accountFilter.RoleId, System.Data.DbType.Int32,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.UserSchoolRecord))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.token LIKE @userSchoolRecord ";
+                parameters.Add("@userSchoolRecord", "%" + accountFilter.UserSchoolRecord + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && accountFilter.SchoolIds != null && accountFilter.SchoolIds.Count > 0)
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                schoolRelation += "LEFT JOIN `gs_users_db_prod`.`upd_user_schools` us ON us.user_id = ac.id\n\r";
+                query += " us.school_id IN (";
+                for (int i = 0; i < accountFilter.SchoolIds.Count; i++)
+                {
+                    query += string.Concat(" @schoolId", i.ToString());
+                    parameters.Add("@schoolId" + i.ToString(), accountFilter.SchoolIds[i], System.Data.DbType.String,
+                        System.Data.ParameterDirection.Input);
+                    if (i < accountFilter.SchoolIds.Count - 1)
+                    {
+                        query += ",";
+                    }
+                }
+
+                query += ") ";
+            }
+
+            if (accountFilter != null && accountFilter.UserIds != null && accountFilter.UserIds.Count > 0)
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.id IN (";
+                for (int i = 0; i < accountFilter.UserIds.Count; i++)
+                {
+                    query += string.Concat(" @userIdToFilter", i.ToString());
+                    parameters.Add("@userIdToFilter" + i.ToString(), accountFilter.UserIds[i],
+                        System.Data.DbType.String, System.Data.ParameterDirection.Input);
+                    if (i < accountFilter.UserIds.Count - 1)
+                    {
+                        query += ",";
+                    }
+                }
+
+                query += ") ";
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.Username))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += @" ac.username LIKE @username ";
+                parameters.Add("@username", "%" + accountFilter.Username + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.FirstName))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                schoolRelation += "INNER JOIN `gs_users_db_prod`.`upd_user_full_names` na ON na.user_id = ac.id\n\r";
+                query += " na.given_name LIKE @givenName ";
+                parameters.Add("@givenName", "%" + accountFilter.FirstName + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.LastName))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                schoolRelation += "INNER JOIN `gs_users_db_prod`.`upd_user_full_names` na ON na.user_id = ac.id\n\r";
+                query += " na.surname LIKE @surname ";
+                parameters.Add("@surname", "%" + accountFilter.LastName + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.Email))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                schoolRelation += "LEFT JOIN `gs_users_db_prod`.`ul_user_emails` em ON em.user_id = ac.id\n\r";
+                query += " em.email LIKE @email ";
+                parameters.Add("@email", "%" + accountFilter.Email + "%", System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.CreatedFrom))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.created_at >= @dateCreatedAccountFrom  ";
+                parameters.Add("@dateCreatedAccountFrom",
+                    DateTime.Parse(accountFilter.CreatedFrom).ToString("yyyy-MM-dd HH:mm:ss"),
+                    System.Data.DbType.String, System.Data.ParameterDirection.Input);
+            }
+
+            if (accountFilter != null && !string.IsNullOrWhiteSpace(accountFilter.CreatedTo))
+            {
+                if (!whereUsed)
+                {
+                    query += " WHERE ";
+                    whereUsed = true;
+                }
+                else
+                    query += " AND ";
+
+                query += " ac.created_at <= @dateCreatedAccountTo  ";
+                parameters.Add("@dateCreatedAccountTo",
+                    DateTime.Parse(accountFilter.CreatedTo).ToString("yyyy-MM-dd HH:mm:ss"), System.Data.DbType.String,
+                    System.Data.ParameterDirection.Input);
+            }
+
+            schoolRelation += query;
+            if (isForTotalItems)
+            {
+                schoolRelation += "ORDER BY ro.user_id\r\n";
+            }
+            else
+            {
+                schoolRelation += "ORDER BY ro.user_id\r\n) ids\r\n INNER JOIN `gs_users_db_prod`.`ul_user_accounts` ac ON ac.id = ids.user_id";
+            }
+
+            return Tuple.Create(schoolRelation, parameters);
+        }
+}
 }

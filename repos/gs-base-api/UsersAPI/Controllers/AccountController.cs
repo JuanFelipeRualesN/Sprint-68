@@ -245,7 +245,7 @@ namespace UsersAPI.Controllers
                 }
                 return Ok(sessionResponseModel);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return BadRequest();
             }

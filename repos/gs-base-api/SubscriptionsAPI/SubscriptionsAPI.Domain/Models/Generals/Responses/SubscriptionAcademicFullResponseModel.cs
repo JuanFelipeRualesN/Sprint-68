@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -34,5 +34,11 @@ namespace SubscriptionsAPI.SubscriptionsAPI.Domain.Models.Generals.Responses
         /// Gets or sets the exam try max models for subscription. This is overwritter by teacher's plan.
         /// </summary>
         public ExamTryMaxModel ExamTryMaxModel { get; set; }
+
+        /// <summary>
+        /// The users related to the subscription (subst_subscription_profiles) with their names and role. Only filled when
+        /// requested (<c>includeProfiles=true</c>); null otherwise.
+        /// </summary>
+        public List<SubscriptionProfileUserResponseModel>? SubscriptionProfiles { get; set; }
     }
 }

@@ -80,7 +80,7 @@ namespace SubscriptionsAPI.Controllers
                 var response =
                     couponCreatorManager.CreateCoupon(
                         requestModel.Coupon,
-                        AppConfiguration.Configuration["AppSettings:subs_stripe_key"]);
+                        AppConfiguration.Configuration["AppSettings:SubsStripeKey"]);
                 generalResponseModel.Messages = response.Messages;
                 if (!response.TransactionValid)
                 {

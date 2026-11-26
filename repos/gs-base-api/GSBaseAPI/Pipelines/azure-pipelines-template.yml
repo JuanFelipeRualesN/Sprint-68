@@ -1,0 +1,167 @@
+# Build & Deploy .NET 8 to Azure App Service (Linux)
+
+parameters:
+  - name: azureAppService
+    type: string
+  - name: azureSubscription
+    type: string
+  - name: buildConfiguration
+    type: string
+  - name: projectEnvironment
+    type: string
+
+variables:
+  packagePath: '$(build.artifactStagingDirectory)/*.zip'
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+
+stages:
+  - stage: Dev
+    displayName: 'Base API - Dev Deploy'
+    condition: eq(variables['Build.SourceBranchName'], 'dev')
+    jobs:
+      - deployment: DeployToDev
+        displayName: 'Deploy to Dev'
+        environment: 'Development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                # TEMPORARY: shows which solutions/projects the agent sees and whether the
+                # AIServicesAPI project has the Azure.AI package references. Remove once fixed.
+                - script: |
+                    echo "=== Commit being built ==="
+                    git log -1 --oneline
+                    echo "=== Solutions ==="
+                    find . -name "*.sln"
+                    echo "=== AIServicesAPI projects ==="
+                    find . -iname "AIServicesAPI.csproj"
+                    echo "=== Azure.AI references in them ==="
+                    find . -iname "AIServicesAPI.csproj" -exec grep -Hn "Azure.AI" {} \;
+                  displayName: 'Diagnose packages'
+
+                - task: DotNetCoreCLI@2
+                  displayName: 'Restore and Build'
+                  inputs:
+                    command: 'build'
+                    projects: '$(solution)'
+                    arguments: '--configuration ${{ parameters.buildConfiguration }}'
+
+                - task: DotNetCoreCLI@2
+                  displayName: 'Publish'
+                  inputs:
+                    command: 'publish'
+                    projects: '**/GSBaseAPI.csproj'
+                    arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build'
+
+                - task: AzureRmWebAppDeployment@4
+                  displayName: 'Deploy to Azure App Service'
+                  inputs:
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    appType: 'webApp'
+                    WebAppName: ${{ parameters.azureAppService }}
+                    package: '$(System.DefaultWorkingDirectory)/**/bin/${{ parameters.buildConfiguration }}/**/*.zip'
+                    DeploymentType: 'zipDeploy'
+                    AppSettings: '-ASPNETCORE_ENVIRONMENT ${{ parameters.projectEnvironment }}'
+
+  - stage: Uat
+    displayName: 'Base API - UAT Deploy'
+    condition: eq(variables['Build.SourceBranchName'], 'uat')
+    jobs:
+      - deployment: DeployToUat
+        displayName: 'Deploy to Uat'
+        environment: 'Uat'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                # TEMPORARY: shows which solutions/projects the agent sees and whether the
+                # AIServicesAPI project has the Azure.AI package references. Remove once fixed.
+                - script: |
+                    echo "=== Commit being built ==="
+                    git log -1 --oneline
+                    echo "=== Solutions ==="
+                    find . -name "*.sln"
+                    echo "=== AIServicesAPI projects ==="
+                    find . -iname "AIServicesAPI.csproj"
+                    echo "=== Azure.AI references in them ==="
+                    find . -iname "AIServicesAPI.csproj" -exec grep -Hn "Azure.AI" {} \;
+                  displayName: 'Diagnose packages'
+
+                - task: DotNetCoreCLI@2
+                  displayName: 'Restore and Build'
+                  inputs:
+                    command: 'build'
+                    projects: '$(solution)'
+                    arguments: '--configuration ${{ parameters.buildConfiguration }}'
+
+                - task: DotNetCoreCLI@2
+                  displayName: 'Publish'
+                  inputs:
+                    command: 'publish'
+                    projects: '**/GSBaseAPI.csproj'
+                    arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build'
+
+                - task: AzureRmWebAppDeployment@4
+                  displayName: 'Deploy to Azure App Service'
+                  inputs:
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    appType: 'webApp'
+                    WebAppName: ${{ parameters.azureAppService }}
+                    package: '$(System.DefaultWorkingDirectory)/**/bin/${{ parameters.buildConfiguration }}/**/*.zip'
+                    DeploymentType: 'zipDeploy'
+                    AppSettings: '-ASPNETCORE_ENVIRONMENT ${{ parameters.projectEnvironment }}'
+
+  - stage: Prod
+    displayName: 'Base API - Prod Deploy'
+    condition: eq(variables['Build.SourceBranchName'], 'main')
+    jobs:
+      - deployment: DeployToProd
+        displayName: 'Deploy to Prod'
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                # TEMPORARY: shows which solutions/projects the agent sees and whether the
+                # AIServicesAPI project has the Azure.AI package references. Remove once fixed.
+                - script: |
+                    echo "=== Commit being built ==="
+                    git log -1 --oneline
+                    echo "=== Solutions ==="
+                    find . -name "*.sln"
+                    echo "=== AIServicesAPI projects ==="
+                    find . -iname "AIServicesAPI.csproj"
+                    echo "=== Azure.AI references in them ==="
+                    find . -iname "AIServicesAPI.csproj" -exec grep -Hn "Azure.AI" {} \;
+                  displayName: 'Diagnose packages'
+
+                - task: DotNetCoreCLI@2
+                  displayName: 'Restore and Build'
+                  inputs:
+                    command: 'build'
+                    projects: '$(solution)'
+                    arguments: '--configuration ${{ parameters.buildConfiguration }}'
+
+                - task: DotNetCoreCLI@2
+                  displayName: 'Publish'
+                  inputs:
+                    command: 'publish'
+                    projects: '**/GSBaseAPI.csproj'
+                    arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build'
+
+                - task: AzureRmWebAppDeployment@4
+                  displayName: 'Deploy to Azure App Service'
+                  inputs:
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    appType: 'webApp'
+                    WebAppName: ${{ parameters.azureAppService }}
+                    package: '$(System.DefaultWorkingDirectory)/**/bin/${{ parameters.buildConfiguration }}/**/*.zip'
+                    DeploymentType: 'zipDeploy'
+                    AppSettings: '-ASPNETCORE_ENVIRONMENT ${{ parameters.projectEnvironment }}'
